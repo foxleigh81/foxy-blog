@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Blog</title>
+</head>
+<body>
+    <h1>Blog Posts</h1>
+    {% if posts %}
+        <ul>
+            {% for post in posts %}
+                <li>
+                    <h2><a href="{{ url_for('main.post_detail', post_id=post._id) }}">{{ post.title }}</a></h2>
+                    <p>{{ post.body[0].children[0].text[:100] }}...</p> <!-- Short preview -->
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No blog posts available.</p>
+    {% endif %}
+</body>
+</html>
