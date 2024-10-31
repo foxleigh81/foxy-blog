@@ -8,7 +8,7 @@
 <body>
     <Img src="https://cdn.sanity.io/images/{{ project_id }}/{{ dataset }}/{{ post.hero.asset._ref | replace('image-', '') | replace('-jpg', '.jpg') | replace('-png', '.png') | replace('-gif', '.gif') }}" alt="{{post.heroAlt}}">
     <h1>{{ post.title }}</h1>
-    <p>Published on: {{ post.publishedAt }}</p>
+    <p>Published on: {{ post.publishedAt }} in <a href="/{{post.category.slug.current}}">{{post.category.name}}</a></p>
     <div>
         {% for block in post.body %}
     {% if block._type == 'block' %}

@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flask Blog</title>
+    <title>{{ category.name }}</title>
 </head>
 <body>
-    <h1>Blog Posts</h1>
-    {% if posts %}
+    <h1>Posts in {{ category.name }}</h1>
+    {% if category.posts %}
         <ul>
-            {% for post in posts %}
+            {% for post in category.posts %}
                 <li>
                     <img src="https://cdn.sanity.io/images/{{ project_id }}/{{ dataset }}/{{ post.hero.asset._ref | replace('image-', '') | replace('-jpg', '.jpg') | replace('-png', '.png') | replace('-gif', '.gif') }}" alt="{{post.heroAlt}}">
                     <h2>
@@ -17,12 +17,12 @@
                             {{ post.title }}
                         </a>
                     </h2>
-                    <p>{{ post.excerpt }}</p> <!-- Short preview -->
+                    <p>{{ post.excerpt }}</p>
                 </li>
             {% endfor %}
         </ul>
     {% else %}
-        <p>No blog posts available.</p>
+        <p>No posts available for this category.</p>
     {% endif %}
 </body>
 </html>

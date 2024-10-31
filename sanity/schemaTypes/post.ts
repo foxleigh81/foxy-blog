@@ -54,10 +54,9 @@ export default defineType({
       hidden: ({document}) => !document?.hero,
     }),
     defineField({
-      name: 'categories',
-      title: 'Categories',
-      type: 'array',
-      of: [{type: 'reference', to: {type: 'category'}}],
+      name: 'category',
+      title: 'Category',
+      type: 'reference', to: {type: 'category'},
       validation: Rule => Rule.required(),
     }),
     defineField({
