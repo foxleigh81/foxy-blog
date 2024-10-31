@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "createdAt": "2024-10-24T14:10:34.546Z",
+  "workspaces": [
+    {
+      "name": "default",
+      "title": "Alex Blog",
+      "basePath": "/",
+      "dataset": "production",
+      "schema": "628bb87c.create-schema.json"
+    }
+  ]
+}
