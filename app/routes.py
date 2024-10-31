@@ -25,16 +25,20 @@ def _fetch_from_sanity(query):
 
 @main.route('/')
 def index():
+    project_id = current_app.config['SANITY_PROJECT_ID']
+    dataset = current_app.config['SANITY_DATASET']
     # Fetch all posts from Sanity
     query = '*[_type == "post"]'
     posts = _fetch_from_sanity(query) or []
 
-    return render_template('index.html', posts=posts)
+    return render_template('index.html', posts=posts, project_id=project_id, dataset=dataset)
 
 @main.route('/post/<post_id>')
 def post_detail(post_id):
+    project_id = current_app.config['SANITY_PROJECT_ID']
+    dataset = current_app.config['SANITY_DATASET']
     # Fetch a specific post by ID from Sanity
     query = f'*[_type == "post" && _id == "{post_id}"][0]'
     post = _fetch_from_sanity(query)
 
-    return render_template('post_detail.html', post=post)
+    return render_template('post_detail.html', post=post, project_id=project_id, dataset=dataset)

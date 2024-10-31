@@ -11,8 +11,9 @@
         <ul>
             {% for post in posts %}
                 <li>
+                    <img src="https://cdn.sanity.io/images/{{ project_id }}/{{ dataset }}/{{ post.hero.asset._ref | replace('image-', '') | replace('-jpg', '.jpg') | replace('-png', '.png') | replace('-gif', '.gif') }}" alt="{{post.heroAlt}}">
                     <h2><a href="{{ url_for('main.post_detail', post_id=post._id) }}">{{ post.title }}</a></h2>
-                    <p>{{ post.body[0].children[0].text[:100] }}...</p> <!-- Short preview -->
+                    <p>{{ post.excerpt }}</p> <!-- Short preview -->
                 </li>
             {% endfor %}
         </ul>
