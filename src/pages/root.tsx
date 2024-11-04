@@ -18,7 +18,7 @@ export default function Root() {
       <header id="top-nav" className="bg-purple-900 text-white p-4">
         <div className="flex justify-between">
           <div className="flex flex-col">
-            <h1 className="text-5xl uppercase font-bold">The Foxy Blog</h1>
+            <a href="/"><h1 className="text-5xl uppercase font-bold">The Foxy Blog</h1></a>
             <p className="text-md pl-2">
               The insane mutterings of Alex Foxleigh
             </p>
