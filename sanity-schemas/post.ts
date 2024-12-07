@@ -31,6 +31,7 @@ export default defineType({
       title: 'Author',
       type: 'reference',
       to: {type: 'author'},
+      initialValue: { _type: 'reference', _ref: 'c2b52b2b-1073-4498-8382-3798246a5e7d' },
       validation: Rule => Rule.required(),
     }),
     defineField({
@@ -91,6 +92,12 @@ export default defineType({
     defineField({
       name: 'disableComments',
       title: 'Disable comments',
+      type: 'boolean',
+      initialValue: false,
+    }),
+    defineField({
+      name: 'unlisted',
+      title: 'Hide this article from the list pages and search results',
       type: 'boolean',
       initialValue: false,
     }),

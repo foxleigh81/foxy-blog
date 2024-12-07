@@ -11,11 +11,6 @@ interface PostWithCategory extends Omit<Post, 'category'> {
   };
 }
 
-type Result = {
-  name: string;
-  posts: PostWithCategory[];
-};
-
 export default function CategoryPage() {
   const { category } = useParams();
 
@@ -23,9 +18,9 @@ export default function CategoryPage() {
   const [posts, setPosts] = React.useState<PostWithCategory[]>([]);
 
   React.useEffect(() => {
-    getPostsByCategory(category || '').then((posts: Result) => {
-      setPosts(posts.posts);
-      setCategoryName(posts.name);
+    getPostsByCategory(category || '').then((posts) => {
+      setPosts(posts?.posts as PostWithCategory[]);
+      setCategoryName(posts?.name as string);
     });
   }, [category]);
 

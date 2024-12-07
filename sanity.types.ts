@@ -159,6 +159,7 @@ export type Post = {
     [internalGroqTypeReferenceTo]?: 'post'
   }>
   disableComments?: boolean
+  unlisted?: boolean
 }
 
 export type Category = {

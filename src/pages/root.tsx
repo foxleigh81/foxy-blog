@@ -6,11 +6,13 @@ import { Category } from '../../sanity.types';
 
 export default function Root() {
   const [categories, setCategories] = React.useState<Category[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    getCategories().then((categories) => {
-      setCategories(categories);
-    });
+    getCategories()
+      .then((categories) => setCategories(categories as Category[]))
+      .catch((error) => console.error('Error fetching categories:', error))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -18,7 +20,9 @@ export default function Root() {
       <header id="top-nav" className="bg-purple-900 text-white p-4">
         <div className="flex justify-between">
           <div className="flex flex-col">
-            <a href="/"><h1 className="text-5xl uppercase font-bold">The Foxy Blog</h1></a>
+            <a href="/">
+              <h1 className="text-5xl uppercase font-bold">The Foxy Blog</h1>
+            </a>
             <p className="text-md pl-2">
               The insane mutterings of Alex Foxleigh
             </p>
@@ -51,16 +55,20 @@ export default function Root() {
         </div>
         <nav className="mt-4">
           <ul className="flex space-x-4 justify-end">
-            {categories.map((category) => (
-              <li key={category._id}>
-                <a
-                  className="hover:underline-offset-8 hover:underline"
-                  href={`/${category?.slug?.current}`}
-                >
-                  {category.name}
-                </a>
-              </li>
-            ))}
+            {loading ? (
+              <li className="text-gray-400">Loading...</li>
+            ) : (
+              categories.map((category) => (
+                <li key={category._id}>
+                  <a
+                    className="hover:underline-offset-8 hover:underline"
+                    href={`/${category?.slug?.current}`}
+                  >
+                    {category.name}
+                  </a>
+                </li>
+              ))
+            )}
           </ul>
         </nav>
       </header>

@@ -3,6 +3,10 @@ import imageUrlBuilder from '@sanity/image-url';
 
 import { env } from './environment';
 
+if (!env.SANITY_PROJECT_ID || !env.SANITY_DATASET) {
+  throw new Error('Missing Sanity environment variables');
+}
+
 const config: ClientConfig = {
   projectId: env.SANITY_PROJECT_ID,
   dataset: env.SANITY_DATASET,
@@ -12,54 +16,92 @@ const config: ClientConfig = {
 
 export const client = createClient(config);
 
-// helper function to build image URLs
+// Helper function to build image URLs
 export const imageBuilder = imageUrlBuilder(client);
 
-// uses GROQ to query content: https://www.sanity.io/docs/groq
-export async function getCategories() {
-  const categories = await client.fetch('*[_type == "category"]');
-  return categories;
+export function urlForImage(source: any) {
+  return imageBuilder.image(source).auto('format').fit('max');
 }
 
-export async function getPosts() {
-  const posts = await client.fetch(
-    '*[_type == "post"]{..., category->{slug}, hero, heroAlt, excerpt, slug}'
-  );
-  return posts;
+// Define TypeScript interfaces for data
+interface Category {
+  name: string;
+  slug: { current: string };
 }
 
-export async function getPostsByCategory(category: string) {
-  const posts = await client.fetch(`
-    *[_type == "category" && slug.current == "${category}"][0] {
-      name,
-      slug,
-      "posts": *[_type == "post" && category._ref == ^._id] {
-        title,
+interface Post {
+  title: string;
+  slug: { current: string };
+  category: { name: string; slug: { current: string } };
+  hero?: string;
+  heroAlt?: string;
+  excerpt?: string;
+  body?: any;
+  publishedAt?: string;
+  tags?: string[];
+}
+
+export async function getCategories(): Promise<Category[]> {
+  try {
+    const categories = await client.fetch(`*[_type == "category"]{name, slug}`);
+    return categories;
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+}
+
+export async function getPosts(): Promise<Post[]> {
+  try {
+    const posts = await client.fetch(
+      `*[_type == "post"]{
+      _id, _type, _createdAt, _updatedAt, _rev, title, subtitle, slug, author, hero, heroAlt, category, tags, publishedAt, excerpt, body, relatedPosts, disableComments, unlisted
+    }`
+    );
+    return posts;
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return [];
+  }
+}
+
+export async function getPostsByCategory(category: string): Promise<{
+  name: string;
+  slug: { current: string };
+  posts: Post[];
+} | null> {
+  try {
+    const postsByCategory = await client.fetch(
+      `*[_type == "category" && slug.current == $category][0] {
+        name,
         slug,
-        category-> { name, slug },
-        hero,
-        heroAlt,
-        excerpt
-      }
-    }
-  `);
-  return posts;
+        "posts": *[_type == "post" && category._ref == ^._id] {
+          title,
+          slug,
+          category-> { name, slug },
+          hero,
+          heroAlt,
+          excerpt
+        }
+      }`,
+      { category }
+    );
+    return postsByCategory;
+  } catch (error) {
+    console.error('Error fetching posts by category:', error);
+    return null;
+  }
 }
 
-export async function getPostBySlug(slug: string) {
-  const post = await client.fetch(`
-    *[_type == "post" && slug.current == "${slug}"][0] {
-      title,
-      subtitle,
-      slug,
-      publishedAt,
-      tags,
-      category-> { name, slug },
-      hero,
-      heroAlt,
-      excerpt,
-      body
-    }
-  `);
-  return post;
+export async function getPostBySlug(slug: string): Promise<Post | null> {
+  try {
+    const post = await client.fetch(
+      `*[_type == "post" && slug.current == $slug][0]{_id, _type, _createdAt, _updatedAt, _rev, title, subtitle, slug, author, hero, heroAlt, category, tags, publishedAt, excerpt, body, relatedPosts, disableComments, unlisted }`,
+      { slug }
+    );
+    return post as Post;
+  } catch (error) {
+    console.error('Error fetching post by slug:', error);
+    return null;
+  }
 }

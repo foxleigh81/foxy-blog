@@ -2,12 +2,13 @@ import React from 'react';
 
 import { getPosts, imageBuilder } from '../sanity';
 import { Post, Slug } from '../../sanity.types';
+import { ensurePostType } from '../helpers';
 
 export default function PostsList() {
   const [posts, setPosts] = React.useState<Post[]>([]);
   React.useEffect(() => {
     getPosts().then((posts) => {
-      setPosts(posts);
+      setPosts(ensurePostType(posts));
     });
   }, []);
 

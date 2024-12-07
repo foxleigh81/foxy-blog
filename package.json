@@ -5,6 +5,7 @@
   "dependencies": {
     "@heroicons/react": "^2.1.5",
     "@portabletext/react": "^3.1.0",
+    "@sanity-typed/types": "^7.0.1",
     "@sanity/client": "^6.22.2",
     "@sanity/code-input": "^4.1.4",
     "@sanity/image-url": "^1.1.0",
@@ -17,6 +18,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "easymde": "^2.18.0",
+    "eslint-plugin-prettier": "^5.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.27.0",
@@ -62,7 +64,9 @@
     "@sanity/eslint-config-studio": "^4.0.0",
     "@types/react": "^18.0.25",
     "eslint": "^8.6.0",
-    "prettier": "^3.0.2",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.3",
+    "sanity-codegen": "^0.9.8",
     "tailwindcss": "^3.4.14",
     "typescript": "^5.1.6"
   },

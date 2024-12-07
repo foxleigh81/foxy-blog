@@ -915,6 +915,13 @@
           "type": "boolean"
         },
         "optional": true
+      },
+      "unlisted": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "boolean"
+        },
+        "optional": true
       }
     }
   },

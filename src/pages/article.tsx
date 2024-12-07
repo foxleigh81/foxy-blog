@@ -7,14 +7,17 @@ import { Post } from '../../sanity.types';
 
 import { PortableTextComponents } from '../components/portable-text-components';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
+import { ensurePostType } from '../helpers';
 
 export default function ArticlePage() {
   const { slug } = useParams();
-  const [post, setPost] = React.useState<Post>();
+  const [post, setPost] = React.useState<Post | undefined>(undefined);
 
   React.useEffect(() => {
     getPostBySlug(slug || '').then((post) => {
-      setPost(post);
+      if (post) {
+        setPost(ensurePostType([post])[0]);
+      }
     });
   }, [slug]);
 
