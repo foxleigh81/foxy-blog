@@ -3,7 +3,7 @@ export const getCategoryColor = (categorySlug: string): string => {
   // Map specific categories to specific colors
   const categoryColorMap: Record<string, string> = {
     'technically-minded': 'bg-blue-600',
-    'digital-industry': 'bg-green-600',
+    'digital-industry': 'bg-green-700',
     'meandering-insanity': 'bg-purple-600',
     'mind-body-and-soul': 'bg-amber-600',
     'scribblings': 'bg-rose-600',
