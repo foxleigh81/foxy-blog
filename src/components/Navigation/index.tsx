@@ -5,12 +5,10 @@ import Link from 'next/link';
 
 interface NavigationProps {
   className?: string;
-  isMobile?: boolean;
 }
 
 const Navigation: React.FC<NavigationProps> = ({ 
-  className = "",
-  isMobile = false
+  className = ""
 }) => {
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -22,21 +20,20 @@ const Navigation: React.FC<NavigationProps> = ({
   ];
 
   return (
-    <ul className={`flex flex-col md:flex-row list-none p-0 m-0 md:justify-end md:items-center py-4 md:py-0 ${className}`}>
-      {navLinks.map((link) => (
-        <li 
-          key={link.path}
-          className={`${isMobile ? 'my-2 w-full' : 'md:my-0 md:ml-6 md:w-auto'}`}
-        >
-          <Link 
-            href={link.path} 
-            className="text-white no-underline font-medium py-2 block md:inline-block hover:underline"
-          >
-            {link.name}
-          </Link>
-        </li>
-      ))}
-    </ul>
+    <div className={`w-full ${className}`}>
+      <div className="flex flex-col md:flex-row md:justify-end">
+        {navLinks.map((link) => (
+          <div key={link.path} className="my-2 md:my-0 md:ml-6">
+            <Link 
+              href={link.path} 
+              className="text-white no-underline font-medium py-2 block md:inline-block hover:underline"
+            >
+              {link.name}
+            </Link>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 

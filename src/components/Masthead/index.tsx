@@ -45,7 +45,7 @@ const Masthead: React.FC = () => {
 
           <nav id="navigation" className={`${menuOpen ? 'max-h-screen' : 'max-h-0 md:max-h-full'} w-full overflow-hidden transition-all duration-300 ease-in-out md:overflow-visible`}>
             <div className="py-4 md:py-0">
-              <Navigation isMobile={true} />
+              <Navigation />
               
               {/* Social links for mobile - shown only in mobile menu */}
               <div className="md:hidden mt-6 pt-4 border-t border-white/20 w-full">
