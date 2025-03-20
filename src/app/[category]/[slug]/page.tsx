@@ -263,8 +263,8 @@ export default async function PostPage({ params }: PostPageProps) {
         mainImage={post.mainImage} 
       />
       
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="lg:col-span-8 mt-4">
           <BlogArticle content={post.body} />
           
           {post.author && <AuthorBio author={post.author} />}
