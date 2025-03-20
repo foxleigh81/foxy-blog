@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
+import Search from '@/components/Search';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -22,7 +23,7 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
 
   return (
     <header className={`w-full text-white py-8 mb-8 relative ${styles.masthead} ${menuOpen ? styles.menuOpen : ''}`}>
-      <div className="max-w-7xl mx-auto px-4 relative z-10">
+      <div className="container mx-auto relative z-10">
         <div className="flex flex-wrap items-center justify-between">
           <div className="flex-1 min-w-[200px] flex items-center gap-4">
             <Image src="/alex-foxleigh.jpg" alt="Alex Foxleigh" width={70} height={70} className="rounded-full border-2 border-white drop-shadow-md" />
@@ -34,6 +35,7 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
           
           <div className="hidden nav:flex items-center">
             <Navigation categories={categories} className="justify-end" />
+            <Search />
           </div>
           
           <button 
@@ -54,6 +56,9 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
         <div className="nav:hidden">
           <nav id="navigation" className={`${menuOpen ? 'max-h-96 py-4' : 'max-h-0 py-0'} w-full overflow-hidden transition-all duration-300 ease-in-out`}>
             <Navigation categories={categories} />
+            <div className="mt-4 flex justify-center">
+              <Search />
+            </div>
           </nav>
         </div>
       </div>

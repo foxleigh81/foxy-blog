@@ -29,7 +29,7 @@ export default async function BlogIndex() {
   ])
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main className="container mx-auto py-4">
       <div className="mb-8">
         <p className="text-2xl font-bold mb-4">Welcome to my blog, where I share my thoughts and experiences. </p>
       </div>

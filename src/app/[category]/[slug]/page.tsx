@@ -13,6 +13,7 @@ import BlogArticle from '@/components/BlogArticle';
 import Tags from '@/components/Tags';
 import AuthorBio from '@/components/AuthorBio';
 import RelatedPosts from '@/components/RelatedPosts';
+import LegacyBanner from '@/components/LegacyBanner';
 
 // Define a type for related posts which are expanded in the query
 type RelatedPost = {
@@ -101,7 +102,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   }
   
   // Get the canonical URL
-  const canonicalUrl = `/${resolvedParams.category}/${resolvedParams.slug}`;
+  const canonicalUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/${resolvedParams.category}/${resolvedParams.slug}`;
   
   return {
     title: post.title,
@@ -249,6 +250,9 @@ export default async function PostPage({ params }: PostPageProps) {
   
   // Limit to 3 posts
   relatedPosts = relatedPosts.slice(0, 3);
+
+  // Check through the tags and see if any of them are 'legacy'
+  const isLegacy = post.tags?.includes('legacy');
   
   return (
     <>
@@ -262,6 +266,8 @@ export default async function PostPage({ params }: PostPageProps) {
         categories={postCategories} 
         mainImage={post.mainImage} 
       />
+      
+      {isLegacy && <LegacyBanner year={post.publishedAt?.split('-')[0] || ''} />}
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-8 mt-4">

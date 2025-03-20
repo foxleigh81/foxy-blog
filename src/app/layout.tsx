@@ -50,7 +50,7 @@ export default async function RootLayout({
     <html lang="en">
       <body className={`${primaryFont.variable} ${secondaryFont.variable} antialiased`}>
         <Masthead categories={categories} title={metadata.title as string} subtitle={metadata.description as string}/>
-        {children}
+        <main className="container mx-auto px-4">{children}</main>
         <Footer />
       </body>
     </html>

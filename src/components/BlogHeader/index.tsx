@@ -20,6 +20,7 @@ interface BlogHeaderProps {
     };
     alt?: string;
   };
+  className?: string;
 }
 
 const BlogHeader: React.FC<BlogHeaderProps> = ({ 
@@ -28,10 +29,11 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
   publishedAt, 
   author, 
   categories, 
-  mainImage 
+  mainImage,
+  className = "",
 }) => {
   return (
-    <header className="mb-4">
+    <header className={className}>
       <h1 className="text-4xl font-bold mb-4">{title}</h1>
       {subtitle && (
         <p className="text-xl text-gray-600 mb-4">{subtitle}</p>

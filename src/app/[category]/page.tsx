@@ -1,9 +1,11 @@
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { sanityClient } from '@/sanity/lib/client';
 import type { Post } from '@/sanity/schemaTypes/postType';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 import BlogHeader from '@/components/BlogHeader';
 import PostGrid from '@/components/PostGrid';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 import { metadata } from '../layout';
 
@@ -46,6 +48,14 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   
   const category = await sanityClient.fetch(categoryQuery, { category: categorySlug });
   
+  // If category doesn't exist, return 404
+  if (!category) {
+    return {
+      title: `Category Not Found | ${metadata.title}`,
+      description: 'The requested category does not exist.',
+    };
+  }
+  
   return {
     title: `${category.title} | ${metadata.title}`,
     description: category.description || `Articles in the ${category.title} category`,
@@ -63,6 +73,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const resolvedParams = await Promise.resolve(params);
   const categorySlug = resolvedParams.category;
   
+  // Fetch the current category
+  const category: Category | null = await sanityClient.fetch(categoryQuery, { 
+    category: categorySlug 
+  });
+  
+  // If category doesn't exist, return 404
+  if (!category) {
+    notFound();
+  }
+  
   // Fetch posts for this category
   const posts: Post[] = await sanityClient.fetch(postsByCategoryQuery, { 
     category: categorySlug 
@@ -70,18 +90,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   
   // Fetch all categories for reference
   const categories: Category[] = await sanityClient.fetch(categoriesQuery);
-  
-  // Fetch the current category
-  const category: Category = await sanityClient.fetch(categoryQuery, { 
-    category: categorySlug 
-  });
 
   return (
-    <main className="container mx-auto px-4 py-8">
+    <main className="container mx-auto px-4">
+      <Breadcrumbs category={category} />
+      
       <BlogHeader 
         title={category.title} 
         subtitle={category.description || `Articles in the ${category.title} category`}
         categories={[]} 
+        className="mt-4"
       />
       
       <PostGrid posts={posts} categories={categories} />

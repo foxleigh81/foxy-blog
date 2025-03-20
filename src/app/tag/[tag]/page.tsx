@@ -1,8 +1,10 @@
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { sanityClient } from '@/sanity/lib/client';
 import type { Post } from '@/sanity/schemaTypes/postType';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 import PostGrid from '@/components/PostGrid';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 import { metadata as siteMetadata } from '../../layout';
 
@@ -58,12 +60,36 @@ export default async function TagPage({ params }: TagPageProps) {
     tagName: tag 
   });
   
+  // If no posts found for this tag, it's likely the tag doesn't exist
+  if (posts.length === 0) {
+    // Check if this is a valid tag that just has no posts
+    const validTags = await sanityClient.fetch(`
+      *[_type == "post" && defined(tags) && !unlisted] {
+        tags
+      }
+    `);
+    
+    const allTags = new Set<string>();
+    validTags.forEach((post: { tags: string[] }) => {
+      if (post.tags) {
+        post.tags.forEach((t: string) => allTags.add(t));
+      }
+    });
+    
+    // If tag doesn't exist in any post, return 404
+    if (!Array.from(allTags).includes(tag)) {
+      notFound();
+    }
+  }
+  
   // Fetch all categories for reference
   const categories: Category[] = await sanityClient.fetch(categoriesQuery);
 
   return (
-    <main className="container mx-auto px-4 py-8">
-      <div className="mb-8">
+    <main className="container mx-auto px-4">
+      <Breadcrumbs tagName={tag} />
+      
+      <div className="mt-4">
         <h1 className="text-3xl font-bold mb-4">#{tag}</h1>
         <p className="text-xl text-gray-600">Articles tagged with #{tag}</p>
       </div>
