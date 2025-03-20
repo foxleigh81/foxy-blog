@@ -16,9 +16,26 @@ module.exports = {
     'text-white',
   ],
   theme: {
+    screens: {
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'nav': '1230px',  // Custom breakpoint for navigation
+      'xl': '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       colors: {
         primary: 'rebeccapurple',
+      },
+      keyframes: {
+        'slight-wobble': {
+          '0%, 100%': { transform: 'rotate(-.5deg)' },
+          '50%': { transform: 'rotate(.5deg)' },
+        },
+      },
+      animation: {
+        'slight-wobble': 'slight-wobble 2s ease-in-out infinite',
       },
     },
   },
