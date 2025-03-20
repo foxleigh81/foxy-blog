@@ -5,6 +5,8 @@ import type { Category } from '@/sanity/schemaTypes/categoryType';
 import BlogHeader from '@/components/BlogHeader';
 import PostGrid from '@/components/PostGrid';
 
+import { metadata } from '../layout';
+
 // Query to fetch posts by category
 const postsByCategoryQuery = `*[_type == "post" && references(*[_type == "category" && slug.current == $category]._id) && !unlisted] | order(publishedAt desc) {
   _id,
@@ -38,24 +40,32 @@ interface CategoryPageProps {
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
-  const category = await sanityClient.fetch(categoryQuery, { category: params.category });
+  // Ensure params is awaited
+  const resolvedParams = await Promise.resolve(params);
+  const categorySlug = resolvedParams.category;
+  
+  const category = await sanityClient.fetch(categoryQuery, { category: categorySlug });
   
   return {
-    title: `${category.title} | The Foxy Blog`,
+    title: `${category.title} | ${metadata.title}`,
     description: category.description || `Articles in the ${category.title} category`,
     openGraph: {
-      title: `${category.title} | The Foxy Blog`,
+      title: `${category.title} | ${metadata.title}`,
       description: category.description || `Articles in the ${category.title} category`,
       type: 'website',
-      url: `/${params.category}`,
+      url: `/${categorySlug}`,
     },
   };
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
+  // Ensure params is awaited
+  const resolvedParams = await Promise.resolve(params);
+  const categorySlug = resolvedParams.category;
+  
   // Fetch posts for this category
   const posts: Post[] = await sanityClient.fetch(postsByCategoryQuery, { 
-    category: params.category 
+    category: categorySlug 
   });
   
   // Fetch all categories for reference
@@ -63,14 +73,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   
   // Fetch the current category
   const category: Category = await sanityClient.fetch(categoryQuery, { 
-    category: params.category 
+    category: categorySlug 
   });
 
   return (
     <main className="container mx-auto px-4 py-8">
       <BlogHeader 
         title={category.title} 
-        subtitle={category.description || `Articles in the ${category.title} category`} 
+        subtitle={category.description || `Articles in the ${category.title} category`}
+        categories={[]} 
       />
       
       <PostGrid posts={posts} categories={categories} />

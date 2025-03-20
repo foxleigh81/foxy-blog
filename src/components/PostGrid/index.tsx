@@ -18,7 +18,7 @@ const PostGrid: React.FC<PostGridProps> = ({ posts, categories }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {posts.map((post) => {
         // Find the first category for this post - all posts have at least one category
         const firstCategoryRef = post.categories?.[0]?._ref;

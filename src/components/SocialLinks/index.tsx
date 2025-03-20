@@ -44,7 +44,7 @@ const SocialLinks: React.FC<SocialLinksProps> = ({
         <a 
           key={link.name}
           href={link.url} 
-          className={`text-white hover:text-white/80 transition-colors ${!showLabels ? 'relative group' : 'flex items-center gap-2'}`}
+          className={`text-black hover:text-black/80 transition-colors ${!showLabels ? 'relative group' : 'flex items-center gap-2'} `}
           aria-label={`${link.name} Profile`}
           title={showLabels ? undefined : `${link.name} Profile`}
         >

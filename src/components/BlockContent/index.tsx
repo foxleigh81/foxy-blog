@@ -20,18 +20,18 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
           return null;
         }
         return (
-          <figure className="my-8">
-            <div className="relative w-full h-auto min-h-[300px] rounded-lg overflow-hidden">
+          <figure className="mt-0 mb-0">
+            <div className="relative w-full h-auto min-h-[300px] mb-4">
               <Image
                 src={urlFor(value).width(800).url()}
                 alt={value.alt || 'Blog post image'}
                 fill
-                className="object-cover"
+                className="object-cover rounded-md overflow-hidden mt-0"
                 sizes="(max-width: 640px) 100vw, (max-width: 768px) 80vw, 800px"
               />
             </div>
             {value.caption && (
-              <figcaption className="mt-2 text-sm text-gray-600 text-center">
+              <figcaption className="text-sm text-gray-600 text-center">
                 {value.caption}
                 {value.attribution && <span className="text-gray-500"> - {value.attribution}</span>}
               </figcaption>
@@ -45,7 +45,7 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
         }
         
         return (
-          <div className="my-8 aspect-video">
+          <div className="my-4 aspect-video">
             <YouTube
               videoId={value.video.id}
               opts={{
@@ -70,9 +70,9 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
       },
     },
     block: {
-      h1: ({ children }: any) => <h1 className="text-3xl font-bold mt-8 mb-4">{children}</h1>,
-      h2: ({ children }: any) => <h2 className="text-2xl font-bold mt-8 mb-4">{children}</h2>,
-      h3: ({ children }: any) => <h3 className="text-xl font-bold mt-6 mb-3">{children}</h3>,
+      h1: ({ children }: any) => <h1 className="text-3xl font-bold mt-4 mb-4">{children}</h1>,
+      h2: ({ children }: any) => <h2 className="text-2xl font-bold mt-4 mb-4">{children}</h2>,
+      h3: ({ children }: any) => <h3 className="text-xl font-bold mt-4 mb-3">{children}</h3>,
       h4: ({ children }: any) => <h4 className="text-lg font-bold mt-4 mb-2">{children}</h4>,
       normal: ({ children }: any) => <p className="mb-4 leading-relaxed">{children}</p>,
       blockquote: ({ children }: any) => (

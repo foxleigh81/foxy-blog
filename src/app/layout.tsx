@@ -1,34 +1,55 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Righteous, Lato } from "next/font/google";
 import "./globals.css";
 
 import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
+import { sanityClient } from "@/sanity/lib/client";
+import type { Category } from "@/sanity/schemaTypes/categoryType";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const primaryFont = Righteous({
+  weight: "400",
+  variable: "--font-primary",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const secondaryFont = Lato({
+  weight: ["400", "700"],
+  variable: "--font-secondary",
   subsets: ["latin"],
 });
 
+// Metadata for the root layout (applied to all pages)
 export const metadata: Metadata = {
-  title: "The Foxy Blog",
-  description: "A personal blog by Alexander Foxleigh",
+  title: "Foxy's Tale",
+  description: "The inane mutterings of Alexander Foxleigh",
 };
 
-export default function RootLayout({
+// Query to fetch all categories
+const categoriesQuery = `*[_type == "category"] | order(title asc) {
+  _id,
+  title,
+  slug
+}`;
+
+// Function to fetch all categories
+async function getCategories() {
+  const categories: Category[] = await sanityClient.fetch(categoriesQuery);
+  return categories;
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Fetch categories for navigation
+  const categories = await getCategories();
+  
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Masthead />
+      <body className={`${primaryFont.variable} ${secondaryFont.variable} antialiased`}>
+        <Masthead categories={categories} title={metadata.title as string} subtitle={metadata.description as string}/>
         {children}
         <Footer />
       </body>

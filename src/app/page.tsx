@@ -1,9 +1,7 @@
 import { sanityClient } from '@/sanity/lib/client'
 import type { Post } from '@/sanity/schemaTypes/postType'
 import type { Category } from '@/sanity/schemaTypes/categoryType'
-import BlogHeader from '@/components/BlogHeader'
 import PostGrid from '@/components/PostGrid'
-
 // Query to fetch posts with all necessary fields
 const postsQuery = `*[_type == "post" && !unlisted] | order(publishedAt desc) {
   _id,
@@ -31,11 +29,10 @@ export default async function BlogIndex() {
   ])
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <BlogHeader 
-        title="The Foxy Blog" 
-        subtitle="Thoughts, stories and ideas from Alex Foxleigh" 
-      />
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
+        <p className="text-2xl font-bold mb-4">Welcome to my blog, where I share my thoughts and experiences. </p>
+      </div>
       
       <PostGrid posts={posts} categories={categories} />
     </main>

@@ -2,37 +2,39 @@
 
 import React from 'react';
 import Link from 'next/link';
+import type { Category } from '@/sanity/schemaTypes/categoryType';
 
 interface NavigationProps {
   className?: string;
+  categories: Category[];
 }
 
 const Navigation: React.FC<NavigationProps> = ({ 
-  className = ""
+  className = "",
+  categories = []
 }) => {
+  // Create navigation links from categories
   const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Technically Minded', path: '/technically-minded' },
-    { name: 'Digital Industry', path: '/digital-industry' },
-    { name: 'Meandering Insanity', path: '/meandering-insanity' },
-    { name: 'Mind, Body and Soul', path: '/mind-body-and-soul' },
-    { name: 'Scribblings', path: '/scribblings' }
+    ...categories.map(category => ({
+      name: category.title,
+      path: `/${category.slug.current}`
+    })).filter(category => category.name !== 'Meta')
   ];
 
   return (
-    <div className={`w-full ${className}`}>
-      <div className="flex flex-col md:flex-row md:justify-end">
+    <div className={`${className}`}>
+      <ul className="flex flex-col nav:flex-row items-center nav:items-stretch list-none p-0 m-0">
         {navLinks.map((link) => (
-          <div key={link.path} className="my-2 md:my-0 md:ml-6">
+          <li key={link.path} className="nav:ml-6 w-full nav:w-auto">
             <Link 
               href={link.path} 
-              className="text-white no-underline font-medium py-2 block md:inline-block hover:underline"
+              className="text-white no-underline font-medium py-2 px-1 block hover:underline transition-all w-full text-center nav:text-left underline-offset-8 drop-shadow-md"
             >
               {link.name}
             </Link>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 };

@@ -1,15 +1,47 @@
 import { Metadata } from 'next';
-import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { sanityClient } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
-import type { Post } from '@/sanity/schemaTypes/postType';
+import type { Post as BasePost } from '@/sanity/schemaTypes/postType';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 import type { Author } from '@/sanity/schemaTypes/authorType';
-import BlockContent from '@/components/BlockContent';
-import { formatDate } from '@/utils/formatDate';
-import { getCategoryColor, getCategoryTextColor } from '@/utils/categoryColors';
+
+// Import components
+import Breadcrumbs from '@/components/Breadcrumbs';
+import BlogHeader from '@/components/BlogHeader';
+import BlogArticle from '@/components/BlogArticle';
+import Tags from '@/components/Tags';
+import AuthorBio from '@/components/AuthorBio';
+import RelatedPosts from '@/components/RelatedPosts';
+
+// Define a type for related posts which are expanded in the query
+type RelatedPost = {
+  _id: string;
+  title: string;
+  subtitle?: string;
+  slug: {
+    current: string;
+  };
+  mainImage?: {
+    asset: {
+      _ref: string;
+      _type: "reference";
+    };
+    alt?: string;
+  };
+  excerpt?: string;
+  categories?: Array<{
+    _ref: string;
+    _type: "reference";
+  }>;
+  publishedAt?: string;
+};
+
+// Extended Post type that includes expanded references
+type Post = Omit<BasePost, 'author' | 'relatedPosts'> & {
+  author: Author;
+  relatedPosts?: RelatedPost[];
+};
 
 // Query to fetch a specific post
 const postQuery = `*[_type == "post" && slug.current == $slug][0] {
@@ -58,7 +90,9 @@ interface PostPageProps {
 }
 
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
-  const post: Post = await sanityClient.fetch(postQuery, { slug: params.slug });
+  // Ensure params is properly awaited
+  const resolvedParams = await params;
+  const post: Post = await sanityClient.fetch(postQuery, { slug: resolvedParams.slug });
   
   if (!post) {
     return {
@@ -67,7 +101,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   }
   
   // Get the canonical URL
-  const canonicalUrl = `/${params.category}/${params.slug}`;
+  const canonicalUrl = `/${resolvedParams.category}/${resolvedParams.slug}`;
   
   return {
     title: post.title,
@@ -101,8 +135,10 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 }
 
 export default async function PostPage({ params }: PostPageProps) {
+  // Ensure params is properly awaited
+  const resolvedParams = await params;
   // Fetch the post
-  const post: Post = await sanityClient.fetch(postQuery, { slug: params.slug });
+  const post: Post = await sanityClient.fetch(postQuery, { slug: resolvedParams.slug });
   
   // If post not found, return 404
   if (!post) {
@@ -116,194 +152,134 @@ export default async function PostPage({ params }: PostPageProps) {
   const postCategories = post.categories
     ? post.categories
         .map(cat => categories.find(c => c._id === cat._ref))
-        .filter(Boolean) as Category[]
+        .filter((cat): cat is Category => Boolean(cat))
     : [];
   
   // Get the first category (for breadcrumb)
   const firstCategory = postCategories.length > 0 ? postCategories[0] : null;
   
-  return (
-    <article className="container mx-auto px-4 py-8">
-      {/* Breadcrumb */}
-      <nav className="text-sm mb-6" aria-label="Breadcrumb">
-        <ol className="flex items-center space-x-2">
-          <li>
-            <Link href="/" className="text-gray-500 hover:text-primary">
-              Home
-            </Link>
-          </li>
-          <li className="flex items-center space-x-2">
-            <span className="text-gray-400">/</span>
-            {firstCategory && (
-              <Link 
-                href={`/${firstCategory.slug.current}`} 
-                className="text-gray-500 hover:text-primary"
-              >
-                {firstCategory.title}
-              </Link>
-            )}
-          </li>
-          <li className="flex items-center space-x-2">
-            <span className="text-gray-400">/</span>
-            <span className="text-gray-900 font-medium" aria-current="page">
-              {post.title}
-            </span>
-          </li>
-        </ol>
-      </nav>
+  // Fetch additional posts for related posts section if needed
+  let relatedPosts = post.relatedPosts || [];
+  
+  // If we don't have enough related posts (less than 3), fetch more
+  if (relatedPosts.length < 3) {
+    // First try to find posts with the same tags and categories
+    if (post.tags && post.tags.length > 0 && post.categories) {
+      const firstCategoryRef = post.categories[0]?._ref;
+      const tagsQuery = `*[_type == "post" && _id != $postId && $postTag in tags && references($categoryId) && !unlisted] | order(publishedAt desc)[0...${(3 - relatedPosts.length).toString()}] {
+        _id,
+        title,
+        slug,
+        mainImage,
+        excerpt,
+        categories,
+        publishedAt
+      }`;
       
-      {/* Article header */}
-      <header className="mb-8">
-        <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
-        {post.subtitle && (
-          <p className="text-xl text-gray-600 mb-4">{post.subtitle}</p>
-        )}
-        
-        {/* Meta information */}
-        <div className="flex flex-wrap items-center text-sm text-gray-600 mb-6">
-          {post.publishedAt && (
-            <time dateTime={post.publishedAt} className="mr-6">
-              {formatDate(post.publishedAt)}
-            </time>
-          )}
+      const tagRelatedPosts = await sanityClient.fetch<RelatedPost[]>(tagsQuery, { 
+        postId: post._id,
+        postTag: post.tags[0],
+        categoryId: firstCategoryRef
+      });
+      
+      // Add posts that aren't already in relatedPosts
+      const existingIds = new Set(relatedPosts.map(p => p._id));
+      tagRelatedPosts.forEach((p: RelatedPost) => {
+        if (!existingIds.has(p._id)) {
+          relatedPosts.push(p);
+          existingIds.add(p._id);
+        }
+      });
+    }
+    
+    // If we still don't have enough, get posts from the same category
+    if (relatedPosts.length < 3 && post.categories) {
+      const firstCategoryRef = post.categories[0]?._ref;
+      const categoryQuery = `*[_type == "post" && _id != $postId && references($categoryId) && !unlisted] | order(publishedAt desc)[0...${(3 - relatedPosts.length).toString()}] {
+        _id,
+        title,
+        slug,
+        mainImage,
+        excerpt,
+        categories,
+        publishedAt
+      }`;
+      
+      const categoryRelatedPosts = await sanityClient.fetch<RelatedPost[]>(categoryQuery, { 
+        postId: post._id,
+        categoryId: firstCategoryRef
+      });
+      
+      // Add posts that aren't already in relatedPosts
+      const existingIds = new Set(relatedPosts.map(p => p._id));
+      categoryRelatedPosts.forEach((p: RelatedPost) => {
+        if (!existingIds.has(p._id)) {
+          relatedPosts.push(p);
+          existingIds.add(p._id);
+        }
+      });
+    }
+    
+    // If we still don't have enough, get the most recent posts
+    if (relatedPosts.length < 3) {
+      const recentQuery = `*[_type == "post" && _id != $postId && !unlisted] | order(publishedAt desc)[0...${(3 - relatedPosts.length).toString()}] {
+        _id,
+        title,
+        slug,
+        mainImage,
+        excerpt,
+        categories,
+        publishedAt
+      }`;
+      
+      const recentPosts = await sanityClient.fetch(recentQuery, { 
+        postId: post._id
+      });
+      
+      // Add posts that aren't already in relatedPosts
+      const existingIds = new Set(relatedPosts.map(p => p._id));
+      recentPosts.forEach((p: RelatedPost) => {
+        if (!existingIds.has(p._id)) {
+          relatedPosts.push(p);
+          existingIds.add(p._id);
+        }
+      });
+    }
+  }
+  
+  // Limit to 3 posts
+  relatedPosts = relatedPosts.slice(0, 3);
+  
+  return (
+    <>
+    <Breadcrumbs category={firstCategory} postTitle={post.title} />
+    <article className="container mx-auto mt-4">
+      <BlogHeader 
+        title={post.title} 
+        subtitle={post.subtitle} 
+        publishedAt={post.publishedAt} 
+        author={post.author} 
+        categories={postCategories} 
+        mainImage={post.mainImage} 
+      />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-8">
+          <BlogArticle content={post.body} />
           
-          {post.author && (
-            <div className="flex items-center mr-6">
-              <span>By </span>
-              <Link 
-                href={`/author/${post.author.slug?.current}`} 
-                className="font-medium text-primary ml-1 hover:underline"
-              >
-                {post.author.name}
-              </Link>
-            </div>
-          )}
-          
-          {/* Categories */}
-          {postCategories.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-              {postCategories.map((category) => (
-                <Link 
-                  key={category._id} 
-                  href={`/${category.slug.current}`}
-                  className={`${getCategoryColor(category.slug.current)} ${getCategoryTextColor(category.slug.current)} px-3 py-1 rounded-full text-xs font-medium`}
-                >
-                  {category.title}
-                </Link>
-              ))}
-            </div>
-          )}
+          {post.author && <AuthorBio author={post.author} />}
         </div>
         
-        {/* Featured image */}
-        {post.mainImage?.asset && (
-          <div className="relative w-full h-auto aspect-video mb-8 rounded-lg overflow-hidden">
-            <Image
-              src={urlFor(post.mainImage).width(1200).height(675).url()}
-              alt={post.mainImage.alt || post.title}
-              fill
-              priority
-              className="object-cover"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
-            />
-          </div>
-        )}
-      </header>
-      
-      {/* Article content */}
-      <div className="max-w-3xl mx-auto">
-        <BlockContent content={post.body} />
-        
-        {/* Tags */}
-        {post.tags && post.tags.length > 0 && (
-          <div className="mt-12 pt-6 border-t border-gray-200">
-            <h2 className="text-lg font-semibold mb-4">Tags</h2>
-            <div className="flex flex-wrap gap-2">
-              {post.tags.map((tag) => (
-                <Link 
-                  key={tag} 
-                  href={`/tag/${tag}`}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm"
-                >
-                  #{tag}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Author bio */}
-        {post.author && (
-          <div className="mt-12 pt-6 border-t border-gray-200">
-            <div className="flex items-center">
-              {post.author.image?.asset && (
-                <div className="mr-4 relative w-16 h-16 rounded-full overflow-hidden">
-                  <Image
-                    src={urlFor(post.author.image).width(64).height(64).url()}
-                    alt={post.author.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              )}
-              <div>
-                <h3 className="font-bold text-lg">
-                  <Link href={`/author/${post.author.slug?.current}`} className="hover:text-primary">
-                    {post.author.name}
-                  </Link>
-                </h3>
-                {post.author.bio && (
-                  <p className="text-gray-600 text-sm">{post.author.bio[0].children[0].text}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Related posts */}
-        {post.relatedPosts && post.relatedPosts.length > 0 && (
-          <div className="mt-12 pt-6 border-t border-gray-200">
-            <h2 className="text-2xl font-bold mb-6">Related Posts</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {post.relatedPosts.map((relatedPost) => {
-                // Find the first category for this post
-                const firstCategoryRef = relatedPost.categories?.[0]?._ref;
-                const firstCategory = categories.find(cat => cat._id === firstCategoryRef)!;
-                const postUrl = `/${firstCategory.slug.current}/${relatedPost.slug.current}`;
-                
-                return (
-                  <Link key={relatedPost._id} href={postUrl} className="group block">
-                    <div className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col">
-                      {relatedPost.mainImage?.asset ? (
-                        <div className="relative h-48 w-full">
-                          <Image
-                            src={urlFor(relatedPost.mainImage).width(400).height(240).url()}
-                            alt={relatedPost.mainImage.alt || relatedPost.title}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            sizes="(max-width: 640px) 100vw, 400px"
-                          />
-                        </div>
-                      ) : (
-                        <div className="h-48 bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-400">No image</span>
-                        </div>
-                      )}
-                      <div className="p-4 flex-grow">
-                        <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors">
-                          {relatedPost.title}
-                        </h3>
-                        <p className="text-gray-600 text-sm line-clamp-2">{relatedPost.excerpt}</p>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        <div className="lg:col-span-4">
+          {relatedPosts.length > 0 && (
+            <RelatedPosts posts={relatedPosts} categories={categories} />
+          )}
+          
+          {post.tags && <Tags tags={post.tags} />}
+        </div>
       </div>
     </article>
+    </>
   );
 }
 

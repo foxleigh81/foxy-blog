@@ -22,35 +22,45 @@ const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl }) => {
 
   return (
     <Link href={postUrl} className="block group">
-      <div className="rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl bg-white h-full flex flex-col">
-        <div className="relative">
+      <div className="rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl bg-white h-full flex flex-col transform group-hover:scale-105">
+        <div className="relative h-60">
           {post.mainImage?.asset ? (
-            <div className="relative h-48 w-full">
+            <>
               <Image
-                src={urlFor(post.mainImage).width(500).height(300).url()}
+                src={urlFor(post.mainImage)
+                  .width(500)
+                  .height(300)
+                  .fit('crop')
+                  .crop('entropy')
+                  .url()}
                 alt={post.mainImage.alt || post.title}
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
               />
-              {post.publishedAt && (
-                <div className="absolute top-0 right-0 bg-black/70 text-white text-xs font-medium px-2 py-1 m-2 rounded">
-                  {formatDate(post.publishedAt)}
-                </div>
-              )}
-            </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30"></div>
+            </>
           ) : (
-            <div className="h-48 bg-gray-200 flex items-center justify-center">
+            <div className="h-full bg-gray-800 flex items-center justify-center">
               <span className="text-gray-400">No image</span>
             </div>
           )}
+          
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <h2 className="font-headers text-2xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              {post.title}
+            </h2>
+            
+            {post.publishedAt && (
+              <div className="text-white/80 text-xs font-medium mt-2">
+                {formatDate(post.publishedAt)}
+              </div>
+            )}
+          </div>
         </div>
         
         <div className="p-4 flex-grow">
-          <h2 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors duration-200">
-            {post.title}
-          </h2>
-          <p className="text-gray-600 text-sm line-clamp-3">
+          <p className="font-body text-gray-600 text-m line-clamp-3">
             {post.excerpt}
           </p>
         </div>
