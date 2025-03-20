@@ -23,6 +23,7 @@ export default defineConfig({
   name: 'default',
   title: 'The Foxy Blog',
   basePath: '/studio',
+  cors: ['https://www.foxleigh.me', 'https://www.foxyblog.com', 'http://localhost:3000'],
   projectId,
   dataset,
   // Add and edit the content schema in the './sanity/schemaTypes' folder
