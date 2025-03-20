@@ -1,79 +1,48 @@
 {
-  "name": "app",
+  "name": "the-foxy-blog",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
-    "@heroicons/react": "^2.1.5",
-    "@portabletext/react": "^3.1.0",
-    "@sanity-typed/types": "^7.0.1",
-    "@sanity/client": "^6.22.2",
-    "@sanity/code-input": "^4.1.4",
-    "@sanity/image-url": "^1.1.0",
-    "@sanity/vision": "^3.62.2",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.119",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "easymde": "^2.18.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.27.0",
-    "react-scripts": "5.0.1",
-    "sanity": "^3.62.2",
-    "sanity-plugin-asset-source-unsplash": "^3.0.1",
-    "sanity-plugin-markdown": "^5.0.0",
-    "sanity-plugin-youtube-input": "^0.2.0",
-    "styled-components": "^6.1",
-    "web-vitals": "^2.1.4"
-  },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "s-dev": "sanity dev",
-    "s-start": "sanity start",
-    "s-build": "sanity build",
-    "s-deploy": "sanity deploy",
-    "typegen": "sanity schema extract && sanity typegen generate",
-    "prettier-write": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\" --config .prettierrc"
+    "dev": "yarn next & yarn sanity",
+    "next": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "sanity": "sanity start",
+    "sanity-deploy": "sanity deploy"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "dependencies": {
+    "@portabletext/react": "^3.2.1",
+    "@sanity/client": "^6.28.3",
+    "@sanity/code-input": "^5.1.2",
+    "@sanity/icons": "^3.7.0",
+    "@sanity/image-url": "^1.1.0",
+    "@sanity/vision": "^3.80.1",
+    "@tailwindcss/typography": "^0.5.16",
+    "easymde": "^2.20.0",
+    "next": "15.2.3",
+    "next-sanity": "^9.9.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-icons": "^5.5.0",
+    "react-youtube": "^10.1.0",
+    "sanity": "^3.80.1",
+    "sanity-plugin-asset-source-unsplash": "^3.0.3",
+    "sanity-plugin-markdown": "^5.1.0",
+    "sanity-plugin-youtube-input": "^0.2.0",
+    "styled-components": "^6.1.16",
+    "web-vitals": "^4.2.4"
   },
   "devDependencies": {
-    "@sanity/eslint-config-studio": "^4.0.0",
-    "@types/react": "^18.0.25",
-    "eslint": "^8.6.0",
-    "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.3.3",
-    "sanity-codegen": "^0.9.8",
-    "tailwindcss": "^3.4.14",
-    "typescript": "^5.1.6"
-  },
-  "prettier": {
-    "semi": false,
-    "printWidth": 100,
-    "bracketSpacing": false,
-    "singleQuote": true
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10",
+    "eslint": "^9",
+    "eslint-config-next": "15.2.3",
+    "postcss": "^8",
+    "tailwindcss": "^3",
+    "typescript": "^5"
   }
 }
