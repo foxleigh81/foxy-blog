@@ -40,10 +40,10 @@ const categoriesQuery = groq`*[_type == "category"] {
 }`;
 
 interface TagPageProps {
-  params: {
+  params: Promise<{
     tag: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
+  }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
@@ -86,7 +86,7 @@ export default async function TagPage({ params, searchParams }: TagPageProps) {
   const tagName = resolvedParams.tag;
 
   // Get pagination parameters
-  const paginationParams = getPaginationParams(searchParams);
+  const paginationParams = getPaginationParams(await Promise.resolve(searchParams));
 
   // Fetch tag data
   const tagData = await sanityClient.fetch<Tag | null>(tagDataQuery, { name: tagName });
@@ -123,13 +123,13 @@ export default async function TagPage({ params, searchParams }: TagPageProps) {
       </div>
 
       <PostGrid posts={posts} categories={categories} />
-      
-      <Pagination 
-        currentPage={currentPage} 
-        totalPages={totalPages} 
-        basePath={`/tag/${tagData.name}`} 
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        basePath={`/tag/${tagData.name}`}
         searchParams={Object.fromEntries(
-          Object.entries(searchParams).filter(([key]) => key !== 'page')
+          Object.entries(await Promise.resolve(searchParams)).filter(([key]) => key !== 'page')
         )}
       />
     </main>

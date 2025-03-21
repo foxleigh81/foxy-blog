@@ -40,19 +40,19 @@ const categoryQuery = groq`*[_type == "category" && slug.current == $category][0
 }`;
 
 interface CategoryPageProps {
-  params: {
+  params: Promise<{
     category: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
+  }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   // Ensure params is awaited
   const resolvedParams = await Promise.resolve(params);
   const categorySlug = resolvedParams.category;
-  
+
   const category = await sanityClient.fetch(categoryQuery, { category: categorySlug });
-  
+
   // If category doesn't exist, return 404
   if (!category) {
     return {
@@ -60,7 +60,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
       description: 'The requested category does not exist.',
     };
   }
-  
+
   return {
     title: `${category.title} | ${metadata.title}`,
     description: category.description || `Articles in the ${category.title} category`,
@@ -77,50 +77,50 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   // Ensure params is awaited
   const resolvedParams = await Promise.resolve(params);
   const categorySlug = resolvedParams.category;
-  
+
   // Get pagination parameters
-  const paginationParams = getPaginationParams(searchParams);
-  
+  const paginationParams = getPaginationParams(await Promise.resolve(searchParams));
+
   // Fetch the current category
-  const category: Category | null = await sanityClient.fetch(categoryQuery, { 
-    category: categorySlug 
+  const category: Category | null = await sanityClient.fetch(categoryQuery, {
+    category: categorySlug
   });
-  
+
   // If category doesn't exist, return 404
   if (!category) {
     notFound();
   }
-  
+
   // Fetch posts for this category
-  const allPosts: Post[] = await sanityClient.fetch(postsByCategoryQuery, { 
-    category: categorySlug 
+  const allPosts: Post[] = await sanityClient.fetch(postsByCategoryQuery, {
+    category: categorySlug
   });
-  
+
   // Paginate the posts
   const { items: posts, currentPage, totalPages } = paginateItems(allPosts, paginationParams);
-  
+
   // Fetch all categories for reference
   const categories: Category[] = await sanityClient.fetch(categoriesQuery);
 
   return (
     <main className="container mx-auto px-4">
       <Breadcrumbs category={category} />
-      
-      <BlogHeader 
-        title={category.title} 
+
+      <BlogHeader
+        title={category.title}
         subtitle={category.description || `Articles in the ${category.title} category`}
-        categories={[]} 
+        categories={[]}
         className="mt-4"
       />
-      
+
       <PostGrid posts={posts} categories={categories} />
-      
-      <Pagination 
-        currentPage={currentPage} 
-        totalPages={totalPages} 
-        basePath={`/${categorySlug}`} 
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        basePath={`/${categorySlug}`}
         searchParams={Object.fromEntries(
-          Object.entries(searchParams).filter(([key]) => key !== 'page')
+          Object.entries(await Promise.resolve(searchParams)).filter(([key]) => key !== 'page')
         )}
       />
     </main>
@@ -130,7 +130,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 // Generate static paths for all categories
 export async function generateStaticParams() {
   const categories: Category[] = await sanityClient.fetch(categoriesQuery);
-  
+
   return categories.map((category) => ({
     category: category.slug.current,
   }));

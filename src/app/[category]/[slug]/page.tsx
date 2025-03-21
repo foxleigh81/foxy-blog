@@ -92,14 +92,15 @@ const tagsQuery = `*[_type == "tag" && _id in $ids] {
 }`;
 
 interface PostPageProps {
-  params: {
+  params: Promise<{
     category: string;
     slug: string;
-  };
+  }>;
+  searchParams?: Promise<Record<string, string | string[]>>;
 }
 
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
-  // Ensure params is properly awaited
+  // Await the params
   const resolvedParams = await params;
   const post: Post = await sanityClient.fetch(postQuery, { slug: resolvedParams.slug });
 
@@ -143,8 +144,9 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 }
 
 export default async function PostPage({ params }: PostPageProps) {
-  // Ensure params is properly awaited
+  // Await the params
   const resolvedParams = await params;
+
   // Fetch the post
   const post: Post = await sanityClient.fetch(postQuery, { slug: resolvedParams.slug });
 

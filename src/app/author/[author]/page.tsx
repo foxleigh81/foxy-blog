@@ -43,10 +43,10 @@ const categoriesQuery = groq`*[_type == "category"] {
 }`;
 
 interface AuthorPageProps {
-  params: {
+  params: Promise<{
     author: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
+  }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata({ params }: AuthorPageProps): Promise<Metadata> {
@@ -95,7 +95,7 @@ export default async function AuthorPage({ params, searchParams }: AuthorPagePro
   const authorSlug = resolvedParams.author;
 
   // Get pagination parameters
-  const paginationParams = getPaginationParams(searchParams);
+  const paginationParams = getPaginationParams(await Promise.resolve(searchParams));
 
   // Fetch author data
   const authorData = await sanityClient.fetch<Author | null>(authorQuery, { slug: authorSlug });
@@ -151,13 +151,13 @@ export default async function AuthorPage({ params, searchParams }: AuthorPagePro
         {posts.length > 0 ? (
           <>
             <PostGrid posts={posts} categories={categories} />
-            
-            <Pagination 
-              currentPage={currentPage} 
-              totalPages={totalPages} 
-              basePath={`/author/${authorSlug}`} 
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              basePath={`/author/${authorSlug}`}
               searchParams={Object.fromEntries(
-                Object.entries(searchParams).filter(([key]) => key !== 'page')
+                Object.entries(await Promise.resolve(searchParams)).filter(([key]) => key !== 'page')
               )}
             />
           </>

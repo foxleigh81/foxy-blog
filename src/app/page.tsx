@@ -27,13 +27,16 @@ const categoriesQuery = groq`*[_type == "category"] {
 }`
 
 interface HomePageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function BlogIndex({ searchParams }: HomePageProps) {
+  // Await the searchParams
+  const resolvedSearchParams = await searchParams;
+
   // Get pagination parameters
-  const paginationParams = getPaginationParams(searchParams);
-  
+  const paginationParams = getPaginationParams(resolvedSearchParams);
+
   // Fetch posts and categories in parallel
   const [allPosts, categories] = await Promise.all([
     sanityClient.fetch<Post[]>(postsQuery),
@@ -46,17 +49,23 @@ export default async function BlogIndex({ searchParams }: HomePageProps) {
   return (
     <main className="container mx-auto py-4 px-4">
       <div className="mb-8">
-        <p className="text-2xl font-bold mb-4">Welcome to my blog, where I share my thoughts and experiences.</p>
+        <p className="text-lg font-bold mb-4">
+          Hi. I&apos;m Alex, I&apos;m a senior full-stack developer with a passion for building performant, accessible and highly usable web applications.
+        </p>
+        <p className="mb-4 text-sm">
+          You can find out more about me by reading my blog, <a className="underline text-purple-700 hover:text-purple-800 hover:no-underline" href="https://www.alexfoxleigh.com">taking a look at my website</a> or having a look at my social links which are below in the footer.
+        </p>
+        <p className="mb-4 text-sm">Here is an assorted collection of my rants, ravings and general ramblings. I apologise in advance.</p>
       </div>
-      
+
       <PostGrid posts={posts} categories={categories} />
-      
-      <Pagination 
-        currentPage={currentPage} 
-        totalPages={totalPages} 
-        basePath="/" 
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        basePath="/"
         searchParams={Object.fromEntries(
-          Object.entries(searchParams).filter(([key]) => key !== 'page')
+          Object.entries(resolvedSearchParams).filter(([key]) => key !== 'page')
         )}
       />
     </main>
