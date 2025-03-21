@@ -3,10 +3,18 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { sanityClient } from '@/sanity/lib/client';
+import { groq } from 'next-sanity';
 import type { Post } from '@/sanity/schemaTypes/postType';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import PostGrid from '@/components/PostGrid';
+
+interface TagRefData {
+  _id: string;
+  name: string;
+  slug: string;
+  color: string;
+}
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -21,20 +29,36 @@ export default function SearchPage() {
     // Define the search function first so it can be called from anywhere in the effect
     async function fetchSearchResults() {
       setIsLoading(true);
-      
+
       try {
-        // Fetch posts that match the search query
         // Remove any hashtags from the search term for better matching
         const cleanQuery = query.replace(/#/g, '');
-        
+
+        // Fetch all tags first to help with search
+        const allTagsQuery = groq`
+          *[_type == "tag"] {
+            _id,
+            name,
+            "slug": slug.current,
+            color
+          }
+        `;
+        const allTags = await sanityClient.fetch<TagRefData[]>(allTagsQuery);
+
+        // Find tags that might match our search term
+        const matchingTagIds = allTags
+          .filter(tag =>
+            tag.name.toLowerCase().includes(cleanQuery.toLowerCase()) ||
+            tag.slug.toLowerCase().includes(cleanQuery.toLowerCase())
+          )
+          .map(tag => tag._id);
+
         // GROQ query for searching posts - explicitly defining which fields to search
-        // Only searching in title, excerpt, body text, and tags
-        // For tags, we check if any tag contains our search term
-        const searchQuery = `*[_type == "post" && !unlisted && (
-          title match $searchTerm || 
-          excerpt match $searchTerm || 
+        const searchQuery = groq`*[_type == "post" && !unlisted && (
+          title match $searchTerm ||
+          excerpt match $searchTerm ||
           pt::text(body) match $searchTerm ||
-          count(tags[@ match $tagSearchTerm]) > 0
+          count(tags[_ref in $matchingTagIds]) > 0
         )] | order(publishedAt desc) {
           _id,
           title,
@@ -45,63 +69,48 @@ export default function SearchPage() {
           categories,
           tags
         }`;
-        
-        const fetchedPosts = await sanityClient.fetch<Post[]>(searchQuery, { 
+
+        const fetchedPosts = await sanityClient.fetch<Post[]>(searchQuery, {
           searchTerm: `*${cleanQuery}*`,
-          tagSearchTerm: `*${cleanQuery}*`
+          matchingTagIds
         });
-        
+
         // Fetch all categories for reference
-        const categoriesQuery = `*[_type == "category"] {
+        const categoriesQuery = groq`*[_type == "category"] {
           _id,
           title,
           slug,
           description
         }`;
-        
+
         const fetchedCategories = await sanityClient.fetch<Category[]>(categoriesQuery);
-        
+
         // For debugging purposes, log the posts and search term
         console.log('Search term:', cleanQuery);
-        console.log('Fetched posts:', fetchedPosts.map(p => ({ title: p.title, tags: p.tags })));
-        
-        // Client-side filtering as a backup to ensure posts actually match the search term
-        // This helps exclude posts that might be included due to references in relatedPosts
+        console.log('Matching tag IDs:', matchingTagIds);
+        console.log('Fetched posts:', fetchedPosts.map(p => ({ title: p.title })));
+
+        // Client-side filtering as a backup
         const filteredPosts = fetchedPosts.filter(post => {
-          if (!post.tags) {
-            // If no tags, just check title and excerpt
-            return post.title?.toLowerCase().includes(cleanQuery.toLowerCase()) ||
-                   post.excerpt?.toLowerCase().includes(cleanQuery.toLowerCase());
-          }
-          
           const searchTermLower = cleanQuery.toLowerCase();
-          
+
           // Check if the post directly matches the search term in these fields
           const titleMatch = post.title?.toLowerCase().includes(searchTermLower);
           const excerptMatch = post.excerpt?.toLowerCase().includes(searchTermLower);
-          
-          // Special handling for tags - check both with and without hashtag
-          const tagsMatch = post.tags.some(tag => {
-            const tagLower = tag.toLowerCase();
-            // Log each tag comparison for debugging
-            console.log(`Comparing tag: '${tagLower}' with search: '${searchTermLower}'`);
-            console.log(`- Exact match: ${tagLower === searchTermLower}`);
-            console.log(`- Tag includes search: ${tagLower.includes(searchTermLower)}`);
-            console.log(`- Search includes tag: ${searchTermLower.includes(tagLower)}`);
-            
-            return tagLower === searchTermLower || // Exact match
-                   tagLower.includes(searchTermLower) || // Tag contains search term
-                   searchTermLower.includes(tagLower); // Search term contains tag
+
+          // Check if any of the post's tags match the search term
+          const tagsMatch = post.tags?.some(tagRef => {
+            const matchingTag = allTags.find(t => t._id === tagRef._ref);
+            if (!matchingTag) return false;
+
+            return matchingTag.name.toLowerCase().includes(searchTermLower) ||
+                  matchingTag.slug.toLowerCase().includes(searchTermLower);
           });
-          
-          // We can't easily check body content client-side as it's a complex structure
-          // But the three checks above should cover most cases
+
           const result = titleMatch || excerptMatch || tagsMatch;
-          console.log(`Post '${post.title}' matches: ${result} (title: ${titleMatch}, excerpt: ${excerptMatch}, tags: ${tagsMatch})`);
-          
           return result;
         });
-        
+
         setPosts(filteredPosts);
         setCategories(fetchedCategories);
       } catch (error) {
@@ -110,24 +119,24 @@ export default function SearchPage() {
         setIsLoading(false);
       }
     }
-    
+
     // Check if this is a hashtag search
     const hashtagMatch = query.match(/^#([\w-]+)$/);
-    
+
     if (hashtagMatch && !redirectedToTag) {
       // It's a hashtag search, check if the tag exists
-      const tag = hashtagMatch[1];
-      
-      // Check if the tag exists in any posts
+      const tagSlug = hashtagMatch[1];
+
+      // Check if the tag exists
       async function checkTagExists() {
         try {
-          const tagQuery = `count(*[_type == "post" && "${tag}" in tags]) > 0`;
+          const tagQuery = groq`count(*[_type == "tag" && slug.current == "${tagSlug}"]) > 0`;
           const tagExists = await sanityClient.fetch<boolean>(tagQuery);
-          
+
           if (tagExists) {
             // Tag exists, redirect to tag page
             setRedirectedToTag(true);
-            router.push(`/tag/${tag}`);
+            router.push(`/tag/${tagSlug}`);
           } else {
             // Tag doesn't exist, just do a normal search
             fetchSearchResults();
@@ -138,7 +147,7 @@ export default function SearchPage() {
           fetchSearchResults();
         }
       }
-      
+
       checkTagExists();
     } else if (query) {
       // Normal search
@@ -153,15 +162,15 @@ export default function SearchPage() {
   return (
     <main className="container mx-auto px-4">
       <Breadcrumbs />
-      
+
       <div className="mt-4">
         <h1 className="text-3xl font-bold mb-4">Search Results</h1>
         {query ? (
           <p className="text-xl text-gray-600 mb-8">
-            {isLoading 
-              ? 'Searching...' 
-              : posts.length > 0 
-                ? `Found ${posts.length} result${posts.length === 1 ? '' : 's'} for "${query}"` 
+            {isLoading
+              ? 'Searching...'
+              : posts.length > 0
+                ? `Found ${posts.length} result${posts.length === 1 ? '' : 's'} for "${query}"`
                 : `No results found for "${query}"`
             }
           </p>
@@ -171,7 +180,7 @@ export default function SearchPage() {
           </p>
         )}
       </div>
-      
+
       {posts.length > 0 && (
         <PostGrid posts={posts} categories={categories} />
       )}

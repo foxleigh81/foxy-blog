@@ -10,10 +10,11 @@ import type { Author } from '@/sanity/schemaTypes/authorType';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import BlogHeader from '@/components/BlogHeader';
 import BlogArticle from '@/components/BlogArticle';
-import Tags from '@/components/Tags';
+import Tags, { TagData } from '@/components/Tags';
 import AuthorBio from '@/components/AuthorBio';
 import RelatedPosts from '@/components/RelatedPosts';
 import LegacyBanner from '@/components/LegacyBanner';
+import OpinionBanner from '@/components/OpinionBanner';
 
 // Define a type for related posts which are expanded in the query
 type RelatedPost = {
@@ -83,6 +84,13 @@ const categoriesQuery = `*[_type == "category"] {
   description
 }`;
 
+// Query to fetch tag data
+const tagsQuery = `*[_type == "tag" && _id in $ids] {
+  _id,
+  name,
+  color
+}`;
+
 interface PostPageProps {
   params: {
     category: string;
@@ -94,16 +102,16 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   // Ensure params is properly awaited
   const resolvedParams = await params;
   const post: Post = await sanityClient.fetch(postQuery, { slug: resolvedParams.slug });
-  
+
   if (!post) {
     return {
       title: 'Post Not Found',
     };
   }
-  
+
   // Get the canonical URL
   const canonicalUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/${resolvedParams.category}/${resolvedParams.slug}`;
-  
+
   return {
     title: post.title,
     description: post.excerpt,
@@ -121,7 +129,6 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
           alt: post.mainImage.alt || post.title,
         }
       ] : undefined,
-      tags: post.tags,
     },
     twitter: {
       card: 'summary_large_image',
@@ -140,59 +147,63 @@ export default async function PostPage({ params }: PostPageProps) {
   const resolvedParams = await params;
   // Fetch the post
   const post: Post = await sanityClient.fetch(postQuery, { slug: resolvedParams.slug });
-  
+
   // If post not found, return 404
   if (!post) {
     notFound();
   }
-  
+
   // Fetch all categories for reference
   const categories: Category[] = await sanityClient.fetch(categoriesQuery);
-  
+
   // Find the post categories
   const postCategories = post.categories
     ? post.categories
         .map(cat => categories.find(c => c._id === cat._ref))
         .filter((cat): cat is Category => Boolean(cat))
     : [];
-  
+
   // Get the first category (for breadcrumb)
   const firstCategory = postCategories.length > 0 ? postCategories[0] : null;
-  
+
   // Fetch additional posts for related posts section if needed
   let relatedPosts = post.relatedPosts || [];
-  
+
   // If we don't have enough related posts (less than 3), fetch more
   if (relatedPosts.length < 3) {
     // First try to find posts with the same tags and categories
     if (post.tags && post.tags.length > 0 && post.categories) {
       const firstCategoryRef = post.categories[0]?._ref;
-      const tagsQuery = `*[_type == "post" && _id != $postId && $postTag in tags && references($categoryId) && !unlisted] | order(publishedAt desc)[0...${(3 - relatedPosts.length).toString()}] {
-        _id,
-        title,
-        slug,
-        mainImage,
-        excerpt,
-        categories,
-        publishedAt
-      }`;
-      
-      const tagRelatedPosts = await sanityClient.fetch<RelatedPost[]>(tagsQuery, { 
-        postId: post._id,
-        postTag: post.tags[0],
-        categoryId: firstCategoryRef
-      });
-      
-      // Add posts that aren't already in relatedPosts
-      const existingIds = new Set(relatedPosts.map(p => p._id));
-      tagRelatedPosts.forEach((p: RelatedPost) => {
-        if (!existingIds.has(p._id)) {
-          relatedPosts.push(p);
-          existingIds.add(p._id);
-        }
-      });
+      const firstTagRef = post.tags[0]?._ref;
+
+      if (firstTagRef) {
+        const tagsQuery = `*[_type == "post" && _id != $postId && references($tagId) && references($categoryId) && !unlisted] | order(publishedAt desc)[0...${(3 - relatedPosts.length).toString()}] {
+          _id,
+          title,
+          slug,
+          mainImage,
+          excerpt,
+          categories,
+          publishedAt
+        }`;
+
+        const tagRelatedPosts = await sanityClient.fetch<RelatedPost[]>(tagsQuery, {
+          postId: post._id,
+          tagId: firstTagRef,
+          categoryId: firstCategoryRef
+        });
+
+        // Add posts that aren't already in relatedPosts
+        const existingIds = new Set(relatedPosts.map(p => p._id));
+        tagRelatedPosts.forEach((p: RelatedPost) => {
+          if (!existingIds.has(p._id)) {
+            relatedPosts.push(p);
+            existingIds.add(p._id);
+          }
+        });
+      }
     }
-    
+
     // If we still don't have enough, get posts from the same category
     if (relatedPosts.length < 3 && post.categories) {
       const firstCategoryRef = post.categories[0]?._ref;
@@ -205,12 +216,12 @@ export default async function PostPage({ params }: PostPageProps) {
         categories,
         publishedAt
       }`;
-      
-      const categoryRelatedPosts = await sanityClient.fetch<RelatedPost[]>(categoryQuery, { 
+
+      const categoryRelatedPosts = await sanityClient.fetch<RelatedPost[]>(categoryQuery, {
         postId: post._id,
         categoryId: firstCategoryRef
       });
-      
+
       // Add posts that aren't already in relatedPosts
       const existingIds = new Set(relatedPosts.map(p => p._id));
       categoryRelatedPosts.forEach((p: RelatedPost) => {
@@ -220,7 +231,7 @@ export default async function PostPage({ params }: PostPageProps) {
         }
       });
     }
-    
+
     // If we still don't have enough, get the most recent posts
     if (relatedPosts.length < 3) {
       const recentQuery = `*[_type == "post" && _id != $postId && !unlisted] | order(publishedAt desc)[0...${(3 - relatedPosts.length).toString()}] {
@@ -232,11 +243,11 @@ export default async function PostPage({ params }: PostPageProps) {
         categories,
         publishedAt
       }`;
-      
-      const recentPosts = await sanityClient.fetch(recentQuery, { 
+
+      const recentPosts = await sanityClient.fetch(recentQuery, {
         postId: post._id
       });
-      
+
       // Add posts that aren't already in relatedPosts
       const existingIds = new Set(relatedPosts.map(p => p._id));
       recentPosts.forEach((p: RelatedPost) => {
@@ -247,41 +258,50 @@ export default async function PostPage({ params }: PostPageProps) {
       });
     }
   }
-  
+
   // Limit to 3 posts
   relatedPosts = relatedPosts.slice(0, 3);
 
-  // Check through the tags and see if any of them are 'legacy'
-  const isLegacy = post.tags?.includes('legacy');
-  
+  // Fetch tag data for all tags in this post
+  let tagData: TagData[] = [];
+  if (post.tags && post.tags.length > 0) {
+    const tagIds = post.tags.map(tag => tag._ref);
+    tagData = await sanityClient.fetch<TagData[]>(tagsQuery, { ids: tagIds });
+    // Sort tags by name
+    tagData.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  // Check if legacy tag is present
+  const isLegacy = tagData.some(tag => tag.name.toLowerCase() === 'legacy');
+  const isOpinion = tagData.some(tag => tag.name.toLowerCase() === 'opinion');
   return (
     <>
     <Breadcrumbs category={firstCategory} postTitle={post.title} />
     <article className="container mx-auto mt-4">
-      <BlogHeader 
-        title={post.title} 
-        subtitle={post.subtitle} 
-        publishedAt={post.publishedAt} 
-        author={post.author} 
-        categories={postCategories} 
-        mainImage={post.mainImage} 
+      <BlogHeader
+        title={post.title}
+        subtitle={post.subtitle}
+        publishedAt={post.publishedAt}
+        author={post.author}
+        categories={postCategories}
+        mainImage={post.mainImage}
       />
-      
+
       {isLegacy && <LegacyBanner year={post.publishedAt?.split('-')[0] || ''} />}
-      
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-8 mt-4">
+          {isOpinion && <OpinionBanner />}
           <BlogArticle content={post.body} />
-          
+
           {post.author && <AuthorBio author={post.author} />}
         </div>
-        
+
         <div className="lg:col-span-4">
           {relatedPosts.length > 0 && (
             <RelatedPosts posts={relatedPosts} categories={categories} />
           )}
-          
-          {post.tags && <Tags tags={post.tags} />}
+
+          {tagData.length > 0 && <Tags tagData={tagData} />}
         </div>
       </div>
     </article>
@@ -297,7 +317,7 @@ export async function generateStaticParams() {
       "category": *[_type == "category" && _id == ^.categories[0]._ref][0].slug.current
     }
   `);
-  
+
   return posts.map((post: { slug: string; category: string }) => ({
     category: post.category,
     slug: post.slug,
