@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { sanityClient } from '@/sanity/lib/client';
 import { groq } from 'next-sanity';
@@ -18,12 +18,11 @@ interface TagRefData {
   color: string;
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get('q') || '';
   const page = searchParams.get('page') ? parseInt(searchParams.get('page') || '1', 10) : 1;
-  const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -117,16 +116,15 @@ export default function SearchPage() {
           return result;
         });
 
-        // Store all posts for pagination
-        setAllPosts(filteredPosts);
-        
+        // Filtered posts ready for pagination
+
         // Paginate the posts
         const pageSize = 9; // Number of posts per page
         const { items: paginatedPosts, totalPages: pages } = paginateItems(
           filteredPosts,
           { page: page.toString(), pageSize: pageSize.toString() }
         );
-        
+
         setPosts(paginatedPosts);
         setTotalPages(pages);
         setCurrentPage(page);
@@ -202,11 +200,11 @@ export default function SearchPage() {
       {posts.length > 0 && (
         <>
           <PostGrid posts={posts} categories={categories} />
-          
-          <Pagination 
-            currentPage={currentPage} 
-            totalPages={totalPages} 
-            basePath="/search" 
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            basePath="/search"
             searchParams={{
               q: query,
               ...Object.fromEntries(
@@ -218,5 +216,13 @@ export default function SearchPage() {
         </>
       )}
     </main>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4">Loading search...</div>}>
+      <SearchContent />
+    </Suspense>
   );
 }
