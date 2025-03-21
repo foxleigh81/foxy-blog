@@ -6,6 +6,7 @@ A modern, responsive blog built with [Next.js](https://nextjs.org), [Tailwind CS
 
 - **Modern Stack**: Built with Next.js, TypeScript, and Tailwind CSS
 - **Content Management**: Powered by Sanity CMS for easy content creation and management
+- **Rich Content**: Support for embedded content including YouTube videos and Instagram posts
 
 ## Getting Started
 
@@ -62,6 +63,17 @@ This project uses Tailwind CSS for styling. The configuration can be found in `t
 ### Content Management
 
 Content is managed through Sanity Studio. The schemas are defined in the `src/sanity/schemaTypes` directory.
+
+### Instagram Embeds
+
+You can embed Instagram posts in your blog content using the Instagram embed block in the Sanity editor. Simply:
+
+1. In the Sanity editor, place your cursor where you want to embed the Instagram post
+2. Click the "+" button to add a block
+3. Select "Instagram"
+4. Paste the Instagram post URL (e.g., `https://www.instagram.com/p/CpzRZPmNxXO/` or `https://www.instagram.com/reel/CpzRZPmNxXO/`)
+
+The Instagram post will be embedded in your content and will be responsive on all devices.
 
 ### Single Author Mode
 
