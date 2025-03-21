@@ -18,11 +18,15 @@ A modern, responsive blog built with [Next.js](https://nextjs.org), [Tailwind CS
 ### Environment Setup
 
 1. Clone this repository
-2. Copy `.env.example` to `.env.local` and fill in the required values:
+2. Copy `.env.sample` to `.env.local` and fill in the required values:
    ```
-   SANITY_PROJECT_ID="your-sanity-project-id"
-   SANITY_HOSTNAME="your-hostname"
-   YOUTUBE_API_KEY="your-youtube-api-key" (if using YouTube integration)
+   NEXT_PUBLIC_SANITY_PROJECT_ID="your-sanity-project-id"
+   NEXT_PUBLIC_SANITY_DATASET="production"
+   NEXT_PUBLIC_SANITY_API_VERSION="2023-05-03"
+   SANITY_STUDIO_YOUTUBE_API_KEY="your-youtube-api-key" (if using YouTube integration)
+   
+   # Optional: Enable single author mode (if you're the only author)
+   SANITY_STUDIO_SINGLE_AUTHOR_MODE="true"
    ```
 
 ### Installation
@@ -57,7 +61,23 @@ This project uses Tailwind CSS for styling. The configuration can be found in `t
 
 ### Content Management
 
-Content is managed through Sanity Studio. The schemas are defined in the `schemas` directory.
+Content is managed through Sanity Studio. The schemas are defined in the `src/sanity/schemaTypes` directory.
+
+### Single Author Mode
+
+If you're the only author of your blog, you can enable single author mode by setting the following environment variables:
+
+```
+SANITY_STUDIO_SINGLE_AUTHOR_MODE="true"
+```
+
+When single author mode is enabled:
+
+1. New posts will automatically use the first author in your Sanity dataset as the default
+2. The author field will still be visible and editable if you need to change it
+3. This simplifies the post creation process for single-author blogs
+
+You can still use this mode even if you have multiple authors, it just means the first author will be used by default.
 
 ## Deployment
 

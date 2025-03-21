@@ -38,6 +38,16 @@ const nextConfig = {
         destination: "/technically-minded/head-in-the-cloud",
         permanent: true,
       },
+      {
+        source: '/meandering-insanity/i-without-internet',
+        destination: '/meandering-insanity/where-would-i-be-without-the-internet',
+        permanent: true,
+      },
+      {
+        source: '/rise-against/internet-changing-face-politics/',
+        destination: '/meandering-insanity/how-the-internet-is-changing-the-face-of-politics',
+        permanent: true,
+      },
     ];
   },
 };

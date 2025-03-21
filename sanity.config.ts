@@ -15,9 +15,10 @@ import { unsplashImageAsset } from 'sanity-plugin-asset-source-unsplash'
 import { markdownSchema } from 'sanity-plugin-markdown'
 import { colorInput } from '@sanity/color-input'
 // Go to https://www.sanity.io/docs/api-versioning to learn how API versioning works
-import { apiVersion, dataset, projectId } from './src/sanity/env'
+import { apiVersion, dataset, projectId, singleAuthorMode } from './src/sanity/env'
 import { schema } from './src/sanity/schemaTypes'
 import { structure } from './src/sanity/structure'
+import { setDefaultAuthorAction } from './src/sanity/actions/setDefaultAuthor'
 
 export default defineConfig({
   name: 'default',
@@ -39,4 +40,14 @@ export default defineConfig({
     youtubeInput({ apiKey: process.env.SANITY_STUDIO_YOUTUBE_API_KEY || '' }),
     colorInput()
   ],
+  document: {
+    // Only add the default author action if single author mode is enabled
+    actions: (prev, context) => {
+      if (singleAuthorMode && context.schemaType === 'post') {
+        // Add our custom action to the beginning of the list
+        return [setDefaultAuthorAction, ...prev]
+      }
+      return prev
+    },
+  },
 })
