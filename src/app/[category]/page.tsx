@@ -1,27 +1,31 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { sanityClient } from '@/sanity/lib/client';
+import { groq } from 'next-sanity';
 import type { Post } from '@/sanity/schemaTypes/postType';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 import BlogHeader from '@/components/BlogHeader';
 import PostGrid from '@/components/PostGrid';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import Pagination from '@/components/Pagination';
+import { paginateItems, getPaginationParams } from '@/utils/pagination';
 
 import { metadata } from '../layout';
 
 // Query to fetch posts by category
-const postsByCategoryQuery = `*[_type == "post" && references(*[_type == "category" && slug.current == $category]._id) && !unlisted] | order(publishedAt desc) {
+const postsByCategoryQuery = groq`*[_type == "post" && references(*[_type == "category" && slug.current == $category]._id) && !unlisted] | order(publishedAt desc) {
   _id,
   title,
   slug,
   publishedAt,
   excerpt,
   mainImage,
-  categories
+  categories,
+  tags
 }`;
 
 // Query to fetch all categories
-const categoriesQuery = `*[_type == "category"] {
+const categoriesQuery = groq`*[_type == "category"] {
   _id,
   title,
   slug,
@@ -29,7 +33,7 @@ const categoriesQuery = `*[_type == "category"] {
 }`;
 
 // Query to fetch a specific category
-const categoryQuery = `*[_type == "category" && slug.current == $category][0] {
+const categoryQuery = groq`*[_type == "category" && slug.current == $category][0] {
   _id,
   title,
   description
@@ -39,6 +43,7 @@ interface CategoryPageProps {
   params: {
     category: string;
   };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
@@ -68,10 +73,13 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   };
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   // Ensure params is awaited
   const resolvedParams = await Promise.resolve(params);
   const categorySlug = resolvedParams.category;
+  
+  // Get pagination parameters
+  const paginationParams = getPaginationParams(searchParams);
   
   // Fetch the current category
   const category: Category | null = await sanityClient.fetch(categoryQuery, { 
@@ -84,9 +92,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   }
   
   // Fetch posts for this category
-  const posts: Post[] = await sanityClient.fetch(postsByCategoryQuery, { 
+  const allPosts: Post[] = await sanityClient.fetch(postsByCategoryQuery, { 
     category: categorySlug 
   });
+  
+  // Paginate the posts
+  const { items: posts, currentPage, totalPages } = paginateItems(allPosts, paginationParams);
   
   // Fetch all categories for reference
   const categories: Category[] = await sanityClient.fetch(categoriesQuery);
@@ -103,6 +114,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       />
       
       <PostGrid posts={posts} categories={categories} />
+      
+      <Pagination 
+        currentPage={currentPage} 
+        totalPages={totalPages} 
+        basePath={`/${categorySlug}`} 
+        searchParams={Object.fromEntries(
+          Object.entries(searchParams).filter(([key]) => key !== 'page')
+        )}
+      />
     </main>
   );
 }

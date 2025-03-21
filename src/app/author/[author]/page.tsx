@@ -9,6 +9,8 @@ import type { Post } from '@/sanity/schemaTypes/postType';
 import BlockContent from '@/components/BlockContent';
 import PostGrid from '@/components/PostGrid';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import Pagination from '@/components/Pagination';
+import { paginateItems, getPaginationParams } from '@/utils/pagination';
 import { metadata as siteMetadata } from '../../layout';
 
 // Query to fetch author data
@@ -44,6 +46,7 @@ interface AuthorPageProps {
   params: {
     author: string;
   };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
 export async function generateMetadata({ params }: AuthorPageProps): Promise<Metadata> {
@@ -86,10 +89,13 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
   };
 }
 
-export default async function AuthorPage({ params }: AuthorPageProps) {
+export default async function AuthorPage({ params, searchParams }: AuthorPageProps) {
   // Ensure params is properly awaited
   const resolvedParams = await Promise.resolve(params);
   const authorSlug = resolvedParams.author;
+
+  // Get pagination parameters
+  const paginationParams = getPaginationParams(searchParams);
 
   // Fetch author data
   const authorData = await sanityClient.fetch<Author | null>(authorQuery, { slug: authorSlug });
@@ -100,9 +106,12 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
   }
 
   // Fetch posts by this author
-  const posts: Post[] = await sanityClient.fetch<Post[]>(postsByAuthorQuery, {
+  const allPosts: Post[] = await sanityClient.fetch<Post[]>(postsByAuthorQuery, {
     authorId: authorData._id
   });
+
+  // Paginate the posts
+  const { items: posts, currentPage, totalPages } = paginateItems(allPosts, paginationParams);
 
   // Fetch all categories for reference
   const categories = await sanityClient.fetch(categoriesQuery);
@@ -140,7 +149,18 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
         <h2 className="text-2xl font-bold mb-6">Articles by {authorData.name}</h2>
 
         {posts.length > 0 ? (
-          <PostGrid posts={posts} categories={categories} />
+          <>
+            <PostGrid posts={posts} categories={categories} />
+            
+            <Pagination 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+              basePath={`/author/${authorSlug}`} 
+              searchParams={Object.fromEntries(
+                Object.entries(searchParams).filter(([key]) => key !== 'page')
+              )}
+            />
+          </>
         ) : (
           <p className="text-gray-600">No articles found by this author.</p>
         )}

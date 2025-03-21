@@ -7,6 +7,8 @@ import type { Category } from '@/sanity/schemaTypes/categoryType';
 import type { Tag } from '@/sanity/schemaTypes/tagType';
 import PostGrid from '@/components/PostGrid';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import Pagination from '@/components/Pagination';
+import { paginateItems, getPaginationParams } from '@/utils/pagination';
 
 import { metadata as siteMetadata } from '../../layout';
 
@@ -41,6 +43,7 @@ interface TagPageProps {
   params: {
     tag: string;
   };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
@@ -77,10 +80,13 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
   };
 }
 
-export default async function TagPage({ params }: TagPageProps) {
+export default async function TagPage({ params, searchParams }: TagPageProps) {
   // Ensure params is awaited
   const resolvedParams = await Promise.resolve(params);
   const tagName = resolvedParams.tag;
+
+  // Get pagination parameters
+  const paginationParams = getPaginationParams(searchParams);
 
   // Fetch tag data
   const tagData = await sanityClient.fetch<Tag | null>(tagDataQuery, { name: tagName });
@@ -91,9 +97,12 @@ export default async function TagPage({ params }: TagPageProps) {
   }
 
   // Fetch posts for this tag
-  const posts: Post[] = await sanityClient.fetch<Post[]>(postsByTagQuery, {
+  const allPosts: Post[] = await sanityClient.fetch<Post[]>(postsByTagQuery, {
     name: tagName
   });
+
+  // Paginate the posts
+  const { items: posts, currentPage, totalPages } = paginateItems(allPosts, paginationParams);
 
   // Fetch all categories for reference
   const categories: Category[] = await sanityClient.fetch(categoriesQuery);
@@ -114,6 +123,15 @@ export default async function TagPage({ params }: TagPageProps) {
       </div>
 
       <PostGrid posts={posts} categories={categories} />
+      
+      <Pagination 
+        currentPage={currentPage} 
+        totalPages={totalPages} 
+        basePath={`/tag/${tagData.name}`} 
+        searchParams={Object.fromEntries(
+          Object.entries(searchParams).filter(([key]) => key !== 'page')
+        )}
+      />
     </main>
   );
 }
