@@ -14,7 +14,7 @@ export const getCategoryColor = (categorySlug: string): string => {
 };
 
 // A utility to get text color based on background color
-export const getCategoryTextColor = (categorySlug: string): string => {
+export const getCategoryTextColor = (): string => {
   // All our background colors are dark enough for white text
   return 'text-white';
 };

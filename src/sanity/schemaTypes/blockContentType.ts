@@ -35,6 +35,8 @@ export type BlockContent = Array<{
 } | {
   _type: "instagram";
   url: string;
+} | {
+  _type: "hr";
 }>;
 
 export const blockContentType = defineType({
@@ -137,6 +139,11 @@ export const blockContentType = defineType({
     // Instagram embed
     defineArrayMember({
       type: 'instagram'
+    }),
+    // Horizontal rule
+    defineArrayMember({
+      type: 'hr',
+      title: 'Horizontal Rule'
     })
   ],
 })

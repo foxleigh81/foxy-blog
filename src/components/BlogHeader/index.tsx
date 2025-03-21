@@ -68,7 +68,7 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
               <Link 
                 key={category._id} 
                 href={`/${category.slug.current}`}
-                className={`${getCategoryColor(category.slug.current)} ${getCategoryTextColor(category.slug.current)} px-3 py-1 rounded-full text-xs font-medium`}
+                className={`${getCategoryColor(category.slug.current)} ${getCategoryTextColor()} px-3 py-1 rounded-full text-xs font-medium`}
               >
                 {category.title}
               </Link>

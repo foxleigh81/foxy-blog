@@ -18,7 +18,7 @@ interface PostCardProps {
 const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl }) => {
   // Get the category color and text color based on the category slug
   const categoryColor = getCategoryColor(category.slug.current);
-  const categoryTextColor = getCategoryTextColor(category.slug.current);
+  const categoryTextColor = getCategoryTextColor();
 
   return (
     <Link href={postUrl} className="block group">

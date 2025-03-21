@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import Search from '@/components/Search';
 import type { Category } from '@/sanity/schemaTypes/categoryType';

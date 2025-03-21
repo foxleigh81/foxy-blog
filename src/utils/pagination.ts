@@ -55,8 +55,10 @@ export function paginateItems<T>(
  * @returns The pagination parameters
  */
 export function getPaginationParams(searchParams: Record<string, string | string[] | undefined>): PaginationParams {
-  const page = typeof searchParams.page === 'string' ? searchParams.page : '1';
-  const pageSize = typeof searchParams.pageSize === 'string' ? searchParams.pageSize : undefined;
+  // Create a copy of the searchParams to avoid direct access
+  const params = { ...searchParams };
+  const page = typeof params.page === 'string' ? params.page : '1';
+  const pageSize = typeof params.pageSize === 'string' ? params.pageSize : undefined;
   
   return {
     page,
