@@ -87,9 +87,27 @@
   }
 }
 
+/* Mobile styles */
+.mobileExpanded {
+  width: 100%;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.mobileExpanded .searchForm,
+.mobileSearchForm {
+  position: static;
+  width: 90%;
+  margin: 0 auto;
+  background-color: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(5px);
+  justify-content: center;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 640px) {
-  .searchForm {
+  .searchForm:not(.mobileExpanded .searchForm) {
     position: absolute;
     top: 100%;
     right: 0;
@@ -116,5 +134,22 @@
     to {
       width: calc(100vw - 8rem);
     }
+  }
+  
+  /* Special styles for search in mobile menu */
+  .mobileExpanded .searchForm,
+  .mobileSearchForm {
+    width: 90%;
+    animation: none;
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .mobileExpanded .searchInput,
+  .mobileSearchForm .searchInput {
+    width: 85%;
+    animation: none;
+    flex-grow: 1;
   }
 }

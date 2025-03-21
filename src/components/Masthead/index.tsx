@@ -26,7 +26,7 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
       <div className="container mx-auto relative z-10">
         <div className="flex flex-wrap items-center justify-between">
           <div className="flex-1 min-w-[200px] flex items-center gap-4">
-            <Image src="/alex-foxleigh.jpg" alt="Alex Foxleigh" width={70} height={70} className="rounded-full border-2 border-white drop-shadow-md" />
+            <Image src="/alex-foxleigh.jpg" alt="Alex Foxleigh" width={70} height={70} className="rounded-full border-2 border-white drop-shadow-md ml-4" />
             <div className="flex flex-col">
               <Link href="/"><h1 className="text-4xl md:text-5xl font-bold text-white m-0 font-headers drop-shadow-md">{title}</h1></Link>
               <p className="text-sm md:text-m font-body font-bold text-white/80 mt-1 drop-shadow-md">{subtitle}</p>
@@ -35,7 +35,7 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
           
           <div className="hidden nav:flex items-center">
             <Navigation categories={categories} className="justify-end" />
-            <Search />
+            <Search mobileMenuOpen={false} />
           </div>
           
           <button 
@@ -56,8 +56,8 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
         <div className="nav:hidden">
           <nav id="navigation" className={`${menuOpen ? 'max-h-96 py-4' : 'max-h-0 py-0'} w-full overflow-hidden transition-all duration-300 ease-in-out`}>
             <Navigation categories={categories} />
-            <div className="mt-4 flex justify-center">
-              <Search />
+            <div className="mt-4 flex justify-center w-full">
+              <Search mobileMenuOpen={menuOpen} />
             </div>
           </nav>
         </div>
