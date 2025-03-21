@@ -7,6 +7,7 @@ import { urlFor } from '@/sanity/lib/image';
 import { BlockContent as BlockContentType } from '@/sanity/schemaTypes/blockContentType';
 import { PortableText } from '@portabletext/react';
 import YouTube from 'react-youtube';
+import InstagramEmbed from '../InstagramEmbed';
 
 interface BlockContentProps {
   content: BlockContentType;
@@ -67,6 +68,12 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
             <code>{value.code}</code>
           </pre>
         );
+      },
+      instagram: ({ value }: any) => {
+        if (!value?.url) {
+          return null;
+        }
+        return <InstagramEmbed url={value.url} />;
       },
     },
     block: {
