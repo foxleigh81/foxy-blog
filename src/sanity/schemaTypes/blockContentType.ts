@@ -32,6 +32,9 @@ export type BlockContent = Array<{
     _type: "reference";
   };
   alt?: string;
+} | {
+  _type: "instagram";
+  url: string;
 }>;
 
 export const blockContentType = defineType({
@@ -130,6 +133,10 @@ export const blockContentType = defineType({
           initialValue: true,
         },
       ],
+    }),
+    // Instagram embed
+    defineArrayMember({
+      type: 'instagram'
     })
   ],
 })
