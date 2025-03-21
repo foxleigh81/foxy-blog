@@ -8,6 +8,8 @@ import type { Post } from '@/sanity/schemaTypes/postType';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import PostGrid from '@/components/PostGrid';
+import Pagination from '@/components/Pagination';
+import { paginateItems } from '@/utils/pagination';
 
 interface TagRefData {
   _id: string;
@@ -20,10 +22,14 @@ export default function SearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get('q') || '';
+  const page = searchParams.get('page') ? parseInt(searchParams.get('page') || '1', 10) : 1;
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [redirectedToTag, setRedirectedToTag] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(page);
 
   useEffect(() => {
     // Define the search function first so it can be called from anywhere in the effect
@@ -111,7 +117,19 @@ export default function SearchPage() {
           return result;
         });
 
-        setPosts(filteredPosts);
+        // Store all posts for pagination
+        setAllPosts(filteredPosts);
+        
+        // Paginate the posts
+        const pageSize = 9; // Number of posts per page
+        const { items: paginatedPosts, totalPages: pages } = paginateItems(
+          filteredPosts,
+          { page: page.toString(), pageSize: pageSize.toString() }
+        );
+        
+        setPosts(paginatedPosts);
+        setTotalPages(pages);
+        setCurrentPage(page);
         setCategories(fetchedCategories);
       } catch (error) {
         console.error('Error fetching search results:', error);
@@ -157,7 +175,7 @@ export default function SearchPage() {
       setPosts([]);
       setIsLoading(false);
     }
-  }, [query, redirectedToTag, router]);
+  }, [query, redirectedToTag, router, page]);
 
   return (
     <main className="container mx-auto px-4">
@@ -182,7 +200,22 @@ export default function SearchPage() {
       </div>
 
       {posts.length > 0 && (
-        <PostGrid posts={posts} categories={categories} />
+        <>
+          <PostGrid posts={posts} categories={categories} />
+          
+          <Pagination 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            basePath="/search" 
+            searchParams={{
+              q: query,
+              ...Object.fromEntries(
+                Array.from(searchParams.entries())
+                  .filter(([key]) => key !== 'page' && key !== 'q')
+              )
+            }}
+          />
+        </>
       )}
     </main>
   );
