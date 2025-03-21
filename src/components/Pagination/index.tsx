@@ -5,7 +5,7 @@ interface PaginationProps {
   currentPage: number;
   totalPages: number;
   basePath: string;
-  searchParams?: Record<string, string>;
+  searchParams?: Record<string, string | string[] | undefined>;
 }
 
 const Pagination: React.FC<PaginationProps> = ({ 
@@ -27,8 +27,8 @@ const Pagination: React.FC<PaginationProps> = ({
     pageNumbers.push(1);
     
     // Calculate range of pages to show around current page
-    let startPage = Math.max(2, currentPage - 1);
-    let endPage = Math.min(totalPages - 1, currentPage + 1);
+    const startPage = Math.max(2, currentPage - 1);
+    const endPage = Math.min(totalPages - 1, currentPage + 1);
     
     // Add ellipsis after first page if needed
     if (startPage > 2) {
@@ -55,12 +55,12 @@ const Pagination: React.FC<PaginationProps> = ({
 
   // Build the URL for a specific page
   const getPageUrl = (page: number) => {
-    // Create a new URLSearchParams object with the current search params
+    // Create a new URLSearchParams object
     const params = new URLSearchParams();
     
-    // Add all existing search params
+    // Add all existing search params except 'page'
     Object.entries(searchParams).forEach(([key, value]) => {
-      if (key !== 'page') {
+      if (key !== 'page' && typeof value === 'string') {
         params.append(key, value);
       }
     });

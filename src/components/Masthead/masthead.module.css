@@ -1,0 +1,51 @@
+@keyframes slideBackground {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0); /* Only move half the width for seamless loop */
+  }
+}
+
+.masthead {
+  position: relative;
+  background-color: rebeccapurple;
+  overflow: hidden;
+}
+
+.masthead::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%; 
+  bottom: 0;
+  height: 100%;
+  background-image: url('/galactic-bg.jpg');
+  background-repeat: repeat-X;
+  background-size: 50% 100%;
+  background-position: center;
+  opacity: 0.4;
+  z-index: 1;
+  animation: slideBackground 80s linear infinite;
+}
+
+/* Media query for mobile and tablet */
+@media (min-width: 1023px) {
+  .masthead::before {
+    background-size: 50% auto;
+  }
+}
+
+/* Add a dark overlay to ensure text remains readable */
+.masthead::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to right, rgba(0,0,0,0.8), rgba(0,0,0,0.5), rgba(0,0,0,0.8));
+  z-index: 2;
+  height: 100%;
+}

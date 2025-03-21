@@ -13,6 +13,7 @@ export default function robots(): MetadataRoute.Robots {
         '/admin/',
         '/_next/',
         '/server-sitemap.xml',
+        '/search',
       ],
     },
     sitemap: `${siteUrl}/sitemap.xml`,

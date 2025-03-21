@@ -1,0 +1,155 @@
+.searchContainer {
+  position: relative;
+  margin-left: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.searchIcon:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.searchForm {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  padding: 0.25rem 0.25rem 0.25rem 1rem;
+  backdrop-filter: blur(5px);
+  animation: expandSearch 0.3s ease forwards;
+}
+
+.searchInput {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 0.5rem 0;
+  width: 0;
+  animation: expandInput 0.3s ease forwards;
+  outline: none;
+  font-size: 0.875rem;
+}
+
+.searchInput::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.searchButton,
+.closeButton {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.searchButton:hover,
+.closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Animations */
+@keyframes expandSearch {
+  from {
+    width: 2.5rem;
+    opacity: 0;
+  }
+  to {
+    width: 15rem;
+    opacity: 1;
+  }
+}
+
+@keyframes expandInput {
+  from {
+    width: 0;
+  }
+  to {
+    width: 10rem;
+  }
+}
+
+/* Mobile styles */
+.mobileExpanded {
+  width: 100%;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.mobileExpanded .searchForm,
+.mobileSearchForm {
+  position: static;
+  width: 90%;
+  margin: 0 auto;
+  background-color: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(5px);
+  justify-content: center;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  .searchForm:not(.mobileExpanded .searchForm) {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 50;
+  }
+  
+  @keyframes expandSearch {
+    from {
+      width: 2.5rem;
+      opacity: 0;
+    }
+    to {
+      width: calc(100vw - 2rem);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes expandInput {
+    from {
+      width: 0;
+    }
+    to {
+      width: calc(100vw - 8rem);
+    }
+  }
+  
+  /* Special styles for search in mobile menu */
+  .mobileExpanded .searchForm,
+  .mobileSearchForm {
+    width: 90%;
+    animation: none;
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .mobileExpanded .searchInput,
+  .mobileSearchForm .searchInput {
+    width: 85%;
+    animation: none;
+    flex-grow: 1;
+  }
+}

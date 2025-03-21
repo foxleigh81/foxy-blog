@@ -1,46 +1,115 @@
-# Getting Started with Create React App
+# The Foxy Blog
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern, responsive blog built with [Next.js](https://nextjs.org), [Tailwind CSS](https://tailwindcss.com), and [Sanity CMS](https://www.sanity.io). This project serves as the personal blog for me, Alexander Foxleigh, featuring various categories of content including technical articles, digital industry insights, and personal musings.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Modern Stack**: Built with Next.js, TypeScript, and Tailwind CSS
+- **Content Management**: Powered by Sanity CMS for easy content creation and management
+- **Rich Content**: Support for embedded content including YouTube videos and Instagram posts
 
-### `npm start`
+## Getting Started
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### Prerequisites
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+- Node.js (v18 or later)
+- npm or yarn
+- A Sanity account (for CMS functionality)
 
-### `npm test`
+### Environment Setup
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Clone this repository
+2. Copy `.env.sample` to `.env.local` and fill in the required values:
+   ```
+   NEXT_PUBLIC_SANITY_PROJECT_ID="your-sanity-project-id"
+   NEXT_PUBLIC_SANITY_DATASET="production"
+   NEXT_PUBLIC_SANITY_API_VERSION="2023-05-03"
+   SANITY_STUDIO_YOUTUBE_API_KEY="your-youtube-api-key" (if using YouTube integration)
+   
+   # Optional: Enable single author mode (if you're the only author)
+   SANITY_STUDIO_SINGLE_AUTHOR_MODE="true"
+   ```
 
-### `npm run build`
+### Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+# Install dependencies
+yarn install
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+# Run the development server (includes Sanity Studio)
+yarn dev
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The site will be available at [http://localhost:3000](http://localhost:3000).
 
-### `npm run eject`
+### Sanity Studio
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+The Sanity Studio will be available at [http://localhost:3333](http://localhost:3333).
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Development
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Adding New Components
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Place new components in the `src/components` directory with their own folder:
 
-## Learn More
+```
+src/components/ComponentName/index.tsx
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Styling
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+This project uses Tailwind CSS for styling. The configuration can be found in `tailwind.config.js`.
+
+### Content Management
+
+Content is managed through Sanity Studio. The schemas are defined in the `src/sanity/schemaTypes` directory.
+
+### Instagram Embeds
+
+You can embed Instagram posts in your blog content using the Instagram embed block in the Sanity editor. Simply:
+
+1. In the Sanity editor, place your cursor where you want to embed the Instagram post
+2. Click the "+" button to add a block
+3. Select "Instagram"
+4. Paste the Instagram post URL (e.g., `https://www.instagram.com/p/CpzRZPmNxXO/` or `https://www.instagram.com/reel/CpzRZPmNxXO/`)
+
+The Instagram post will be embedded in your content and will be responsive on all devices.
+
+### Single Author Mode
+
+If you're the only author of your blog, you can enable single author mode by setting the following environment variables:
+
+```
+SANITY_STUDIO_SINGLE_AUTHOR_MODE="true"
+```
+
+When single author mode is enabled:
+
+1. New posts will automatically use the first author in your Sanity dataset as the default
+2. The author field will still be visible and editable if you need to change it
+3. This simplifies the post creation process for single-author blogs
+
+You can still use this mode even if you have multiple authors, it just means the first author will be used by default.
+
+## Deployment
+
+The site can be deployed to any platform that supports Next.js applications, such as Vercel or Netlify.
+
+```bash
+# Build for production
+yarn build
+
+# Start production server
+yarn start
+```
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- [Alexander Foxleigh](http://www.alexfoxleigh.com) - Creator and maintainer
+- [Next.js](https://nextjs.org) team for the amazing framework
+- [Sanity](https://www.sanity.io) team for the flexible CMS
+- [Tailwind CSS](https://tailwindcss.com) for the utility-first CSS framework (I still don't like you)
