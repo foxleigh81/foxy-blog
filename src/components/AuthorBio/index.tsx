@@ -15,12 +15,12 @@ const AuthorBio: React.FC<AuthorBioProps> = ({ author }) => {
     <div className="mt-12 pt-6 border-t border-gray-200">
       <div className="flex items-center">
         {author.image?.asset && (
-          <div className="mr-4 relative w-16 h-16 rounded-full overflow-hidden">
+          <div className="mr-4 relative w-20 h-20  aspect-square">
             <Image
-              src={urlFor(author.image).width(64).height(64).url()}
+              src={urlFor(author.image).width(80).height(80).url()}
               alt={author.name}
               fill
-              className="object-cover"
+              className="object-cover rounded-full"
             />
           </div>
         )}
