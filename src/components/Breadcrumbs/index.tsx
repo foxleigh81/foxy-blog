@@ -5,21 +5,26 @@ interface BreadcrumbsProps {
   category?: Category | null;
   postTitle?: string;
   tagName?: string;
+  authorName?: string;
   isNotFound?: boolean;
 }
 
-export default function Breadcrumbs({ category, postTitle, tagName, isNotFound }: BreadcrumbsProps) {
+export default function Breadcrumbs({ category, postTitle, tagName, authorName, isNotFound }: BreadcrumbsProps) {
   // Determine page type and content
   let currentPageTitle = '';
   let backUrl = '/';
   let backLabel = '';
-  
+
   if (isNotFound) {
     currentPageTitle = 'Page Not Found';
     backUrl = '/';
     backLabel = 'Back to Home';
   } else if (tagName) {
     currentPageTitle = `#${tagName}`;
+    backUrl = '/';
+    backLabel = 'Back to Home';
+  } else if (authorName) {
+    currentPageTitle = authorName;
     backUrl = '/';
     backLabel = 'Back to Home';
   } else if (category && !postTitle) {
@@ -33,12 +38,12 @@ export default function Breadcrumbs({ category, postTitle, tagName, isNotFound }
     backUrl = `/${category.slug.current}`;
     backLabel = `Back to ${category.title}`;
   }
-  
+
   return (
     <nav className="container mx-auto text-sm mt-4" aria-label="Breadcrumb">
       {/* Mobile: Back link */}
       <div className="md:hidden">
-        <Link 
+        <Link
           href={backUrl}
           className="flex items-center text-gray-700 hover:text-primary font-medium"
         >
@@ -48,21 +53,21 @@ export default function Breadcrumbs({ category, postTitle, tagName, isNotFound }
           {backLabel}
         </Link>
       </div>
-      
+
       {/* Desktop: Full breadcrumbs */}
       <ol className="hidden md:flex items-center">
         <li className="flex items-center">
           <Link href="/" className="text-gray-700 hover:text-primary">
             Home
           </Link>
-          {(category || tagName || isNotFound) && <span className="text-gray-700 mx-2">/</span>}
+          {(category || tagName || authorName || isNotFound) && <span className="text-gray-700 mx-2">/</span>}
         </li>
-        
+
         {/* Category link (for post pages) */}
         {category && postTitle && (
           <li className="flex items-center">
-            <Link 
-              href={`/${category.slug.current}`} 
+            <Link
+              href={`/${category.slug.current}`}
               className="text-gray-700 hover:text-primary"
             >
               {category.title}
@@ -70,7 +75,7 @@ export default function Breadcrumbs({ category, postTitle, tagName, isNotFound }
             <span className="text-gray-700 mx-2">/</span>
           </li>
         )}
-        
+
         {/* Tag prefix (for tag pages) */}
         {tagName && (
           <li className="flex items-center">
@@ -78,11 +83,19 @@ export default function Breadcrumbs({ category, postTitle, tagName, isNotFound }
             <span className="text-gray-700 mx-2">/</span>
           </li>
         )}
-        
+
+        {/* Author prefix (for author pages) */}
+        {authorName && (
+          <li className="flex items-center">
+            <span className="text-gray-700">Author</span>
+            <span className="text-gray-700 mx-2">/</span>
+          </li>
+        )}
+
         {/* Current page */}
         <li>
-          <span 
-            className="text-gray-900 font-medium" 
+          <span
+            className="text-gray-900 font-medium"
             aria-current="page"
           >
             {currentPageTitle}
