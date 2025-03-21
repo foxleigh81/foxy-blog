@@ -1,26 +1,36 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { sanityClient } from '@/sanity/lib/client';
+import { groq } from 'next-sanity';
 import type { Post } from '@/sanity/schemaTypes/postType';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
+import type { Tag } from '@/sanity/schemaTypes/tagType';
 import PostGrid from '@/components/PostGrid';
 import Breadcrumbs from '@/components/Breadcrumbs';
 
 import { metadata as siteMetadata } from '../../layout';
 
-// Query to fetch posts by tag
-const postsByTagQuery = `*[_type == "post" && $tagName in tags && !unlisted] | order(publishedAt desc) {
+// Query to fetch tag data
+const tagDataQuery = groq`*[_type == "tag" && name == $name][0] {
+  _id,
+  name,
+  color
+}`;
+
+// Query to fetch posts by tag reference
+const postsByTagQuery = groq`*[_type == "post" && references(*[_type == "tag" && name == $name]._id) && !unlisted] | order(publishedAt desc) {
   _id,
   title,
   slug,
   publishedAt,
   excerpt,
   mainImage,
-  categories
+  categories,
+  tags
 }`;
 
 // Query to fetch all categories
-const categoriesQuery = `*[_type == "category"] {
+const categoriesQuery = groq`*[_type == "category"] {
   _id,
   title,
   slug,
@@ -36,16 +46,33 @@ interface TagPageProps {
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
   // Ensure params is awaited
   const resolvedParams = await Promise.resolve(params);
-  const tag = resolvedParams.tag;
-  
+  const tagName = resolvedParams.tag;
+
+  // Fetch tag data to get proper name
+  const tagData = await sanityClient.fetch<Tag | null>(tagDataQuery, { name: tagName });
+
+  // If tag not found, use the URL parameter
+  if (!tagData) {
+    return {
+      title: `#${tagName} | ${siteMetadata.title}`,
+      description: `Articles tagged with #${tagName}`,
+      openGraph: {
+        title: `#${tagName} | ${siteMetadata.title}`,
+        description: `Articles tagged with #${tagName}`,
+        type: 'website',
+        url: `/tag/${tagName}`,
+      },
+    };
+  }
+
   return {
-    title: `#${tag} | ${siteMetadata.title}`,
-    description: `Articles tagged with #${tag}`,
+    title: `#${tagData.name} | ${siteMetadata.title}`,
+    description: `Articles tagged with #${tagData.name}`,
     openGraph: {
-      title: `#${tag} | ${siteMetadata.title}`,
-      description: `Articles tagged with #${tag}`,
+      title: `#${tagData.name} | ${siteMetadata.title}`,
+      description: `Articles tagged with #${tagData.name}`,
       type: 'website',
-      url: `/tag/${tag}`,
+      url: `/tag/${tagData.name}`,
     },
   };
 }
@@ -53,47 +80,39 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
 export default async function TagPage({ params }: TagPageProps) {
   // Ensure params is awaited
   const resolvedParams = await Promise.resolve(params);
-  const tag = resolvedParams.tag;
-  
-  // Fetch posts for this tag
-  const posts: Post[] = await sanityClient.fetch<Post[]>(postsByTagQuery, { 
-    tagName: tag 
-  });
-  
-  // If no posts found for this tag, it's likely the tag doesn't exist
-  if (posts.length === 0) {
-    // Check if this is a valid tag that just has no posts
-    const validTags = await sanityClient.fetch(`
-      *[_type == "post" && defined(tags) && !unlisted] {
-        tags
-      }
-    `);
-    
-    const allTags = new Set<string>();
-    validTags.forEach((post: { tags: string[] }) => {
-      if (post.tags) {
-        post.tags.forEach((t: string) => allTags.add(t));
-      }
-    });
-    
-    // If tag doesn't exist in any post, return 404
-    if (!Array.from(allTags).includes(tag)) {
-      notFound();
-    }
+  const tagName = resolvedParams.tag;
+
+  // Fetch tag data
+  const tagData = await sanityClient.fetch<Tag | null>(tagDataQuery, { name: tagName });
+
+  // If tag not found, return 404
+  if (!tagData) {
+    notFound();
   }
-  
+
+  // Fetch posts for this tag
+  const posts: Post[] = await sanityClient.fetch<Post[]>(postsByTagQuery, {
+    name: tagName
+  });
+
   // Fetch all categories for reference
   const categories: Category[] = await sanityClient.fetch(categoriesQuery);
 
   return (
     <main className="container mx-auto px-4">
-      <Breadcrumbs tagName={tag} />
-      
-      <div className="mt-4">
-        <h1 className="text-3xl font-bold mb-4">#{tag}</h1>
-        <p className="text-xl text-gray-600">Articles tagged with #{tag}</p>
+      <Breadcrumbs tagName={tagData.name} />
+
+      <div className="mt-4 py-6 rounded-lg">
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold">
+            #{tagData.name}
+          </h1>
+        </div>
+        <p className="text-xl mt-2">
+          Articles tagged with #{tagData.name}
+        </p>
       </div>
-      
+
       <PostGrid posts={posts} categories={categories} />
     </main>
   );
@@ -101,21 +120,11 @@ export default async function TagPage({ params }: TagPageProps) {
 
 // Generate static paths for all tags
 export async function generateStaticParams() {
-  const tags = await sanityClient.fetch(`
-    *[_type == "post" && defined(tags) && !unlisted] {
-      tags
+  const tags = await sanityClient.fetch(groq`
+    *[_type == "tag"] {
+      "tag": name
     }
   `);
-  
-  // Extract unique tags
-  const uniqueTags = new Set<string>();
-  tags.forEach((post: { tags: string[] }) => {
-    if (post.tags) {
-      post.tags.forEach((tag: string) => uniqueTags.add(tag));
-    }
-  });
-  
-  return Array.from(uniqueTags).map((tag) => ({
-    tag,
-  }));
+
+  return tags;
 }

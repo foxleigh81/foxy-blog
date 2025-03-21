@@ -32,14 +32,17 @@ export type Post = {
       marks?: string[];
     }>;
   }>;
-  excerpt?: string; 
-  tags?: Array<string>; 
-  disableComments?: boolean; 
-  unlisted?: boolean; 
+  excerpt?: string;
+  tags?: Array<{
+    _ref: string;
+    _type: "reference";
+  }>;
+  disableComments?: boolean;
+  unlisted?: boolean;
   relatedPosts?: Array<{
     _ref: string;
     _type: "reference";
-  }>; 
+  }>;
   youtube?: {
     _key: string;
     _type: string;
@@ -52,7 +55,7 @@ export type Post = {
       publishedAt: string;
       thumbnails: Array<string>;
     };
-  }; 
+  };
 };
 
 export const postType = defineType({
@@ -125,24 +128,27 @@ export const postType = defineType({
       name: 'excerpt',
       type: 'string',
       validation: Rule => Rule.required(),
-    }), 
+    }),
     defineField({
       name: 'tags',
       type: 'array',
-      of: [{ type: 'string' }],
-    }), 
+      of: [{ type: 'reference', to: { type: 'tag' } }],
+      options: {
+        layout: 'tags'
+      },
+    }),
     defineField({
       name: 'disableComments',
       title: 'Disable comments',
       type: 'boolean',
       initialValue: false,
-    }), 
+    }),
     defineField({
       name: 'unlisted',
       title: 'Hide this article from the list pages and search results',
       type: 'boolean',
       initialValue: false,
-    }), 
+    }),
     defineField({
       name: 'relatedPosts',
       type: 'array',
