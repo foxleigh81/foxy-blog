@@ -39,6 +39,7 @@ export type Post = {
   }>;
   disableComments?: boolean;
   unlisted?: boolean;
+  featured?: boolean;
   relatedPosts?: Array<{
     _ref: string;
     _type: "reference";
@@ -146,6 +147,12 @@ export const postType = defineType({
     defineField({
       name: 'unlisted',
       title: 'Hide this article from the list pages and search results',
+      type: 'boolean',
+      initialValue: false,
+    }),
+    defineField({
+      name: 'featured',
+      title: 'Featured Post',
       type: 'boolean',
       initialValue: false,
     }),
