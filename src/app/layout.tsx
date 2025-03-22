@@ -7,6 +7,7 @@ import Masthead from "@/components/Masthead";
 import Footer from "@/components/Footer";
 import { sanityClient } from "@/sanity/lib/client";
 import type { Category } from "@/sanity/schemaTypes/categoryType";
+import { Analytics } from "@vercel/analytics/react"
 
 const primaryFont = Righteous({
   weight: "400",
@@ -78,6 +79,7 @@ export default async function RootLayout({
         <Masthead categories={categories} title={metadata.title as string} subtitle={metadata.description as string}/>
         <main className="container mx-auto px-4">{children}</main>
         <Footer />
+        <Analytics />
       </body>
     </html>
   );
