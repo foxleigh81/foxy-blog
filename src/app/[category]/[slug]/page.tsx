@@ -304,6 +304,24 @@ export default async function PostPage({ params }: PostPageProps) {
           )}
 
           {tagData.length > 0 && <Tags tagData={tagData} />}
+
+          {/* Ko-fi Donation Panel */}
+          <div className="mt-8 bg-white rounded-lg shadow-md p-4">
+            <h3 className="text-lg font-bold mb-4">Support This Blog</h3>
+            <p className="text-sm mb-4">
+              At the moment, this site is not ad-supported but if you want to support me, please use the Ko-fi donation link below and thank you in advance!
+            </p>
+
+            <div className="overflow-hidden rounded-md">
+              <iframe
+                id='kofiframe'
+                src='https://ko-fi.com/foxleigh81/?hidefeed=true&widget=true&embed=true&preview=true'
+                style={{ border: 'none', width: '100%', padding: '4px', background: '#f9f9f9' }}
+                height='712'
+                title='foxleigh81'
+              />
+            </div>
+          </div>
         </div>
       </div>
     </article>
