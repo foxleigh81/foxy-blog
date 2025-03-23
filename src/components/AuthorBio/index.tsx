@@ -20,6 +20,7 @@ const AuthorBio: React.FC<AuthorBioProps> = ({ author }) => {
               src={urlFor(author.image).width(80).height(80).url()}
               alt={author.name}
               fill
+              sizes="80px"
               className="object-cover rounded-full"
             />
           </div>

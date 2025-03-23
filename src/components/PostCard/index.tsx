@@ -21,13 +21,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl }) => {
   const categoryTextColor = getCategoryTextColor();
 
   // Check if post is featured
-  const isFeatured = !!(post as Post & { featured?: boolean }).featured;
+  const isFeatured = !!(post as Post & { featured?: boolean }).featured
 
   return (
     <Link
       href={postUrl}
-      className="block group"
-      style={isFeatured ? { gridColumn: '1 / 3' } : undefined}
+      className={`block group h-full ${isFeatured ? 'sm:col-span-2' : ''}`}
     >
       <div className="rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl bg-white h-full flex flex-col transform group-hover:scale-105">
         <div className="relative h-60">
@@ -35,7 +34,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl }) => {
             <>
               <Image
                 src={urlFor(post.mainImage)
-                  .width(500)
+                  .width(isFeatured ? 800 : 500)
                   .height(300)
                   .fit('crop')
                   .crop('entropy')
@@ -43,7 +42,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl }) => {
                 alt={post.mainImage.alt || post.title}
                 fill
                 className="object-cover"
-                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                sizes={isFeatured
+                  ? "(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 66vw"
+                  : "(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30"></div>
             </>
@@ -72,7 +73,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl }) => {
           </p>
         </div>
 
-        <div className={`${categoryColor} ${categoryTextColor} px-4 py-2 text-sm font-medium`}>
+        <div className={`${categoryColor} ${categoryTextColor} px-4 py-2 text-sm font-medium mt-auto`}>
           {category.title}
         </div>
       </div>

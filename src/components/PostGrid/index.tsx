@@ -1,7 +1,7 @@
 import React from 'react';
 import { Post } from '@/sanity/schemaTypes/postType';
 import { Category } from '@/sanity/schemaTypes/categoryType';
-import PostCard from '../PostCard';
+import PostCard from '@/components/PostCard';
 
 interface PostGridProps {
   posts: Post[];
@@ -9,62 +9,51 @@ interface PostGridProps {
 }
 
 const PostGrid: React.FC<PostGridProps> = ({ posts, categories }) => {
-  if (posts.length === 0) {
+  if (!posts || posts.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 text-lg">No posts found.</p>
+      <div className="text-center py-10">
+        <p className="text-gray-500">No posts to display.</p>
       </div>
     );
   }
 
-  // Calculate position information for each post
-  const postsWithPositionInfo = posts.map((post, index) => {
-    const isFeatured = !!post.featured;
+  // Create a map of categories for quick lookup by id
+  const categoryMap = categories.reduce((acc, category) => {
+    acc[category._id] = category;
+    return acc;
+  }, {} as Record<string, Category>);
 
-    // Calculate position in grid - important for preventing orphan columns
-    // In a 3-column grid (desktop), featured posts should start at position 0, 3, 6, etc.
-    // In a 2-column grid (tablet), featured posts should start at position 0, 2, 4, etc.
-    const positionInGrid = index;
+  // Find a default category to use as fallback
+  const defaultCategory = categories.find(c => c.slug.current === 'uncategorized') ||
+    categories.find(c => c.title.toLowerCase() === 'uncategorized') ||
+    categories[0];
 
-    return {
-      post,
-      isFeatured,
-      positionInGrid,
-      // For a 2-column grid (sm screens), ensure featured posts start at even positions
-      needsPositionAdjustment: isFeatured && (positionInGrid % 2 !== 0)
-    };
-  });
-
-  // Rearrange posts if needed to avoid orphaned columns
-  const optimizedPosts = [...postsWithPositionInfo];
-  for (let i = 0; i < optimizedPosts.length; i++) {
-    const current = optimizedPosts[i];
-
-    // If a featured post doesn't start at an even position, try to swap with previous post
-    if (current.needsPositionAdjustment && i > 0) {
-      const temp = optimizedPosts[i - 1];
-      optimizedPosts[i - 1] = current;
-      optimizedPosts[i] = temp;
-    }
+  if (!defaultCategory) {
+    console.error('No categories available for posts');
   }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {optimizedPosts.map(({ post }) => {
-        // Find the first category for this post - all posts have at least one category
-        const firstCategoryRef = post.categories?.[0]?._ref;
+      {posts.map((post) => {
+        // Get the category for the post
+        const category = post.categories && post.categories[0] && categoryMap[post.categories[0]._ref]
+          ? categoryMap[post.categories[0]._ref]
+          : defaultCategory;
 
-        // Find the category object that matches the reference
-        const firstCategory = categories.find(cat => cat._id === firstCategoryRef)!;
+        // If we still don't have a category, skip this post
+        if (!category) {
+          console.warn(`No category found for post: ${post.title}`);
+          return null;
+        }
 
-        // Generate the URL path for the post using the category slug and post slug
-        const postUrl = `/${firstCategory.slug.current}/${post.slug.current}`;
+        // Get the post URL
+        const postUrl = `/${category.slug.current}/${post.slug.current}`;
 
         return (
           <PostCard
-            key={post._id || post.slug.current}
+            key={post._id}
             post={post}
-            category={firstCategory}
+            category={category}
             postUrl={postUrl}
           />
         );

@@ -23,12 +23,12 @@ interface BlogHeaderProps {
   className?: string;
 }
 
-const BlogHeader: React.FC<BlogHeaderProps> = ({ 
-  title, 
-  subtitle, 
-  publishedAt, 
-  author, 
-  categories, 
+const BlogHeader: React.FC<BlogHeaderProps> = ({
+  title,
+  subtitle,
+  publishedAt,
+  author,
+  categories,
   mainImage,
   className = "",
 }) => {
@@ -38,20 +38,20 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
       {subtitle && (
         <p className="text-xl text-gray-600 mb-4">{subtitle}</p>
       )}
-      
+
       <div className="flex flex-wrap items-center text-sm text-gray-600 mb-6">
         {publishedAt && (
           <time dateTime={publishedAt} className="mr-6">
             {formatDate(publishedAt)}
           </time>
         )}
-        
+
         {author && (
           <div className="flex items-center mr-6">
             <span>By </span>
             {author.slug?.current ? (
-              <Link 
-                href={`/author/${author.slug.current}`} 
+              <Link
+                href={`/author/${author.slug.current}`}
                 className="font-medium text-primary ml-1 hover:underline"
               >
                 {author.name}
@@ -61,12 +61,12 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
             )}
           </div>
         )}
-        
+
         {categories && categories.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
             {categories.map((category) => (
-              <Link 
-                key={category._id} 
+              <Link
+                key={category._id}
                 href={`/${category.slug.current}`}
                 className={`${getCategoryColor(category.slug.current)} ${getCategoryTextColor()} px-3 py-1 rounded-full text-xs font-medium`}
               >
@@ -76,16 +76,15 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
           </div>
         )}
       </div>
-      
+
       {mainImage?.asset && (
-        <div className="relative w-full max-h-[450px] mb-4 rounded-lg overflow-hidden">
+        <div className="relative w-full h-[450px] mb-4 rounded-lg overflow-hidden">
           <Image
             src={urlFor(mainImage).width(1200).height(450).url()}
             alt={mainImage.alt || title}
-            width={1200}
-            height={450}
+            fill
             priority
-            className="object-cover w-full h-auto max-h-[450px] object-top"
+            className="object-cover object-top"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
           />
         </div>
