@@ -312,14 +312,15 @@ export default async function PostPage({ params }: PostPageProps) {
               At the moment, this site is not ad-supported but if you want to support me, please use the Ko-fi donation link below and thank you in advance!
             </p>
 
-            <div className="overflow-hidden rounded-md">
-              <iframe
-                id='kofiframe'
-                src='https://ko-fi.com/foxleigh81/?hidefeed=true&widget=true&embed=true&preview=true'
-                style={{ border: 'none', width: '100%', padding: '4px', background: '#f9f9f9' }}
-                height='712'
-                title='foxleigh81'
-              />
+            <div className="flex flex-col items-center space-y-4">
+              <a
+                href='https://ko-fi.com/I3I21FRCN'
+                target='_blank'
+                rel="noopener noreferrer"
+                className="bg-[#d110a4] text-white py-3 px-6 rounded-lg font-bold text-center hover:bg-[#b50e8f] transition-colors w-full"
+              >
+                Support me on Ko-fi
+              </a>
             </div>
           </div>
         </div>
