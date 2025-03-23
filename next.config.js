@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["cdn.sanity.io"],
+    domains: ["cdn.sanity.io", "storage.ko-fi.com"],
   },
   experimental: {
     allowedDevOrigins: ['localhost', '127.0.0.1'],

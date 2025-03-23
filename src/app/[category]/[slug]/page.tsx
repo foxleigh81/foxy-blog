@@ -304,6 +304,25 @@ export default async function PostPage({ params }: PostPageProps) {
           )}
 
           {tagData.length > 0 && <Tags tagData={tagData} />}
+
+          {/* Ko-fi Donation Panel */}
+          <div className="mt-8 bg-white rounded-lg shadow-md p-4">
+            <h3 className="text-lg font-bold mb-4">Support This Blog</h3>
+            <p className="text-sm mb-4">
+              At the moment, this site is not ad-supported but if you want to support me, please use the Ko-fi donation link below and thank you in advance!
+            </p>
+
+            <div className="flex flex-col items-center space-y-4">
+              <a
+                href='https://ko-fi.com/I3I21FRCN'
+                target='_blank'
+                rel="noopener noreferrer"
+                className="bg-[#d110a4] text-white py-3 px-6 rounded-lg font-bold text-center hover:bg-[#b50e8f] transition-colors w-full"
+              >
+                Support me on Ko-fi
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </article>

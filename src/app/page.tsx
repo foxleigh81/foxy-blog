@@ -15,7 +15,8 @@ const postsQuery = groq`*[_type == "post" && !unlisted] | order(publishedAt desc
   excerpt,
   categories,
   publishedAt,
-  tags
+  tags,
+  featured
 }`
 
 // Query to fetch all categories

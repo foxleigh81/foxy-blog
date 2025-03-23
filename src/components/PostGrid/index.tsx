@@ -1,7 +1,7 @@
 import React from 'react';
 import { Post } from '@/sanity/schemaTypes/postType';
 import { Category } from '@/sanity/schemaTypes/categoryType';
-import PostCard from '../PostCard';
+import PostCard from '@/components/PostCard';
 
 interface PostGridProps {
   posts: Post[];
@@ -9,31 +9,51 @@ interface PostGridProps {
 }
 
 const PostGrid: React.FC<PostGridProps> = ({ posts, categories }) => {
-  if (posts.length === 0) {
+  if (!posts || posts.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 text-lg">No posts found.</p>
+      <div className="text-center py-10">
+        <p className="text-gray-500">No posts to display.</p>
       </div>
     );
+  }
+
+  // Create a map of categories for quick lookup by id
+  const categoryMap = categories.reduce((acc, category) => {
+    acc[category._id] = category;
+    return acc;
+  }, {} as Record<string, Category>);
+
+  // Find a default category to use as fallback
+  const defaultCategory = categories.find(c => c.slug.current === 'uncategorized') ||
+    categories.find(c => c.title.toLowerCase() === 'uncategorized') ||
+    categories[0];
+
+  if (!defaultCategory) {
+    console.error('No categories available for posts');
   }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {posts.map((post) => {
-        // Find the first category for this post - all posts have at least one category
-        const firstCategoryRef = post.categories?.[0]?._ref;
-        
-        // Find the category object that matches the reference
-        const firstCategory = categories.find(cat => cat._id === firstCategoryRef)!;
-        
-        // Generate the URL path for the post using the category slug and post slug
-        const postUrl = `/${firstCategory.slug.current}/${post.slug.current}`;
+        // Get the category for the post
+        const category = post.categories && post.categories[0] && categoryMap[post.categories[0]._ref]
+          ? categoryMap[post.categories[0]._ref]
+          : defaultCategory;
+
+        // If we still don't have a category, skip this post
+        if (!category) {
+          console.warn(`No category found for post: ${post.title}`);
+          return null;
+        }
+
+        // Get the post URL
+        const postUrl = `/${category.slug.current}/${post.slug.current}`;
 
         return (
-          <PostCard 
-            key={post._id || post.slug.current} 
-            post={post} 
-            category={firstCategory}
+          <PostCard
+            key={post._id}
+            post={post}
+            category={category}
             postUrl={postUrl}
           />
         );
