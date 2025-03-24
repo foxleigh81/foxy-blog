@@ -58,10 +58,31 @@ const postQuery = `*[_type == "post" && slug.current == $slug][0] {
     image,
     bio
   },
-  mainImage,
+  mainImage {
+    asset->{
+      _id,
+      _type,
+    },
+    alt,
+    attribution
+  },
   categories,
   publishedAt,
-  body,
+  body[] {
+    ...,
+    _type == "image" => {
+      "asset": asset->{
+        _id,
+        _type,
+        metadata {
+          dimensions {
+            width,
+            height
+          }
+        }
+      }
+    }
+  },
   excerpt,
   tags,
   youtube,

@@ -19,6 +19,7 @@ interface BlogHeaderProps {
       _type: "reference";
     };
     alt?: string;
+    attribution?: string;
   };
   className?: string;
 }
@@ -32,6 +33,7 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
   mainImage,
   className = "",
 }) => {
+  console.log({mainImage})
   return (
     <header className={className}>
       <h1 className="text-4xl font-bold mb-4">{title}</h1>
@@ -77,17 +79,23 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
         )}
       </div>
 
+
       {mainImage?.asset && (
-        <div className="relative w-full h-[450px] mb-4 rounded-lg overflow-hidden">
-          <Image
-            src={urlFor(mainImage).width(1200).height(450).url()}
-            alt={mainImage.alt || title}
-            fill
-            priority
-            className="object-cover object-top"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
-          />
-        </div>
+        <figure className="mb-8 relative w-full h-[450px] rounded-lg overflow-hidden">
+            <Image
+              src={urlFor(mainImage).width(1200).height(450).url()}
+              alt={mainImage.alt || title}
+              fill
+              priority
+              className="object-cover object-top"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
+            />
+            {mainImage.attribution && (
+              <div className="absolute bottom-1 right-1 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
+                &copy; Copyright {mainImage.attribution}
+              </div>
+            )}
+        </figure>
       )}
     </header>
   );

@@ -107,6 +107,13 @@ export const postType = defineType({
             return true
           }),
           hidden: ({document}) => !document?.mainImage,
+        },
+        {
+          name: 'attribution',
+          type: 'string',
+          title: 'Attribution',
+          description: 'Credit for the image (e.g., "Photo by John Doe")',
+          hidden: ({document}) => !document?.mainImage,
         }
       ]
     }),

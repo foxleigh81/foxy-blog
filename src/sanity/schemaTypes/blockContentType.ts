@@ -32,6 +32,9 @@ export type BlockContent = Array<{
     _type: "reference";
   };
   alt?: string;
+  caption?: string;
+  attribution?: string;
+  alignment?: "full" | "left" | "right" | "center";
 } | {
   _type: "instagram";
   url: string;
@@ -110,6 +113,21 @@ export const blockContentType = defineType({
           name: 'alt',
           type: 'string',
           validation: Rule => Rule.required(),
+        },
+        {
+          title: 'Alignment',
+          name: 'alignment',
+          type: 'string',
+          options: {
+            list: [
+              { title: 'Full width', value: 'full' },
+              { title: 'Left', value: 'left' },
+              { title: 'Right', value: 'right' },
+              { title: 'Center', value: 'center' }
+            ],
+            layout: 'radio'
+          },
+          initialValue: 'full'
         }
       ]
     }),
