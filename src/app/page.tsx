@@ -112,6 +112,11 @@ export default async function BlogIndex({ searchParams }: HomePageProps) {
         <div className="text-center py-10">
           <p className="text-gray-500">Something went wrong loading the posts. Please try again later.</p>
         </div>
+        <PostGrid
+          posts={[]}
+          categories={[]}
+          includesFeatured={false}
+        />
       </main>
     );
   }

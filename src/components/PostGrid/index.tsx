@@ -6,10 +6,10 @@ import PostCard from '@/components/PostCard';
 interface PostGridProps {
   posts: Post[];
   categories: Category[];
-  includesFeatured: boolean;
+  includesFeatured?: boolean;
 }
 
-const PostGrid: React.FC<PostGridProps> = ({ posts, categories, includesFeatured }) => {
+const PostGrid: React.FC<PostGridProps> = ({ posts, categories, includesFeatured = false }) => {
   if (!posts || posts.length === 0) {
     return (
       <div className="text-center py-10">
