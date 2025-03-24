@@ -1,0 +1,257 @@
+/* Giphy Asset Source Styles */
+
+.giphy-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.giphy-header {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.giphy-logo {
+  width: 120px;
+  height: auto;
+}
+
+.giphy-close-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 1.25rem;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.giphy-close-button:hover {
+  color: #333;
+}
+
+.giphy-search-container {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.giphy-search-form {
+  position: relative;
+}
+
+.giphy-search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  padding-right: 5rem;
+  border: 2px solid #a855f7;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+}
+
+.giphy-search-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.3);
+}
+
+.giphy-search-button {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #a855f7;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.giphy-search-button:hover {
+  background-color: #9333ea;
+}
+
+.giphy-search-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.giphy-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.giphy-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 16rem;
+}
+
+.giphy-spinner {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: 0.25rem solid rgba(168, 85, 247, 0.1);
+  border-top-color: #a855f7;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.giphy-no-results {
+  text-align: center;
+  padding: 3rem 0;
+  color: #666;
+}
+
+.giphy-initial-state {
+  text-align: center;
+  padding: 3rem 0;
+  color: #666;
+}
+
+.giphy-results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .giphy-results-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .giphy-results-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.giphy-gif-item {
+  position: relative;
+  aspect-ratio: 1/1;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  background-color: #f5f5f5;
+  border: none;
+  padding: 0;
+}
+
+.giphy-gif-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.giphy-gif-item:hover .giphy-gif-image {
+  transform: scale(1.1);
+}
+
+.giphy-gif-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.giphy-gif-item:hover .giphy-gif-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.giphy-select-button {
+  opacity: 0;
+  background-color: #a855f7;
+  color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  transition: opacity 0.2s ease;
+}
+
+.giphy-gif-item:hover .giphy-select-button {
+  opacity: 1;
+}
+
+/* Pagination Styles */
+.giphy-footer {
+  border-top: 1px solid #eee;
+  padding: 1rem;
+}
+
+.giphy-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.giphy-pagination-info {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.giphy-pagination-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.giphy-pagination-button {
+  background-color: #a855f7;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.giphy-pagination-button:hover:not(:disabled) {
+  background-color: #9333ea;
+}
+
+.giphy-pagination-button:disabled {
+  background-color: #d8b4fe;
+  cursor: not-allowed;
+}
+
+.giphy-pagination-button svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.giphy-attribution {
+  text-align: center;
+  padding-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.giphy-attribution a {
+  color: #a855f7;
+  text-decoration: none;
+}
+
+.giphy-attribution a:hover {
+  text-decoration: underline;
+}
