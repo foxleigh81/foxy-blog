@@ -1,15 +1,44 @@
-import type {StructureResolver} from 'sanity/structure'
+import { StructureResolver } from 'sanity/structure'
+import { DocumentIcon, StarIcon, CogIcon } from '@sanity/icons'
 
-// https://www.sanity.io/docs/structure-builder-cheat-sheet
-export const structure: StructureResolver = (S) =>
-  S.list()
-    .title('Blog')
+export const structure: StructureResolver = (S) => {
+  return S.list()
+    .title('Content')
     .items([
-      S.documentTypeListItem('post').title('Posts'),
-      S.documentTypeListItem('category').title('Categories'),
-      S.documentTypeListItem('author').title('Authors'),
+      S.listItem()
+        .title('Featured Post')
+        .icon(StarIcon)
+        .child(
+          S.editor()
+            .schemaType('featuredPost')
+            .documentId('featured-post')
+        ),
       S.divider(),
-      ...S.documentTypeListItems().filter(
-        (item) => item.getId() && !['post', 'category', 'author'].includes(item.getId()!),
-      ),
+      S.listItem()
+        .title('Posts')
+        .icon(DocumentIcon)
+        .child(S.documentTypeList('post').title('Posts')),
+      S.divider(),
+      S.listItem()
+        .title('Site Configuration')
+        .icon(CogIcon)
+        .child(
+          S.list()
+            .title('Site Configuration')
+            .items([
+              S.listItem()
+                .title('Categories')
+                .icon(DocumentIcon)
+                .child(S.documentTypeList('category').title('Categories')),
+              S.listItem()
+                .title('Authors')
+                .icon(DocumentIcon)
+                .child(S.documentTypeList('author').title('Authors')),
+              S.listItem()
+                .title('Tags')
+                .icon(DocumentIcon)
+                .child(S.documentTypeList('tag').title('Tags')),
+            ])
+        ),
     ])
+}

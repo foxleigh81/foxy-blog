@@ -16,7 +16,7 @@ const postsQuery = groq`*[_type == "post" && !unlisted] | order(publishedAt desc
   categories,
   publishedAt,
   tags,
-  featured
+  noindex
 }`
 
 // Query to fetch all categories
@@ -26,6 +26,21 @@ const categoriesQuery = groq`*[_type == "category"] {
   slug,
   description
 }`
+
+// Query to fetch the featured post with all necessary fields
+const featuredPostQuery = groq`*[_type == "featuredPost"][0] {
+  "post": post->{
+    _id,
+    title,
+    slug,
+    mainImage,
+    excerpt,
+    categories,
+    publishedAt,
+    tags,
+    noindex
+  }
+}.post`
 
 interface HomePageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -38,14 +53,27 @@ export default async function BlogIndex({ searchParams }: HomePageProps) {
   // Get pagination parameters
   const paginationParams = getPaginationParams(resolvedSearchParams);
 
-  // Fetch posts and categories in parallel
-  const [allPosts, categories] = await Promise.all([
+  // Fetch posts, categories, and featured post in parallel
+  const [allPosts, categories, featuredPost] = await Promise.all([
     sanityClient.fetch<Post[]>(postsQuery),
-    sanityClient.fetch<Category[]>(categoriesQuery)
+    sanityClient.fetch<Category[]>(categoriesQuery),
+    sanityClient.fetch<Post | null>(featuredPostQuery)
   ])
 
-  // Paginate the posts
-  const { items: posts, currentPage, totalPages } = paginateItems(allPosts, paginationParams);
+  // Filter out the featured post from regular posts if it exists
+  const filteredPosts = featuredPost
+    ? allPosts.filter(post => post._id !== featuredPost._id)
+    : allPosts;
+
+  // Combine featured post with filtered posts if it exists
+  const posts = featuredPost ? [featuredPost, ...filteredPosts] : filteredPosts;
+
+  // Paginate the posts with 8 items per page if there's a featured post
+  const { items: paginatedPosts, currentPage, totalPages } = paginateItems(
+    posts,
+    paginationParams,
+    featuredPost ? 8 : 9
+  );
 
   return (
     <main className="container mx-auto py-4 px-4">
@@ -59,7 +87,11 @@ export default async function BlogIndex({ searchParams }: HomePageProps) {
         <p className="mb-4 text-sm">Here is an assorted collection of my rants, ravings and general ramblings. I apologise in advance.</p>
       </div>
 
-      <PostGrid posts={posts} categories={categories} />
+      <PostGrid
+        posts={paginatedPosts}
+        categories={categories}
+        includesFeatured={!!featuredPost}
+      />
 
       <Pagination
         currentPage={currentPage}

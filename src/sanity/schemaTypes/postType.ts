@@ -39,7 +39,7 @@ export type Post = {
   }>;
   disableComments?: boolean;
   unlisted?: boolean;
-  featured?: boolean;
+  noindex?: boolean;
   relatedPosts?: Array<{
     _ref: string;
     _type: "reference";
@@ -146,13 +146,15 @@ export const postType = defineType({
     }),
     defineField({
       name: 'unlisted',
-      title: 'Hide this article from the list pages and search results',
+      title: 'Hide this article from list pages',
+      description: 'When enabled, this post will not appear in any list views (like the homepage or category pages)',
       type: 'boolean',
       initialValue: false,
     }),
     defineField({
-      name: 'featured',
-      title: 'Featured Post',
+      name: 'noindex',
+      title: 'Prevent search engine indexing',
+      description: 'When enabled, this post will not be indexed by search engines',
       type: 'boolean',
       initialValue: false,
     }),

@@ -13,20 +13,18 @@ interface PostCardProps {
   post: Post;
   category: Category;
   postUrl: string;
+  isFeatured?: boolean;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl, isFeatured = false }) => {
   // Get the category color and text color based on the category slug
   const categoryColor = getCategoryColor(category.slug.current);
   const categoryTextColor = getCategoryTextColor();
 
-  // Check if post is featured
-  const isFeatured = !!(post as Post & { featured?: boolean }).featured
-
   return (
     <Link
       href={postUrl}
-      className={`block group h-full ${isFeatured ? 'sm:col-span-2' : ''}`}
+      className={`block group h-full ${isFeatured ? 'lg:col-span-2' : ''}`}
     >
       <div className="rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl bg-white h-full flex flex-col transform group-hover:scale-105">
         <div className="relative h-60">

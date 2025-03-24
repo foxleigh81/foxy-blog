@@ -6,9 +6,10 @@ import PostCard from '@/components/PostCard';
 interface PostGridProps {
   posts: Post[];
   categories: Category[];
+  includesFeatured: boolean;
 }
 
-const PostGrid: React.FC<PostGridProps> = ({ posts, categories }) => {
+const PostGrid: React.FC<PostGridProps> = ({ posts, categories, includesFeatured }) => {
   if (!posts || posts.length === 0) {
     return (
       <div className="text-center py-10">
@@ -32,29 +33,37 @@ const PostGrid: React.FC<PostGridProps> = ({ posts, categories }) => {
     console.error('No categories available for posts');
   }
 
+  // Get the category for a post
+  const getPostCategory = (post: Post) => {
+    const category = post.categories && post.categories[0] && categoryMap[post.categories[0]._ref]
+      ? categoryMap[post.categories[0]._ref]
+      : defaultCategory;
+
+    if (!category) {
+      console.warn(`No category found for post: ${post.title}`);
+      return null;
+    }
+
+    return category;
+  };
+
+  // Get the post URL
+  const getPostUrl = (post: Post, category: Category) => {
+    return `/${category.slug.current}/${post.slug.current}`;
+  };
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {posts.map((post) => {
-        // Get the category for the post
-        const category = post.categories && post.categories[0] && categoryMap[post.categories[0]._ref]
-          ? categoryMap[post.categories[0]._ref]
-          : defaultCategory;
-
-        // If we still don't have a category, skip this post
-        if (!category) {
-          console.warn(`No category found for post: ${post.title}`);
-          return null;
-        }
-
-        // Get the post URL
-        const postUrl = `/${category.slug.current}/${post.slug.current}`;
-
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {posts.map((post, index) => {
+        const category = getPostCategory(post);
+        if (!category) return null;
         return (
           <PostCard
             key={post._id}
             post={post}
             category={category}
-            postUrl={postUrl}
+            postUrl={getPostUrl(post, category)}
+            isFeatured={includesFeatured && index === 0}
           />
         );
       })}
