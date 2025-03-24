@@ -19,6 +19,7 @@ import { apiVersion, dataset, projectId, singleAuthorMode } from './src/sanity/e
 import { schema } from './src/sanity/schemaTypes'
 import { structure } from './src/sanity/structure'
 import { setDefaultAuthorAction } from './src/sanity/actions/setDefaultAuthor'
+import { giphyAssetSourcePlugin } from './src/sanity/plugins/giphyAssetSource'
 
 export default defineConfig({
   name: 'default',
@@ -38,7 +39,8 @@ export default defineConfig({
     codeInput(),
     markdownSchema(),
     youtubeInput({ apiKey: process.env.SANITY_STUDIO_YOUTUBE_API_KEY || '' }),
-    colorInput()
+    colorInput(),
+    giphyAssetSourcePlugin()
   ],
   document: {
     // Only add the default author action if single author mode is enabled
