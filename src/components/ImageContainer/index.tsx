@@ -26,16 +26,16 @@ const ImageContainer: React.FC<ImageContainerProps> = ({
   const aspectRatio = dimensions.width / dimensions.height;
 
   // Determine figure classes based on alignment
-  let figureClasses = 'relative mt-0 mb-4';
+  let figureClasses = 'relative mt-0 mb-4 w-full';
   switch (alignment) {
     case 'left':
-      figureClasses += ' float-left mr-6 mb-2 max-w-[50%]';
+      figureClasses += 'md:mx-0 md:float-left md:mr-6 w-full md:max-w-[50%]';
       break;
     case 'right':
-      figureClasses += ' float-right ml-6 mb-2 max-w-[50%]';
+      figureClasses += 'md:mx-0 md:float-right md:ml-6 w-full md:max-w-[50%]';
       break;
     case 'center':
-      figureClasses += ' mx-auto w-[600px]';
+      figureClasses += ' md:mx-auto md:w-[600px]';
       break;
     case 'full':
     default:
@@ -56,15 +56,13 @@ const ImageContainer: React.FC<ImageContainerProps> = ({
       <Image
         src={src}
         alt={alt}
-        fill={alignment !== 'left' && alignment !== 'right'}
-        width={alignment === 'left' || alignment === 'right' ? dimensions.width : undefined}
-        height={alignment === 'left' || alignment === 'right' ? dimensions.height : undefined}
+        fill
         className={imageClasses}
         sizes={alignment === 'full'
           ? "(max-width: 640px) 100vw, (max-width: 768px) 80vw, 800px"
           : alignment === 'center'
             ? "600px"
-            : "50vw"
+            : "(max-width: 768px) 100vw, 50vw"
         }
         priority
       />

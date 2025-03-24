@@ -33,7 +33,6 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
   mainImage,
   className = "",
 }) => {
-  console.log({mainImage})
   return (
     <header className={className}>
       <h1 className="text-4xl font-bold mb-4">{title}</h1>
