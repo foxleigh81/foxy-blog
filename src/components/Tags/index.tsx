@@ -40,8 +40,9 @@ const Tags: React.FC<TagsProps> = ({ tagData }) => {
                 backgroundColor: colors.background,
                 color: colors.text,
                 borderColor: colors.border,
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
               }}
-              className="px-3 py-1 rounded-full text-sm border hover:opacity-80 transition-opacity"
+              className="font-bold px-3 py-1 rounded-full text-sm border hover:opacity-80 transition-opacity"
             >
               #{tag.name}
             </Link>
