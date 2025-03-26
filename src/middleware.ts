@@ -19,15 +19,13 @@ export function middleware(request: NextRequest) {
     img-src 'self' blob: data: https://cdn.sanity.io https://storage.ko-fi.com;
     font-src 'self' https://fonts.gstatic.com;
     connect-src 'self' https://www.google-analytics.com https://*.sanity.io;
-    frame-src 'self' https://www.googletagmanager.com;
+    frame-src 'self' https://www.googletagmanager.com https://vercel.live;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
     frame-ancestors 'none';
     block-all-mixed-content;
-  `
-    .replace(/\s{2,}/g, ' ')
-    .trim();
+  `.replace(/\s{2,}/g, ' ').trim();
 
   response.headers.set('Content-Security-Policy', cspHeader);
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -40,5 +38,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
