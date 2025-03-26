@@ -13,7 +13,8 @@ export function middleware(request: NextRequest) {
   // Add Content Security Policy headers
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://vercel.live;
+    script-src-elem 'self' 'unsafe-inline' https://www.googletagmanager.com https://vercel.live;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https://cdn.sanity.io https://storage.ko-fi.com;
     font-src 'self' https://fonts.gstatic.com;
