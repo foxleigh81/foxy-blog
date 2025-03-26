@@ -13,12 +13,12 @@ export function middleware(request: NextRequest) {
   // Add Content Security Policy headers
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://vercel.live;
-    script-src-elem 'self' 'unsafe-inline' https://www.googletagmanager.com https://vercel.live;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://vercel.live https://va.vercel-scripts.com;
+    script-src-elem 'self' 'unsafe-inline' https://www.googletagmanager.com https://vercel.live https://va.vercel-scripts.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live;
     img-src 'self' blob: data: https://cdn.sanity.io https://storage.ko-fi.com https://vercel.live https://vercel.com;
     font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com;
-    connect-src 'self' https://www.google-analytics.com https://*.sanity.io https://vercel.live wss://ws-us3.pusher.com;
+    connect-src 'self' https://www.google-analytics.com https://*.sanity.io https://vercel.live wss://ws-us3.pusher.com https://region1.google-analytics.com https://va.vercel-scripts.com;
     frame-src 'self' https://www.googletagmanager.com https://vercel.live;
     object-src 'none';
     base-uri 'self';
