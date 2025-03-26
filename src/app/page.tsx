@@ -130,7 +130,7 @@ export default async function BlogIndex({ searchParams }: HomePageProps) {
           <p className="mb-4 text-sm">
             You can find out more about me by reading my blog,{' '}
             <a
-              className="no-underline text-purple-700 hover:text-purple-800 hover:underline hover:underline-offset-4"
+              className="underline text-purple-700 hover:text-purple-800 hover:no-underline hover:underline-offset-4 transition-colors"
               href="https://www.alexfoxleigh.com"
             >
               taking a look at my website
