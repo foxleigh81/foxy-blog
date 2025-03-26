@@ -1,10 +1,29 @@
 import React from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { Category } from '@/sanity/schemaTypes/categoryType';
+
+// Define the RelatedPost type
+type RelatedPost = {
+  _id: string;
+  title: string;
+  subtitle?: string;
+  slug: {
+    current: string;
+  };
+  mainImage?: {
+    asset: {
+      _ref: string;
+      _type: 'reference';
+    };
+    alt?: string;
+  };
+  excerpt?: string;
+  categories?: Array<{
+    _ref: string;
+    _type: string;
+  }>;
+};
 import { urlFor } from '@/sanity/lib/image';
-import { formatDate } from '@/utils/formatDate';
-import type { RelatedPost } from '@/types/post';
 
 interface RelatedPostsProps {
   posts: RelatedPost[];
@@ -12,50 +31,52 @@ interface RelatedPostsProps {
 }
 
 const RelatedPosts: React.FC<RelatedPostsProps> = ({ posts, categories }) => {
-  if (!posts.length) return null;
+  if (!posts || posts.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h3 className="text-lg font-bold mb-4">Related Posts</h3>
-      <div className="space-y-4">
-        {posts.map((post) => {
-          const category = post.categories?.[0]
-            ? categories.find((c) => c._id === post.categories![0]._ref)
-            : null;
+    <div className="mt-8 lg:mt-0">
+      <h2 className="text-2xl font-bold mb-6">Related Posts</h2>
+      <div className="grid grid-cols-1 gap-6">
+        {posts.map((relatedPost) => {
+          // Find the first category for this post
+          const firstCategoryRef = relatedPost.categories?.[0]?._ref;
+          const firstCategory = categories.find((cat) => cat._id === firstCategoryRef);
+          const postUrl = firstCategory
+            ? `/${firstCategory.slug.current}/${relatedPost.slug.current}`
+            : `/post/${relatedPost.slug.current}`;
 
           return (
-            <Link
-              key={post._id}
-              href={`/${category?.slug.current || ''}/${post.slug.current}`}
-              className="block group"
+            <div
+              key={relatedPost._id}
+              className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col"
             >
-              <div className="flex gap-4">
-                {post.mainImage?.asset && (
-                  <div className="relative w-24 h-24 flex-shrink-0">
+              <a href={postUrl} className="block group">
+                {relatedPost.mainImage?.asset && (
+                  <div className="relative h-48 w-full">
                     <Image
-                      src={urlFor(post.mainImage)
-                        .width(96)
-                        .height(96)
+                      src={urlFor(relatedPost.mainImage)
+                        .width(400)
+                        .height(240)
                         .fit('crop')
                         .crop('entropy')
                         .url()}
-                      alt={post.mainImage.alt || post.title}
+                      alt={relatedPost.mainImage.alt || relatedPost.title}
                       fill
-                      className="object-cover rounded-lg"
-                      sizes="96px"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 640px) 100vw, 400px"
                     />
                   </div>
                 )}
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
-                    {post.title}
-                  </h4>
-                  {post.publishedAt && (
-                    <time className="text-sm text-gray-500">{formatDate(post.publishedAt)}</time>
+                <div className="p-4 flex-grow">
+                  <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors">
+                    {relatedPost.title}
+                  </h3>
+                  {relatedPost.excerpt && (
+                    <p className="text-gray-600 text-sm line-clamp-2">{relatedPost.excerpt}</p>
                   )}
                 </div>
-              </div>
-            </Link>
+              </a>
+            </div>
           );
         })}
       </div>
