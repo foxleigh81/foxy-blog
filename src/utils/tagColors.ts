@@ -27,7 +27,7 @@ const getContrastTextColor = (hexColor: string): string => {
   const b = parseInt(hexColor.slice(5, 7), 16);
 
   // Calculate perceived brightness (YIQ equation)
-  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
 
   // Return black for bright backgrounds, white for dark ones
   return yiq >= 128 ? '#000000' : '#ffffff';
@@ -81,7 +81,7 @@ export const calculateTagColors = (hexColor: string): TagColors => {
     background: hexColor,
     text: getContrastTextColor(hexColor),
     border: getBorderColor(hexColor),
-    hover: getHoverColor(hexColor)
+    hover: getHoverColor(hexColor),
   };
 };
 

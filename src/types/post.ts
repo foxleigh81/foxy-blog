@@ -8,7 +8,7 @@ export type RelatedPost = {
   mainImage?: {
     asset: {
       _ref: string;
-      _type: "reference";
+      _type: 'reference';
       metadata: {
         dimensions: {
           width: number;

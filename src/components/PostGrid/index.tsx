@@ -11,35 +11,44 @@ interface PostGridProps {
 
 const PostGrid: React.FC<PostGridProps> = ({ posts, categories, includesFeatured = false }) => {
   // Memoize the category map for better performance
-  const categoryMap = useMemo(() =>
-    categories.reduce((acc, category) => {
-      acc[category._id] = category;
-      return acc;
-    }, {} as Record<string, Category>),
+  const categoryMap = useMemo(
+    () =>
+      categories.reduce(
+        (acc, category) => {
+          acc[category._id] = category;
+          return acc;
+        },
+        {} as Record<string, Category>
+      ),
     [categories]
   );
 
   // Memoize the default category lookup
-  const defaultCategory = useMemo(() =>
-    categories.find(c => c.slug.current === 'uncategorized') ||
-    categories.find(c => c.title.toLowerCase() === 'uncategorized') ||
-    categories[0],
+  const defaultCategory = useMemo(
+    () =>
+      categories.find((c) => c.slug.current === 'uncategorized') ||
+      categories.find((c) => c.title.toLowerCase() === 'uncategorized') ||
+      categories[0],
     [categories]
   );
 
   // Memoize the getPostCategory function
-  const getPostCategory = useCallback((post: Post) => {
-    const category = post.categories && post.categories[0] && categoryMap[post.categories[0]._ref]
-      ? categoryMap[post.categories[0]._ref]
-      : defaultCategory;
+  const getPostCategory = useCallback(
+    (post: Post) => {
+      const category =
+        post.categories && post.categories[0] && categoryMap[post.categories[0]._ref]
+          ? categoryMap[post.categories[0]._ref]
+          : defaultCategory;
 
-    if (!category) {
-      console.warn(`No category found for post: ${post.title}`);
-      return null;
-    }
+      if (!category) {
+        console.warn(`No category found for post: ${post.title}`);
+        return null;
+      }
 
-    return category;
-  }, [categoryMap, defaultCategory]);
+      return category;
+    },
+    [categoryMap, defaultCategory]
+  );
 
   // Memoize the getPostUrl function
   const getPostUrl = useCallback((post: Post, category: Category) => {

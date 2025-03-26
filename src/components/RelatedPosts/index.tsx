@@ -20,7 +20,7 @@ const RelatedPosts: React.FC<RelatedPostsProps> = ({ posts, categories }) => {
       <div className="space-y-4">
         {posts.map((post) => {
           const category = post.categories?.[0]
-            ? categories.find(c => c._id === post.categories![0]._ref)
+            ? categories.find((c) => c._id === post.categories![0]._ref)
             : null;
 
           return (
@@ -51,9 +51,7 @@ const RelatedPosts: React.FC<RelatedPostsProps> = ({ posts, categories }) => {
                     {post.title}
                   </h4>
                   {post.publishedAt && (
-                    <time className="text-sm text-gray-500">
-                      {formatDate(post.publishedAt)}
-                    </time>
+                    <time className="text-sm text-gray-500">{formatDate(post.publishedAt)}</time>
                   )}
                 </div>
               </div>

@@ -98,7 +98,7 @@ export default async function TagPage({ params, searchParams }: TagPageProps) {
 
   // Fetch posts for this tag
   const allPosts: Post[] = await sanityClient.fetch<Post[]>(postsByTagQuery, {
-    name: tagName
+    name: tagName,
   });
 
   // Paginate the posts
@@ -113,13 +113,9 @@ export default async function TagPage({ params, searchParams }: TagPageProps) {
 
       <div className="mt-4 py-6 rounded-lg">
         <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold">
-            #{tagData.name}
-          </h1>
+          <h1 className="text-3xl font-bold">#{tagData.name}</h1>
         </div>
-        <p className="text-xl mt-2">
-          Articles tagged with #{tagData.name}
-        </p>
+        <p className="text-xl mt-2">Articles tagged with #{tagData.name}</p>
       </div>
 
       <PostGrid posts={posts} categories={categories} />

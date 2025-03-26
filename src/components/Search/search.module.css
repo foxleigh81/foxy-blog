@@ -115,7 +115,7 @@
     background-color: rgba(0, 0, 0, 0.8);
     z-index: 50;
   }
-  
+
   @keyframes expandSearch {
     from {
       width: 2.5rem;
@@ -126,7 +126,7 @@
       opacity: 1;
     }
   }
-  
+
   @keyframes expandInput {
     from {
       width: 0;
@@ -135,7 +135,7 @@
       width: calc(100vw - 8rem);
     }
   }
-  
+
   /* Special styles for search in mobile menu */
   .mobileExpanded .searchForm,
   .mobileSearchForm {
@@ -145,7 +145,7 @@
     justify-content: space-between;
     padding: 0.25rem 0.5rem;
   }
-  
+
   .mobileExpanded .searchInput,
   .mobileSearchForm .searchInput {
     width: 85%;

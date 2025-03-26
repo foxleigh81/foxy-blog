@@ -3,9 +3,9 @@ import BlockContent from '@/components/BlockContent';
 
 interface BlogArticleProps {
   content: Array<{
-    _type: "block";
+    _type: 'block';
     children: Array<{
-      _type: "span";
+      _type: 'span';
       text: string;
       marks?: string[];
     }>;

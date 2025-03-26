@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -51,20 +51,36 @@ const Search: React.FC<SearchProps> = ({ mobileMenuOpen = false }) => {
   }, [mobileMenuOpen]);
 
   return (
-    <div className={`${styles.searchContainer} ${showSearchForm ? styles.expanded : ''} ${mobileMenuOpen ? styles.mobileExpanded : ''}`}>
+    <div
+      className={`${styles.searchContainer} ${showSearchForm ? styles.expanded : ''} ${mobileMenuOpen ? styles.mobileExpanded : ''}`}
+    >
       {!showSearchForm ? (
-        <button 
+        <button
           onClick={toggleSearch}
           className={styles.searchIcon}
           aria-label="Open search"
           title="Click to search"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            className="w-6 h-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
         </button>
       ) : (
-        <form onSubmit={handleSubmit} className={`${styles.searchForm} ${mobileMenuOpen ? styles.mobileSearchForm : ''}`}>
+        <form
+          onSubmit={handleSubmit}
+          className={`${styles.searchForm} ${mobileMenuOpen ? styles.mobileSearchForm : ''}`}
+        >
           <input
             ref={inputRef}
             type="text"
@@ -74,25 +90,43 @@ const Search: React.FC<SearchProps> = ({ mobileMenuOpen = false }) => {
             className={styles.searchInput}
             aria-label="Search"
           />
-          <button 
-            type="submit" 
-            className={styles.searchButton}
-            aria-label="Submit search"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <button type="submit" className={styles.searchButton} aria-label="Submit search">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              className="w-5 h-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </button>
           {/* Only show close button when not in mobile menu */}
           {!mobileMenuOpen && (
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={toggleSearch}
               className={styles.closeButton}
               aria-label="Close search"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                className="w-5 h-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           )}

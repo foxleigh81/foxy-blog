@@ -1,5 +1,5 @@
-import {defineType, defineArrayMember} from 'sanity'
-import {ImageIcon} from '@sanity/icons'
+import { defineType, defineArrayMember } from 'sanity';
+import { ImageIcon } from '@sanity/icons';
 
 /**
  * This is the schema type for block content used in the post document type
@@ -12,35 +12,40 @@ import {ImageIcon} from '@sanity/icons'
  *  }
  */
 
-export type BlockContent = Array<{
-  _type: "block";
-  children: Array<{
-    _type: "span";
-    text: string;
-    marks?: string[];
-  }>;
-  style?: "normal" | "h1" | "h2" | "h3" | "h4" | "blockquote";
-  markDefs?: Array<{
-    _key: string;
-    _type: "link";
-    href: string;
-  }>;
-} | {
-  _type: "image";
-  asset: {
-    _ref: string;
-    _type: "reference";
-  };
-  alt?: string;
-  caption?: string;
-  attribution?: string;
-  alignment?: "full" | "left" | "right" | "center";
-} | {
-  _type: "instagram";
-  url: string;
-} | {
-  _type: "hr";
-}>;
+export type BlockContent = Array<
+  | {
+      _type: 'block';
+      children: Array<{
+        _type: 'span';
+        text: string;
+        marks?: string[];
+      }>;
+      style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote';
+      markDefs?: Array<{
+        _key: string;
+        _type: 'link';
+        href: string;
+      }>;
+    }
+  | {
+      _type: 'image';
+      asset: {
+        _ref: string;
+        _type: 'reference';
+      };
+      alt?: string;
+      caption?: string;
+      attribution?: string;
+      alignment?: 'full' | 'left' | 'right' | 'center';
+    }
+  | {
+      _type: 'instagram';
+      url: string;
+    }
+  | {
+      _type: 'hr';
+    }
+>;
 
 export const blockContentType = defineType({
   title: 'Block Content',
@@ -54,21 +59,21 @@ export const blockContentType = defineType({
       // you want, and decide how you want to deal with it where you want to
       // use your content.
       styles: [
-        {title: 'Normal', value: 'normal'},
-        {title: 'H1', value: 'h1'},
-        {title: 'H2', value: 'h2'},
-        {title: 'H3', value: 'h3'},
-        {title: 'H4', value: 'h4'},
-        {title: 'Quote', value: 'blockquote'},
+        { title: 'Normal', value: 'normal' },
+        { title: 'H1', value: 'h1' },
+        { title: 'H2', value: 'h2' },
+        { title: 'H3', value: 'h3' },
+        { title: 'H4', value: 'h4' },
+        { title: 'Quote', value: 'blockquote' },
       ],
-      lists: [{title: 'Bullet', value: 'bullet'}],
+      lists: [{ title: 'Bullet', value: 'bullet' }],
       // Marks let you mark up inline text in the Portable Text Editor
       marks: {
         // Decorators usually describe a single property – e.g. a typographic
         // preference or highlighting
         decorators: [
-          {title: 'Strong', value: 'strong'},
-          {title: 'Emphasis', value: 'em'},
+          { title: 'Strong', value: 'strong' },
+          { title: 'Emphasis', value: 'em' },
         ],
         // Annotations can be any object structure – e.g. a link or a footnote.
         annotations: [
@@ -90,7 +95,7 @@ export const blockContentType = defineType({
     // You can add additional types here. Note that you can't use
     // primitive types such as 'string' and 'number' in the same array
     // as a block type.
-   defineArrayMember({
+    defineArrayMember({
       type: 'image',
       icon: ImageIcon,
       options: {
@@ -112,7 +117,7 @@ export const blockContentType = defineType({
           title: 'Alt text',
           name: 'alt',
           type: 'string',
-          validation: Rule => Rule.required(),
+          validation: (Rule) => Rule.required(),
         },
         {
           title: 'Alignment',
@@ -123,16 +128,16 @@ export const blockContentType = defineType({
               { title: 'Full width', value: 'full' },
               { title: 'Left', value: 'left' },
               { title: 'Right', value: 'right' },
-              { title: 'Center', value: 'center' }
+              { title: 'Center', value: 'center' },
             ],
-            layout: 'radio'
+            layout: 'radio',
           },
-          initialValue: 'full'
-        }
-      ]
+          initialValue: 'full',
+        },
+      ],
     }),
     defineArrayMember({
-      type: 'code'
+      type: 'code',
     }),
     defineArrayMember({
       name: 'youtube',
@@ -156,12 +161,12 @@ export const blockContentType = defineType({
     }),
     // Instagram embed
     defineArrayMember({
-      type: 'instagram'
+      type: 'instagram',
     }),
     // Horizontal rule
     defineArrayMember({
       type: 'hr',
-      title: 'Horizontal Rule'
-    })
+      title: 'Horizontal Rule',
+    }),
   ],
-})
+});

@@ -1,5 +1,5 @@
-import {DocumentTextIcon} from '@sanity/icons'
-import {defineArrayMember, defineField, defineType} from 'sanity'
+import { DocumentTextIcon } from '@sanity/icons';
+import { defineArrayMember, defineField, defineType } from 'sanity';
 
 export type Post = {
   _id: string;
@@ -10,24 +10,24 @@ export type Post = {
   };
   author: {
     _ref: string;
-    _type: "reference";
+    _type: 'reference';
   };
   mainImage?: {
     asset: {
       _ref: string;
-      _type: "reference";
+      _type: 'reference';
     };
     alt?: string;
   };
   categories?: Array<{
     _ref: string;
-    _type: "reference";
+    _type: 'reference';
   }>;
   publishedAt?: string;
   body: Array<{
-    _type: "block";
+    _type: 'block';
     children: Array<{
-      _type: "span";
+      _type: 'span';
       text: string;
       marks?: string[];
     }>;
@@ -35,14 +35,14 @@ export type Post = {
   excerpt?: string;
   tags?: Array<{
     _ref: string;
-    _type: "reference";
+    _type: 'reference';
   }>;
   disableComments?: boolean;
   unlisted?: boolean;
   noindex?: boolean;
   relatedPosts?: Array<{
     _ref: string;
-    _type: "reference";
+    _type: 'reference';
   }>;
   youtube?: {
     _key: string;
@@ -68,7 +68,7 @@ export const postType = defineType({
     defineField({
       name: 'title',
       type: 'string',
-      validation: Rule => Rule.required(),
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'subtitle',
@@ -81,13 +81,13 @@ export const postType = defineType({
       options: {
         source: 'title',
       },
-      validation: Rule => Rule.required(),
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'author',
       type: 'reference',
-      to: {type: 'author'},
-      validation: Rule => Rule.required(),
+      to: { type: 'author' },
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'mainImage',
@@ -100,28 +100,29 @@ export const postType = defineType({
           name: 'alt',
           type: 'string',
           title: 'Alternative text',
-           validation: Rule => Rule.custom((alt, context) => {
-            if (context?.document?.mainImage && !alt) {
-              return 'The mainImage image must have an alt description'
-            }
-            return true
-          }),
-          hidden: ({document}) => !document?.mainImage,
+          validation: (Rule) =>
+            Rule.custom((alt, context) => {
+              if (context?.document?.mainImage && !alt) {
+                return 'The mainImage image must have an alt description';
+              }
+              return true;
+            }),
+          hidden: ({ document }) => !document?.mainImage,
         },
         {
           name: 'attribution',
           type: 'string',
           title: 'Attribution',
           description: 'Credit for the image (e.g., "Photo by John Doe")',
-          hidden: ({document}) => !document?.mainImage,
-        }
-      ]
+          hidden: ({ document }) => !document?.mainImage,
+        },
+      ],
     }),
     defineField({
       name: 'categories',
       type: 'array',
-      of: [defineArrayMember({type: 'reference', to: {type: 'category'}})],
-      validation: Rule => Rule.required(),
+      of: [defineArrayMember({ type: 'reference', to: { type: 'category' } })],
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'publishedAt',
@@ -130,19 +131,19 @@ export const postType = defineType({
     defineField({
       name: 'body',
       type: 'blockContent',
-      validation: Rule => Rule.required(),
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'excerpt',
       type: 'text',
-      validation: Rule => Rule.required(),
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'tags',
       type: 'array',
       of: [{ type: 'reference', to: { type: 'tag' } }],
       options: {
-        layout: 'tags'
+        layout: 'tags',
       },
     }),
     defineField({
@@ -154,7 +155,8 @@ export const postType = defineType({
     defineField({
       name: 'unlisted',
       title: 'Hide this article from list pages',
-      description: 'When enabled, this post will not appear in any list views (like the homepage or category pages)',
+      description:
+        'When enabled, this post will not appear in any list views (like the homepage or category pages)',
       type: 'boolean',
       initialValue: false,
     }),
@@ -178,8 +180,8 @@ export const postType = defineType({
       media: 'mainImage',
     },
     prepare(selection) {
-      const {author} = selection
-      return {...selection, subtitle: author && `by ${author}`}
+      const { author } = selection;
+      return { ...selection, subtitle: author && `by ${author}` };
     },
   },
-})
+});

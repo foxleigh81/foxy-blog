@@ -58,11 +58,12 @@ const ImageContainer: React.FC<ImageContainerProps> = ({
         alt={alt}
         fill
         className={imageClasses}
-        sizes={alignment === 'full'
-          ? "(max-width: 640px) 100vw, (max-width: 768px) 80vw, 800px"
-          : alignment === 'center'
-            ? "600px"
-            : "(max-width: 768px) 100vw, 50vw"
+        sizes={
+          alignment === 'full'
+            ? '(max-width: 640px) 100vw, (max-width: 768px) 80vw, 800px'
+            : alignment === 'center'
+              ? '600px'
+              : '(max-width: 768px) 100vw, 50vw'
         }
         priority
       />
@@ -72,7 +73,9 @@ const ImageContainer: React.FC<ImageContainerProps> = ({
         </div>
       )}
       {caption && (
-        <figcaption className={`text-sm text-gray-600 mt-2 ${alignment === 'center' ? 'text-center' : ''}`}>
+        <figcaption
+          className={`text-sm text-gray-600 mt-2 ${alignment === 'center' ? 'text-center' : ''}`}
+        >
           {caption}
         </figcaption>
       )}

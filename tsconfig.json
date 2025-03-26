@@ -23,7 +23,7 @@
       "@/utils": ["./src/utils"],
       "@/components": ["./src/components"],
       "@/app": ["./src/app"],
-      "@/sanity": ["./src/sanity"],
+      "@/sanity": ["./src/sanity"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

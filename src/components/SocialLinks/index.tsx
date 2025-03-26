@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React from 'react';
 import { FaLinkedin, FaGithub, FaInstagram } from 'react-icons/fa';
@@ -10,46 +10,46 @@ interface SocialLinksProps {
   iconSize?: number;
 }
 
-const SocialLinks: React.FC<SocialLinksProps> = ({ 
-  className = "", 
+const SocialLinks: React.FC<SocialLinksProps> = ({
+  className = '',
   showLabels = false,
-  iconSize = 22
+  iconSize = 22,
 }) => {
   const socialLinks = [
     {
       name: 'LinkedIn',
       url: 'https://www.linkedin.com/in/alexfoxleigh/',
-      icon: <FaLinkedin size={iconSize} />
+      icon: <FaLinkedin size={iconSize} />,
     },
     {
       name: 'GitHub',
       url: 'https://github.com/foxleigh81',
-      icon: <FaGithub size={iconSize} />
+      icon: <FaGithub size={iconSize} />,
     },
     {
       name: 'Instagram',
       url: 'https://www.instagram.com/foxleigh81',
-      icon: <FaInstagram size={iconSize} />
+      icon: <FaInstagram size={iconSize} />,
     },
     {
       name: 'Bluesky',
       url: 'https://bsky.app/profile/foxleigh81.bsky.social',
-      icon: <SiBluesky size={iconSize} />
-    }
+      icon: <SiBluesky size={iconSize} />,
+    },
   ];
 
   return (
     <div className={`flex flex-wrap ${showLabels ? 'gap-6' : 'gap-5'} ${className}`}>
       {socialLinks.map((link) => (
-        <a 
+        <a
           key={link.name}
-          href={link.url} 
+          href={link.url}
           className={`text-black hover:text-black/80 transition-colors ${!showLabels ? 'relative group' : 'flex items-center gap-2'} `}
           aria-label={`${link.name} Profile`}
           title={showLabels ? undefined : `${link.name} Profile`}
         >
           {link.icon}
-          
+
           {showLabels ? (
             <span>{link.name}</span>
           ) : (

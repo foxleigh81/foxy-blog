@@ -18,7 +18,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 200%; 
+  width: 200%;
   bottom: 0;
   height: 100%;
   background-image: url('/galactic-bg.jpg');
@@ -45,7 +45,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to right, rgba(0,0,0,0.8), rgba(0,0,0,0.5), rgba(0,0,0,0.8));
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.8));
   z-index: 2;
   height: 100%;
 }

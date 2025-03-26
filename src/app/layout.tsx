@@ -1,30 +1,30 @@
-import type { Metadata } from "next";
-import { Righteous, Lato } from "next/font/google";
-import "./globals.css";
-import Script from "next/script";
+import type { Metadata } from 'next';
+import { Righteous, Lato } from 'next/font/google';
+import './globals.css';
+import Script from 'next/script';
 
-import Masthead from "@/components/Masthead";
-import Footer from "@/components/Footer";
-import { sanityClient } from "@/sanity/lib/client";
-import type { Category } from "@/sanity/schemaTypes/categoryType";
-import { Analytics } from "@vercel/analytics/react"
+import Masthead from '@/components/Masthead';
+import Footer from '@/components/Footer';
+import { sanityClient } from '@/sanity/lib/client';
+import type { Category } from '@/sanity/schemaTypes/categoryType';
+import { Analytics } from '@vercel/analytics/react';
 
 const primaryFont = Righteous({
-  weight: "400",
-  variable: "--font-primary",
-  subsets: ["latin"],
+  weight: '400',
+  variable: '--font-primary',
+  subsets: ['latin'],
 });
 
 const secondaryFont = Lato({
-  weight: ["400", "700"],
-  variable: "--font-secondary",
-  subsets: ["latin"],
+  weight: ['400', '700'],
+  variable: '--font-secondary',
+  subsets: ['latin'],
 });
 
 // Metadata for the root layout (applied to all pages)
 export const metadata: Metadata = {
   title: "Foxy's Tale",
-  description: "The inane mutterings of Alexander Foxleigh",
+  description: 'The inane mutterings of Alexander Foxleigh',
 };
 
 // Query to fetch all categories
@@ -66,14 +66,14 @@ export default async function RootLayout({
               new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
               j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-              })(window,document,'script','dataLayer','${gtmId}');`
+              })(window,document,'script','dataLayer','${gtmId}');`,
           }}
         />
         <Script
           id="gtm-dataLayer"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `window.dataLayer = window.dataLayer || [];`
+            __html: `window.dataLayer = window.dataLayer || [];`,
           }}
         />
       </head>
@@ -87,7 +87,11 @@ export default async function RootLayout({
             loading="lazy"
           />
         </noscript>
-        <Masthead categories={categories} title={metadata.title as string} subtitle={metadata.description as string}/>
+        <Masthead
+          categories={categories}
+          title={metadata.title as string}
+          subtitle={metadata.description as string}
+        />
         <main className="container mx-auto px-4">{children}</main>
         <Footer />
         <Analytics />

@@ -121,14 +121,16 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       type: 'article',
       publishedTime: post.publishedAt,
       url: canonicalUrl,
-      images: post.mainImage ? [
-        {
-          url: urlFor(post.mainImage).width(1200).height(630).url(),
-          width: 1200,
-          height: 630,
-          alt: post.mainImage.alt || post.title,
-        }
-      ] : undefined,
+      images: post.mainImage
+        ? [
+            {
+              url: urlFor(post.mainImage).width(1200).height(630).url(),
+              width: 1200,
+              height: 630,
+              alt: post.mainImage.alt || post.title,
+            },
+          ]
+        : undefined,
     },
     twitter: {
       card: 'summary_large_image',
@@ -149,7 +151,7 @@ export default async function PostPage({ params }: PostPageProps) {
   // Fetch the post and categories in parallel
   const [post, categories] = await Promise.all([
     sanityClient.fetch<Post>(postQuery, { slug: resolvedParams.slug }),
-    sanityClient.fetch<Category[]>(categoriesQuery)
+    sanityClient.fetch<Category[]>(categoriesQuery),
   ]);
 
   // If post not found, return 404
@@ -203,7 +205,7 @@ export default async function PostPage({ params }: PostPageProps) {
         const tagRelatedPosts = await sanityClient.fetch<RelatedPost[]>(tagsQuery, {
           postId: post._id,
           tagId: firstTagRef,
-          categoryId: firstCategoryRef
+          categoryId: firstCategoryRef,
         });
 
         // Add posts that aren't already in relatedPosts
@@ -244,7 +246,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
       const categoryRelatedPosts = await sanityClient.fetch<RelatedPost[]>(categoryQuery, {
         postId: post._id,
-        categoryId: firstCategoryRef
+        categoryId: firstCategoryRef,
       });
 
       // Add posts that aren't already in relatedPosts
@@ -282,7 +284,7 @@ export default async function PostPage({ params }: PostPageProps) {
       }`;
 
       const recentPosts = await sanityClient.fetch<RelatedPost[]>(recentQuery, {
-        postId: post._id
+        postId: post._id,
       });
 
       // Add posts that aren't already in relatedPosts
@@ -345,13 +347,14 @@ export default async function PostPage({ params }: PostPageProps) {
             <div className="mt-8 bg-white rounded-lg shadow-md p-4">
               <h3 className="text-lg font-bold mb-4">Support This Blog</h3>
               <p className="text-sm mb-4">
-                At the moment, this site is not ad-supported but if you want to support me, please use the Ko-fi donation link below and thank you in advance!
+                At the moment, this site is not ad-supported but if you want to support me, please
+                use the Ko-fi donation link below and thank you in advance!
               </p>
 
               <div className="flex flex-col items-center space-y-4">
                 <a
-                  href='https://ko-fi.com/I3I21FRCN'
-                  target='_blank'
+                  href="https://ko-fi.com/I3I21FRCN"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="bg-[#d110a4] text-white py-3 px-6 rounded-lg font-bold text-center hover:bg-[#b50e8f] transition-colors w-full"
                 >

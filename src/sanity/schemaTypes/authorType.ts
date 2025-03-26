@@ -1,5 +1,5 @@
-import {UserIcon} from '@sanity/icons'
-import {defineArrayMember, defineField, defineType} from 'sanity'
+import { UserIcon } from '@sanity/icons';
+import { defineArrayMember, defineField, defineType } from 'sanity';
 
 export type Author = {
   _id: string;
@@ -10,13 +10,13 @@ export type Author = {
   image?: {
     asset: {
       _ref: string;
-      _type: "reference";
+      _type: 'reference';
     };
   };
   bio?: Array<{
-    _type: "block";
+    _type: 'block';
     children: Array<{
-      _type: "span";
+      _type: 'span';
       text: string;
       marks?: string[];
     }>;
@@ -53,7 +53,7 @@ export const authorType = defineType({
       of: [
         defineArrayMember({
           type: 'block',
-          styles: [{title: 'Normal', value: 'normal'}],
+          styles: [{ title: 'Normal', value: 'normal' }],
           lists: [],
         }),
       ],
@@ -65,4 +65,4 @@ export const authorType = defineType({
       media: 'image',
     },
   },
-})
+});

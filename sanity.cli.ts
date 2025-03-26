@@ -1,11 +1,11 @@
 /**
-* This configuration file lets you run `$ sanity [command]` in this folder
-* Go to https://www.sanity.io/docs/cli to learn more.
-**/
-import { defineCliConfig } from 'sanity/cli'
+ * This configuration file lets you run `$ sanity [command]` in this folder
+ * Go to https://www.sanity.io/docs/cli to learn more.
+ **/
+import { defineCliConfig } from 'sanity/cli';
 
-const projectId = process.env.SANITY_STUDIO_PROJECT_ID
-const dataset = process.env.SANITY_STUDIO_DATASET
-const hostname = process.env.SANITY_STUDIO_HOSTNAME
+const projectId = process.env.SANITY_STUDIO_PROJECT_ID;
+const dataset = process.env.SANITY_STUDIO_DATASET;
+const hostname = process.env.SANITY_STUDIO_HOSTNAME;
 
-export default defineCliConfig({ api: { projectId, dataset }, studioHost: hostname })
+export default defineCliConfig({ api: { projectId, dataset }, studioHost: hostname });

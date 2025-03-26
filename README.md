@@ -20,12 +20,13 @@ A modern, responsive blog built with [Next.js](https://nextjs.org), [Tailwind CS
 
 1. Clone this repository
 2. Copy `.env.sample` to `.env.local` and fill in the required values:
+
    ```
    NEXT_PUBLIC_SANITY_PROJECT_ID="your-sanity-project-id"
    NEXT_PUBLIC_SANITY_DATASET="production"
    NEXT_PUBLIC_SANITY_API_VERSION="2023-05-03"
    SANITY_STUDIO_YOUTUBE_API_KEY="your-youtube-api-key" (if using YouTube integration)
-   
+
    # Optional: Enable single author mode (if you're the only author)
    SANITY_STUDIO_SINGLE_AUTHOR_MODE="true"
    ```

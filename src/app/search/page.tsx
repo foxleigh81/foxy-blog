@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -57,11 +57,12 @@ function SearchContent() {
 
         // Find tags that might match our search term
         const matchingTagIds = allTags
-          .filter(tag =>
-            tag.name.toLowerCase().includes(cleanQuery.toLowerCase()) ||
-            tag.slug.toLowerCase().includes(cleanQuery.toLowerCase())
+          .filter(
+            (tag) =>
+              tag.name.toLowerCase().includes(cleanQuery.toLowerCase()) ||
+              tag.slug.toLowerCase().includes(cleanQuery.toLowerCase())
           )
-          .map(tag => tag._id);
+          .map((tag) => tag._id);
 
         // GROQ query for searching posts - explicitly defining which fields to search
         const searchQuery = groq`*[_type == "post" && !unlisted && (
@@ -84,7 +85,7 @@ function SearchContent() {
 
         const fetchedPosts = await sanityClient.fetch<Post[]>(searchQuery, {
           searchTerm: `*${cleanQuery}*`,
-          matchingTagIds
+          matchingTagIds,
         });
 
         // Fetch all categories for reference
@@ -100,10 +101,13 @@ function SearchContent() {
         // For debugging purposes, log the posts and search term
         console.log('Search term:', cleanQuery);
         console.log('Matching tag IDs:', matchingTagIds);
-        console.log('Fetched posts:', fetchedPosts.map(p => ({ title: p.title })));
+        console.log(
+          'Fetched posts:',
+          fetchedPosts.map((p) => ({ title: p.title }))
+        );
 
         // Client-side filtering as a backup
-        const filteredPosts = fetchedPosts.filter(post => {
+        const filteredPosts = fetchedPosts.filter((post) => {
           const searchTermLower = cleanQuery.toLowerCase();
 
           // Check if the post directly matches the search term in these fields
@@ -111,12 +115,14 @@ function SearchContent() {
           const excerptMatch = post.excerpt?.toLowerCase().includes(searchTermLower);
 
           // Check if any of the post's tags match the search term
-          const tagsMatch = post.tags?.some(tagRef => {
-            const matchingTag = allTags.find(t => t._id === tagRef._ref);
+          const tagsMatch = post.tags?.some((tagRef) => {
+            const matchingTag = allTags.find((t) => t._id === tagRef._ref);
             if (!matchingTag) return false;
 
-            return matchingTag.name.toLowerCase().includes(searchTermLower) ||
-                  matchingTag.slug.toLowerCase().includes(searchTermLower);
+            return (
+              matchingTag.name.toLowerCase().includes(searchTermLower) ||
+              matchingTag.slug.toLowerCase().includes(searchTermLower)
+            );
           });
 
           const result = titleMatch || excerptMatch || tagsMatch;
@@ -127,10 +133,10 @@ function SearchContent() {
 
         // Paginate the posts
         const pageSize = 9; // Number of posts per page
-        const { items: paginatedPosts, totalPages: pages } = paginateItems(
-          filteredPosts,
-          { page: page.toString(), pageSize: pageSize.toString() }
-        );
+        const { items: paginatedPosts, totalPages: pages } = paginateItems(filteredPosts, {
+          page: page.toString(),
+          pageSize: pageSize.toString(),
+        });
 
         setPosts(paginatedPosts);
         setTotalPages(pages);
@@ -201,13 +207,10 @@ function SearchContent() {
               ? 'Searching...'
               : posts.length > 0
                 ? `Found ${posts.length} result${posts.length === 1 ? '' : 's'} for "${query}"`
-                : `No results found for "${query}"`
-            }
+                : `No results found for "${query}"`}
           </p>
         ) : (
-          <p className="text-xl text-gray-600 mb-8">
-            Please enter a search term
-          </p>
+          <p className="text-xl text-gray-600 mb-8">Please enter a search term</p>
         )}
       </div>
 
@@ -222,9 +225,8 @@ function SearchContent() {
             searchParams={{
               q: query,
               ...Object.fromEntries(
-                Array.from(searchParams.entries())
-                  .filter(([key]) => key !== 'page' && key !== 'q')
-              )
+                Array.from(searchParams.entries()).filter(([key]) => key !== 'page' && key !== 'q')
+              ),
             }}
           />
         </>

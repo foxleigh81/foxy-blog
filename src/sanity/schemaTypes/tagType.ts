@@ -1,5 +1,5 @@
-import {TagIcon} from '@sanity/icons'
-import {defineField, defineType} from 'sanity'
+import { TagIcon } from '@sanity/icons';
+import { defineField, defineType } from 'sanity';
 
 export type Tag = {
   _id: string;
@@ -40,19 +40,22 @@ export const tagType = defineType({
       title: 'Tag Name',
       description: 'Must be in lower-kebab-case format (e.g., "react-hooks" or "next-js")',
       type: 'string',
-      validation: Rule => Rule.required()
-        .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, {
-          name: 'lower-kebab-case',
-          invert: false
-        })
-        .error('Tag name must be in lower-kebab-case format (only lowercase letters, numbers, and hyphens)'),
+      validation: (Rule) =>
+        Rule.required()
+          .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, {
+            name: 'lower-kebab-case',
+            invert: false,
+          })
+          .error(
+            'Tag name must be in lower-kebab-case format (only lowercase letters, numbers, and hyphens)'
+          ),
     }),
     defineField({
       name: 'color',
       title: 'Color',
       description: 'Choose a color for this tag',
       type: 'color',
-      validation: Rule => Rule.required(),
+      validation: (Rule) => Rule.required(),
     }),
   ],
   preview: {
@@ -60,12 +63,12 @@ export const tagType = defineType({
       title: 'name',
       color: 'color',
     },
-    prepare: ({title, color}) => {
+    prepare: ({ title, color }) => {
       return {
         title,
         subtitle: color?.hex || 'No color selected',
-        media: TagIcon
-      }
-    }
+        media: TagIcon,
+      };
+    },
   },
-})
+});

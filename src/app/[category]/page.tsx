@@ -83,7 +83,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   // Fetch the current category
   const category: Category | null = await sanityClient.fetch(categoryQuery, {
-    category: categorySlug
+    category: categorySlug,
   });
 
   // If category doesn't exist, return 404
@@ -93,7 +93,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   // Fetch posts for this category
   const allPosts: Post[] = await sanityClient.fetch(postsByCategoryQuery, {
-    category: categorySlug
+    category: categorySlug,
   });
 
   // Paginate the posts
