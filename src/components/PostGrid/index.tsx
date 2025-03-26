@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Post } from '@/sanity/schemaTypes/postType';
 import { Category } from '@/sanity/schemaTypes/categoryType';
 import PostCard from '@/components/PostCard';
@@ -10,31 +10,25 @@ interface PostGridProps {
 }
 
 const PostGrid: React.FC<PostGridProps> = ({ posts, categories, includesFeatured = false }) => {
-  if (!posts || posts.length === 0) {
-    return (
-      <div className="text-center py-10">
-        <p className="text-gray-500">No posts to display.</p>
-      </div>
-    );
-  }
+  // Memoize the category map for better performance
+  const categoryMap = useMemo(() =>
+    categories.reduce((acc, category) => {
+      acc[category._id] = category;
+      return acc;
+    }, {} as Record<string, Category>),
+    [categories]
+  );
 
-  // Create a map of categories for quick lookup by id
-  const categoryMap = categories.reduce((acc, category) => {
-    acc[category._id] = category;
-    return acc;
-  }, {} as Record<string, Category>);
-
-  // Find a default category to use as fallback
-  const defaultCategory = categories.find(c => c.slug.current === 'uncategorized') ||
+  // Memoize the default category lookup
+  const defaultCategory = useMemo(() =>
+    categories.find(c => c.slug.current === 'uncategorized') ||
     categories.find(c => c.title.toLowerCase() === 'uncategorized') ||
-    categories[0];
+    categories[0],
+    [categories]
+  );
 
-  if (!defaultCategory) {
-    console.error('No categories available for posts');
-  }
-
-  // Get the category for a post
-  const getPostCategory = (post: Post) => {
+  // Memoize the getPostCategory function
+  const getPostCategory = useCallback((post: Post) => {
     const category = post.categories && post.categories[0] && categoryMap[post.categories[0]._ref]
       ? categoryMap[post.categories[0]._ref]
       : defaultCategory;
@@ -45,12 +39,24 @@ const PostGrid: React.FC<PostGridProps> = ({ posts, categories, includesFeatured
     }
 
     return category;
-  };
+  }, [categoryMap, defaultCategory]);
 
-  // Get the post URL
-  const getPostUrl = (post: Post, category: Category) => {
+  // Memoize the getPostUrl function
+  const getPostUrl = useCallback((post: Post, category: Category) => {
     return `/${category.slug.current}/${post.slug.current}`;
-  };
+  }, []);
+
+  if (!posts || posts.length === 0) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-gray-500">No posts to display.</p>
+      </div>
+    );
+  }
+
+  if (!defaultCategory) {
+    console.error('No categories available for posts');
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

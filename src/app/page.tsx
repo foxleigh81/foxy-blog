@@ -1,3 +1,4 @@
+import { Metadata } from 'next';
 import { sanityClient } from '@/sanity/lib/client'
 import { groq } from 'next-sanity'
 import type { Post } from '@/sanity/schemaTypes/postType'
@@ -11,7 +12,19 @@ const postsQuery = groq`*[_type == "post" && !unlisted] | order(publishedAt desc
   _id,
   title,
   slug,
-  mainImage,
+  mainImage {
+    asset->{
+      _id,
+      _type,
+      metadata {
+        dimensions {
+          width,
+          height
+        }
+      }
+    },
+    alt
+  },
   excerpt,
   categories,
   publishedAt,
@@ -33,7 +46,19 @@ const featuredPostQuery = groq`*[_type == "featuredPost"][0] {
     _id,
     title,
     slug,
-    mainImage,
+    mainImage {
+      asset->{
+        _id,
+        _type,
+        metadata {
+          dimensions {
+            width,
+            height
+          }
+        }
+      },
+      alt
+    },
     excerpt,
     categories,
     publishedAt,
@@ -45,6 +70,25 @@ const featuredPostQuery = groq`*[_type == "featuredPost"][0] {
 interface HomePageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
+
+export const metadata: Metadata = {
+  title: "Foxy's Tale - Home",
+  description: "The inane mutterings of Alexander Foxleigh",
+  openGraph: {
+    title: "Foxy's Tale - Home",
+    description: "The inane mutterings of Alexander Foxleigh",
+    type: 'website',
+    url: process.env.NEXT_PUBLIC_SITE_URL,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Foxy's Tale - Home",
+    description: "The inane mutterings of Alexander Foxleigh",
+  },
+};
+
+// Enable static rendering with revalidation
+export const revalidate = 3600; // Revalidate every hour
 
 export default async function BlogIndex({ searchParams }: HomePageProps) {
   // Await the searchParams
@@ -83,7 +127,7 @@ export default async function BlogIndex({ searchParams }: HomePageProps) {
             Hi. I&apos;m Alex, I&apos;m a senior full-stack developer with a passion for building performant, accessible and highly usable web applications.
           </p>
           <p className="mb-4 text-sm">
-            You can find out more about me by reading my blog, <a className="underline text-purple-700 hover:text-purple-800 hover:no-underline" href="https://www.alexfoxleigh.com">taking a look at my website</a> or having a look at my social links which are below in the footer.
+            You can find out more about me by reading my blog, <a className="no-underline text-purple-700 hover:text-purple-800 hover:underline hover:underline-offset-4" href="https://www.alexfoxleigh.com">taking a look at my website</a> or having a look at my social links which are below in the footer.
           </p>
           <p className="mb-4 text-sm">Here is an assorted collection of my rants, ravings and general ramblings. I apologise in advance.</p>
         </div>

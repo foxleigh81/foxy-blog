@@ -21,6 +21,20 @@ const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl, isFeatured
   const categoryColor = getCategoryColor(category.slug.current);
   const categoryTextColor = getCategoryTextColor();
 
+  // Calculate image dimensions based on featured status
+  const imageWidth = isFeatured ? 800 : 500;
+  const imageHeight = isFeatured ? 400 : 300;
+
+  // Generate image URL with proper dimensions
+  const imageUrl = post.mainImage?.asset
+    ? urlFor(post.mainImage)
+        .width(imageWidth)
+        .height(imageHeight)
+        .fit('crop')
+        .crop('entropy')
+        .url()
+    : '';
+
   return (
     <Link
       href={postUrl}
@@ -31,18 +45,15 @@ const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl, isFeatured
           {post.mainImage?.asset ? (
             <>
               <Image
-                src={urlFor(post.mainImage)
-                  .width(isFeatured ? 800 : 500)
-                  .height(300)
-                  .fit('crop')
-                  .crop('entropy')
-                  .url()}
+                src={imageUrl}
                 alt={post.mainImage.alt || post.title}
                 fill
                 className="object-cover"
+                priority={isFeatured}
                 sizes={isFeatured
-                  ? "(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 66vw"
-                  : "(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"}
+                  ? "(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1000px"
+                  : "(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 500px"}
+                quality={isFeatured ? 90 : 75}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30"></div>
             </>

@@ -31,8 +31,11 @@ function SearchContent() {
   const [currentPage, setCurrentPage] = useState(page);
 
   useEffect(() => {
+    let isMounted = true;
+
     // Define the search function first so it can be called from anywhere in the effect
     async function fetchSearchResults() {
+      if (!isMounted) return;
       setIsLoading(true);
 
       try {
@@ -49,6 +52,8 @@ function SearchContent() {
           }
         `;
         const allTags = await sanityClient.fetch<TagRefData[]>(allTagsQuery);
+
+        if (!isMounted) return;
 
         // Find tags that might match our search term
         const matchingTagIds = allTags
@@ -74,6 +79,8 @@ function SearchContent() {
           categories,
           tags
         }`;
+
+        if (!isMounted) return;
 
         const fetchedPosts = await sanityClient.fetch<Post[]>(searchQuery, {
           searchTerm: `*${cleanQuery}*`,
@@ -130,9 +137,12 @@ function SearchContent() {
         setCurrentPage(page);
         setCategories(fetchedCategories);
       } catch (error) {
+        if (!isMounted) return;
         console.error('Error fetching search results:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
@@ -173,6 +183,10 @@ function SearchContent() {
       setPosts([]);
       setIsLoading(false);
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [query, redirectedToTag, router, page]);
 
   return (

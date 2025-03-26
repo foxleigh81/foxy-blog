@@ -5,6 +5,7 @@ import { urlFor } from '@/sanity/lib/image';
 import type { Post as BasePost } from '@/sanity/schemaTypes/postType';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 import type { Author } from '@/sanity/schemaTypes/authorType';
+import type { RelatedPost } from '@/types/post';
 
 // Import components
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -15,29 +16,6 @@ import AuthorBio from '@/components/AuthorBio';
 import RelatedPosts from '@/components/RelatedPosts';
 import LegacyBanner from '@/components/LegacyBanner';
 import OpinionBanner from '@/components/OpinionBanner';
-
-// Define a type for related posts which are expanded in the query
-type RelatedPost = {
-  _id: string;
-  title: string;
-  subtitle?: string;
-  slug: {
-    current: string;
-  };
-  mainImage?: {
-    asset: {
-      _ref: string;
-      _type: "reference";
-    };
-    alt?: string;
-  };
-  excerpt?: string;
-  categories?: Array<{
-    _ref: string;
-    _type: "reference";
-  }>;
-  publishedAt?: string;
-};
 
 // Extended Post type that includes expanded references
 type Post = Omit<BasePost, 'author' | 'relatedPosts'> & {
@@ -168,21 +146,21 @@ export default async function PostPage({ params }: PostPageProps) {
   // Await the params
   const resolvedParams = await params;
 
-  // Fetch the post
-  const post: Post = await sanityClient.fetch(postQuery, { slug: resolvedParams.slug });
+  // Fetch the post and categories in parallel
+  const [post, categories] = await Promise.all([
+    sanityClient.fetch<Post>(postQuery, { slug: resolvedParams.slug }),
+    sanityClient.fetch<Category[]>(categoriesQuery)
+  ]);
 
   // If post not found, return 404
   if (!post) {
     notFound();
   }
 
-  // Fetch all categories for reference
-  const categories: Category[] = await sanityClient.fetch(categoriesQuery);
-
   // Find the post categories
   const postCategories = post.categories
     ? post.categories
-        .map(cat => categories.find(c => c._id === cat._ref))
+        .map((cat: { _ref: string }) => categories.find((c: Category) => c._id === cat._ref))
         .filter((cat): cat is Category => Boolean(cat))
     : [];
 
@@ -204,7 +182,19 @@ export default async function PostPage({ params }: PostPageProps) {
           _id,
           title,
           slug,
-          mainImage,
+          mainImage {
+            asset->{
+              _id,
+              _type,
+              metadata {
+                dimensions {
+                  width,
+                  height
+                }
+              }
+            },
+            alt
+          },
           excerpt,
           categories,
           publishedAt
@@ -217,7 +207,7 @@ export default async function PostPage({ params }: PostPageProps) {
         });
 
         // Add posts that aren't already in relatedPosts
-        const existingIds = new Set(relatedPosts.map(p => p._id));
+        const existingIds = new Set(relatedPosts.map((p: RelatedPost) => p._id));
         tagRelatedPosts.forEach((p: RelatedPost) => {
           if (!existingIds.has(p._id)) {
             relatedPosts.push(p);
@@ -234,7 +224,19 @@ export default async function PostPage({ params }: PostPageProps) {
         _id,
         title,
         slug,
-        mainImage,
+        mainImage {
+          asset->{
+            _id,
+            _type,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          alt
+        },
         excerpt,
         categories,
         publishedAt
@@ -246,7 +248,7 @@ export default async function PostPage({ params }: PostPageProps) {
       });
 
       // Add posts that aren't already in relatedPosts
-      const existingIds = new Set(relatedPosts.map(p => p._id));
+      const existingIds = new Set(relatedPosts.map((p: RelatedPost) => p._id));
       categoryRelatedPosts.forEach((p: RelatedPost) => {
         if (!existingIds.has(p._id)) {
           relatedPosts.push(p);
@@ -261,18 +263,30 @@ export default async function PostPage({ params }: PostPageProps) {
         _id,
         title,
         slug,
-        mainImage,
+        mainImage {
+          asset->{
+            _id,
+            _type,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          alt
+        },
         excerpt,
         categories,
         publishedAt
       }`;
 
-      const recentPosts = await sanityClient.fetch(recentQuery, {
+      const recentPosts = await sanityClient.fetch<RelatedPost[]>(recentQuery, {
         postId: post._id
       });
 
       // Add posts that aren't already in relatedPosts
-      const existingIds = new Set(relatedPosts.map(p => p._id));
+      const existingIds = new Set(relatedPosts.map((p: RelatedPost) => p._id));
       recentPosts.forEach((p: RelatedPost) => {
         if (!existingIds.has(p._id)) {
           relatedPosts.push(p);
@@ -288,65 +302,66 @@ export default async function PostPage({ params }: PostPageProps) {
   // Fetch tag data for all tags in this post
   let tagData: TagData[] = [];
   if (post.tags && post.tags.length > 0) {
-    const tagIds = post.tags.map(tag => tag._ref);
+    const tagIds = post.tags.map((tag: { _ref: string }) => tag._ref);
     tagData = await sanityClient.fetch<TagData[]>(tagsQuery, { ids: tagIds });
     // Sort tags by name
     tagData.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   // Check if legacy tag is present
-  const isLegacy = tagData.some(tag => tag.name.toLowerCase() === 'legacy');
-  const isOpinion = tagData.some(tag => tag.name.toLowerCase() === 'opinion');
+  const isLegacy = tagData.some((tag: TagData) => tag.name.toLowerCase() === 'legacy');
+  const isOpinion = tagData.some((tag: TagData) => tag.name.toLowerCase() === 'opinion');
+
   return (
     <>
-    <Breadcrumbs category={firstCategory} postTitle={post.title} />
-    <article className="container mx-auto mt-4">
-      <BlogHeader
-        title={post.title}
-        subtitle={post.subtitle}
-        publishedAt={post.publishedAt}
-        author={post.author}
-        categories={postCategories}
-        mainImage={post.mainImage}
-      />
+      <Breadcrumbs category={firstCategory} postTitle={post.title} />
+      <article className="container mx-auto mt-4">
+        <BlogHeader
+          title={post.title}
+          subtitle={post.subtitle}
+          publishedAt={post.publishedAt}
+          author={post.author}
+          categories={postCategories}
+          mainImage={post.mainImage}
+        />
 
-      {isLegacy && <LegacyBanner year={post.publishedAt?.split('-')[0] || ''} />}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <div className="lg:col-span-8 mt-4">
-          {isOpinion && <OpinionBanner />}
-          <BlogArticle content={post.body} />
+        {isLegacy && <LegacyBanner year={post.publishedAt?.split('-')[0] || ''} />}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          <div className="lg:col-span-8 mt-4">
+            {isOpinion && <OpinionBanner />}
+            <BlogArticle content={post.body} />
 
-          {post.author && <AuthorBio author={post.author} />}
-        </div>
+            {post.author && <AuthorBio author={post.author} />}
+          </div>
 
-        <div className="lg:col-span-4">
-          {relatedPosts.length > 0 && (
-            <RelatedPosts posts={relatedPosts} categories={categories} />
-          )}
+          <div className="lg:col-span-4">
+            {relatedPosts.length > 0 && (
+              <RelatedPosts posts={relatedPosts} categories={categories} />
+            )}
 
-          {tagData.length > 0 && <Tags tagData={tagData} />}
+            {tagData.length > 0 && <Tags tagData={tagData} />}
 
-          {/* Ko-fi Donation Panel */}
-          <div className="mt-8 bg-white rounded-lg shadow-md p-4">
-            <h3 className="text-lg font-bold mb-4">Support This Blog</h3>
-            <p className="text-sm mb-4">
-              At the moment, this site is not ad-supported but if you want to support me, please use the Ko-fi donation link below and thank you in advance!
-            </p>
+            {/* Ko-fi Donation Panel */}
+            <div className="mt-8 bg-white rounded-lg shadow-md p-4">
+              <h3 className="text-lg font-bold mb-4">Support This Blog</h3>
+              <p className="text-sm mb-4">
+                At the moment, this site is not ad-supported but if you want to support me, please use the Ko-fi donation link below and thank you in advance!
+              </p>
 
-            <div className="flex flex-col items-center space-y-4">
-              <a
-                href='https://ko-fi.com/I3I21FRCN'
-                target='_blank'
-                rel="noopener noreferrer"
-                className="bg-[#d110a4] text-white py-3 px-6 rounded-lg font-bold text-center hover:bg-[#b50e8f] transition-colors w-full"
-              >
-                Support me on Ko-fi
-              </a>
+              <div className="flex flex-col items-center space-y-4">
+                <a
+                  href='https://ko-fi.com/I3I21FRCN'
+                  target='_blank'
+                  rel="noopener noreferrer"
+                  className="bg-[#d110a4] text-white py-3 px-6 rounded-lg font-bold text-center hover:bg-[#b50e8f] transition-colors w-full"
+                >
+                  Support me on Ko-fi
+                </a>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </article>
+      </article>
     </>
   );
 }

@@ -82,12 +82,12 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
       {mainImage?.asset && (
         <figure className="mb-8 relative w-full h-[450px] rounded-lg overflow-hidden">
             <Image
-              src={urlFor(mainImage).width(1200).height(450).url()}
+              src={urlFor(mainImage).width(1510).height(450).url()}
               alt={mainImage.alt || title}
               fill
               priority
               className="object-cover object-top"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1510px"
             />
             {mainImage.attribution && (
               <div className="absolute bottom-1 right-1 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
