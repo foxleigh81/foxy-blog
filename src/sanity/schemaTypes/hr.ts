@@ -1,4 +1,4 @@
-import { defineType } from 'sanity'
+import { defineType } from 'sanity';
 
 export const hr = defineType({
   name: 'hr',
@@ -11,18 +11,16 @@ export const hr = defineType({
       type: 'string',
       initialValue: 'default',
       options: {
-        list: [
-          { title: 'Default', value: 'default' }
-        ]
+        list: [{ title: 'Default', value: 'default' }],
       },
-      hidden: true
-    }
+      hidden: true,
+    },
   ],
   preview: {
     prepare() {
       return {
-        title: 'Horizontal Rule'
-      }
-    }
-  }
-})
+        title: 'Horizontal Rule',
+      };
+    },
+  },
+});

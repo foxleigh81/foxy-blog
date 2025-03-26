@@ -6,18 +6,14 @@ module.exports = {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
     './src/utils/**/*.{js,ts,jsx,tsx,mdx}',
   ],
-  safelist: [
-    'text-white',
-    'hover:bg-opacity-70',
-    'hover:text-opacity-80',
-  ],
+  safelist: ['text-white', 'hover:bg-opacity-70', 'hover:text-opacity-80'],
   theme: {
     screens: {
-      'sm': '640px',
-      'md': '768px',
-      'lg': '1024px',
-      'nav': '1230px',  // Custom breakpoint for navigation
-      'xl': '1280px',
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      nav: '1230px', // Custom breakpoint for navigation
+      xl: '1280px',
       '2xl': '1536px',
     },
     extend: {

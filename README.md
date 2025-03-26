@@ -20,12 +20,13 @@ A modern, responsive blog built with [Next.js](https://nextjs.org), [Tailwind CS
 
 1. Clone this repository
 2. Copy `.env.sample` to `.env.local` and fill in the required values:
-   ```
+
+   ```env
    NEXT_PUBLIC_SANITY_PROJECT_ID="your-sanity-project-id"
    NEXT_PUBLIC_SANITY_DATASET="production"
    NEXT_PUBLIC_SANITY_API_VERSION="2023-05-03"
    SANITY_STUDIO_YOUTUBE_API_KEY="your-youtube-api-key" (if using YouTube integration)
-   
+
    # Optional: Enable single author mode (if you're the only author)
    SANITY_STUDIO_SINGLE_AUTHOR_MODE="true"
    ```
@@ -52,8 +53,8 @@ The Sanity Studio will be available at [http://localhost:3333](http://localhost:
 
 Place new components in the `src/components` directory with their own folder:
 
-```
-src/components/ComponentName/index.tsx
+```tsx
+src / components / ComponentName / index.tsx;
 ```
 
 ### Styling
@@ -79,7 +80,7 @@ The Instagram post will be embedded in your content and will be responsive on al
 
 If you're the only author of your blog, you can enable single author mode by setting the following environment variables:
 
-```
+```env
 SANITY_STUDIO_SINGLE_AUTHOR_MODE="true"
 ```
 

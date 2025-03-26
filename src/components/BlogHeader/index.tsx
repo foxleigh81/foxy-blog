@@ -16,7 +16,7 @@ interface BlogHeaderProps {
   mainImage?: {
     asset: {
       _ref: string;
-      _type: "reference";
+      _type: 'reference';
     };
     alt?: string;
     attribution?: string;
@@ -31,14 +31,12 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
   author,
   categories,
   mainImage,
-  className = "",
+  className = '',
 }) => {
   return (
     <header className={className}>
       <h1 className="text-4xl font-bold mb-4">{title}</h1>
-      {subtitle && (
-        <p className="text-xl text-gray-600 mb-4">{subtitle}</p>
-      )}
+      {subtitle && <p className="text-xl text-gray-600 mb-4">{subtitle}</p>}
 
       <div className="flex flex-wrap items-center text-sm text-gray-600 mb-6">
         {publishedAt && (
@@ -78,22 +76,21 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
         )}
       </div>
 
-
       {mainImage?.asset && (
         <figure className="mb-8 relative w-full h-[450px] rounded-lg overflow-hidden">
-            <Image
-              src={urlFor(mainImage).width(1200).height(450).url()}
-              alt={mainImage.alt || title}
-              fill
-              priority
-              className="object-cover object-top"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
-            />
-            {mainImage.attribution && (
-              <div className="absolute bottom-1 right-1 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
-                &copy; Copyright {mainImage.attribution}
-              </div>
-            )}
+          <Image
+            src={urlFor(mainImage).width(1510).height(450).url()}
+            alt={mainImage.alt || title}
+            fill
+            priority
+            className="object-cover object-top"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1510px"
+          />
+          {mainImage.attribution && (
+            <div className="absolute bottom-1 right-1 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
+              &copy; Copyright {mainImage.attribution}
+            </div>
+          )}
         </figure>
       )}
     </header>

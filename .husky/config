@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+# husky
+
+# Created by Husky v4.3.8 (https://github.com/typicode/husky#readme)
+#   At: 3/26/2024, 5:15:00 PM
+
+# This is a basic Husky pre-commit hook. To use it:
+#  1. Install dependencies with `yarn install`
+#  2. Enable Git hooks with `yarn husky install`
+#  3. Try to commit to see the action
+
+. "$(dirname "$0")/_/husky.sh"

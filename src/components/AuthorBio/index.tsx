@@ -31,9 +31,12 @@ const AuthorBio: React.FC<AuthorBioProps> = ({ author }) => {
               {author.name}
             </Link>
           </h3>
-          {author.bio && author.bio.length > 0 && author.bio[0].children && author.bio[0].children.length > 0 && (
-            <p className="text-gray-600 text-sm">{author.bio[0].children[0].text}</p>
-          )}
+          {author.bio &&
+            author.bio.length > 0 &&
+            author.bio[0].children &&
+            author.bio[0].children.length > 0 && (
+              <p className="text-gray-600 text-sm">{author.bio[0].children[0].text}</p>
+            )}
         </div>
       </div>
     </div>

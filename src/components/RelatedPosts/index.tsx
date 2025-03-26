@@ -13,7 +13,7 @@ type RelatedPost = {
   mainImage?: {
     asset: {
       _ref: string;
-      _type: "reference";
+      _type: 'reference';
     };
     alt?: string;
   };
@@ -32,7 +32,7 @@ interface RelatedPostsProps {
 
 const RelatedPosts: React.FC<RelatedPostsProps> = ({ posts, categories }) => {
   if (!posts || posts.length === 0) return null;
-  
+
   return (
     <div className="mt-8 lg:mt-0">
       <h2 className="text-2xl font-bold mb-6">Related Posts</h2>
@@ -40,13 +40,16 @@ const RelatedPosts: React.FC<RelatedPostsProps> = ({ posts, categories }) => {
         {posts.map((relatedPost) => {
           // Find the first category for this post
           const firstCategoryRef = relatedPost.categories?.[0]?._ref;
-          const firstCategory = categories.find(cat => cat._id === firstCategoryRef);
-          const postUrl = firstCategory 
+          const firstCategory = categories.find((cat) => cat._id === firstCategoryRef);
+          const postUrl = firstCategory
             ? `/${firstCategory.slug.current}/${relatedPost.slug.current}`
             : `/post/${relatedPost.slug.current}`;
-          
+
           return (
-            <div key={relatedPost._id} className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col">
+            <div
+              key={relatedPost._id}
+              className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col"
+            >
               <a href={postUrl} className="block group">
                 {relatedPost.mainImage?.asset && (
                   <div className="relative h-48 w-full">

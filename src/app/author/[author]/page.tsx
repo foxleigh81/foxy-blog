@@ -71,20 +71,24 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
       description: `Articles by ${authorData.name}`,
       type: 'profile',
       url: `/author/${authorSlug}`,
-      images: authorData.image ? [
-        {
-          url: urlFor(authorData.image).width(1200).height(630).url(),
-          width: 1200,
-          height: 630,
-          alt: authorData.name,
-        }
-      ] : undefined,
+      images: authorData.image
+        ? [
+            {
+              url: urlFor(authorData.image).width(1200).height(630).url(),
+              width: 1200,
+              height: 630,
+              alt: authorData.name,
+            },
+          ]
+        : undefined,
     },
     twitter: {
       card: 'summary_large_image',
       title: `${authorData.name} | ${siteMetadata.title}`,
       description: `Articles by ${authorData.name}`,
-      images: authorData.image ? [urlFor(authorData.image).width(1200).height(630).url()] : undefined,
+      images: authorData.image
+        ? [urlFor(authorData.image).width(1200).height(630).url()]
+        : undefined,
     },
   };
 }
@@ -107,7 +111,7 @@ export default async function AuthorPage({ params, searchParams }: AuthorPagePro
 
   // Fetch posts by this author
   const allPosts: Post[] = await sanityClient.fetch<Post[]>(postsByAuthorQuery, {
-    authorId: authorData._id
+    authorId: authorData._id,
   });
 
   // Paginate the posts
@@ -157,7 +161,9 @@ export default async function AuthorPage({ params, searchParams }: AuthorPagePro
               totalPages={totalPages}
               basePath={`/author/${authorSlug}`}
               searchParams={Object.fromEntries(
-                Object.entries(await Promise.resolve(searchParams)).filter(([key]) => key !== 'page')
+                Object.entries(await Promise.resolve(searchParams)).filter(
+                  ([key]) => key !== 'page'
+                )
               )}
             />
           </>

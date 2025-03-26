@@ -1,9 +1,13 @@
-"use client";
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
 import { BlockContent as BlockContentType } from '@/sanity/schemaTypes/blockContentType';
-import { PortableText, PortableTextComponentProps, PortableTextReactComponents } from '@portabletext/react';
+import {
+  PortableText,
+  PortableTextComponentProps,
+  PortableTextReactComponents,
+} from '@portabletext/react';
 import YouTube from 'react-youtube';
 import InstagramEmbed from '../InstagramEmbed';
 import ImageContainer from '../ImageContainer';
@@ -16,11 +20,13 @@ interface BlockContentProps {
 const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
   const components: Partial<PortableTextReactComponents> = {
     types: {
-      image: ({ value }: PortableTextComponentProps<{
-        _type: "image";
+      image: ({
+        value,
+      }: PortableTextComponentProps<{
+        _type: 'image';
         asset?: {
           _id: string;
-          _type: "sanity.imageAsset";
+          _type: 'sanity.imageAsset';
           metadata: {
             dimensions: {
               width: number;
@@ -48,7 +54,13 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
           />
         );
       },
-      youtube: ({ value }: PortableTextComponentProps<{ video?: { id: string }; autoplay?: boolean; controls?: boolean }>) => {
+      youtube: ({
+        value,
+      }: PortableTextComponentProps<{
+        video?: { id: string };
+        autoplay?: boolean;
+        controls?: boolean;
+      }>) => {
         if (!value?.video?.id) {
           return null;
         }
@@ -81,7 +93,11 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
         if (!value?.url) {
           return null;
         }
-        return <div className="clear-both"><InstagramEmbed url={value.url} /></div>;
+        return (
+          <div className="clear-both">
+            <InstagramEmbed url={value.url} />
+          </div>
+        );
       },
       hr: () => {
         return <hr className="my-8 border-t-2 border-gray-200 clear-both" />;
@@ -94,7 +110,9 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
       h4: ({ children }) => <h4 className="text-lg font-bold mt-4 mb-2 clear-both">{children}</h4>,
       normal: ({ children }) => <p className="mb-4 leading-relaxed">{children}</p>,
       blockquote: ({ children }) => (
-        <blockquote className="border-l-4 border-primary pl-4 italic my-6 clear-both">{children}</blockquote>
+        <blockquote className="border-l-4 border-primary pl-4 italic my-6 clear-both">
+          {children}
+        </blockquote>
       ),
       hr: () => <hr className="my-8 border-t-2 border-gray-200 clear-both" />,
     },
@@ -105,7 +123,7 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
           <Link
             href={value.href}
             rel={rel}
-            className="text-primary underline hover:text-primary/80 transition-colors"
+            className="no-underline text-purple-700 hover:text-purple-800 hover:underline hover:underline-offset-4 transition-colors"
           >
             {children}
           </Link>

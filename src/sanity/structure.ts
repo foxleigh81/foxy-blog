@@ -1,5 +1,5 @@
-import { StructureResolver } from 'sanity/structure'
-import { DocumentIcon, StarIcon, CogIcon } from '@sanity/icons'
+import { StructureResolver } from 'sanity/structure';
+import { DocumentIcon, StarIcon, CogIcon } from '@sanity/icons';
 
 export const structure: StructureResolver = (S) => {
   return S.list()
@@ -8,11 +8,7 @@ export const structure: StructureResolver = (S) => {
       S.listItem()
         .title('Featured Post')
         .icon(StarIcon)
-        .child(
-          S.editor()
-            .schemaType('featuredPost')
-            .documentId('featured-post')
-        ),
+        .child(S.editor().schemaType('featuredPost').documentId('featured-post')),
       S.divider(),
       S.listItem()
         .title('Posts')
@@ -40,5 +36,5 @@ export const structure: StructureResolver = (S) => {
                 .child(S.documentTypeList('tag').title('Tags')),
             ])
         ),
-    ])
-}
+    ]);
+};

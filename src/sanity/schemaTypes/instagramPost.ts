@@ -1,4 +1,4 @@
-import {defineType, defineField} from 'sanity'
+import { defineType, defineField } from 'sanity';
 
 export const instagramPost = defineType({
   name: 'instagram',
@@ -10,20 +10,21 @@ export const instagramPost = defineType({
       type: 'url',
       title: 'Instagram URL',
       description: 'The URL of the Instagram post (e.g., https://www.instagram.com/p/CpzRZPmNxXO/)',
-      validation: Rule => Rule.required().uri({
-        scheme: ['http', 'https']
-      })
-    })
+      validation: (Rule) =>
+        Rule.required().uri({
+          scheme: ['http', 'https'],
+        }),
+    }),
   ],
   preview: {
     select: {
-      url: 'url'
+      url: 'url',
     },
-    prepare({url}) {
+    prepare({ url }) {
       return {
         title: 'Instagram Post',
-        subtitle: url
-      }
-    }
-  }
-})
+        subtitle: url,
+      };
+    },
+  },
+});

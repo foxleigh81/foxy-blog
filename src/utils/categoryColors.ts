@@ -6,7 +6,7 @@ export const getCategoryColor = (categorySlug: string): string => {
     'digital-industry': 'bg-green-700',
     'meandering-insanity': 'bg-purple-600',
     'mind-body-and-soul': 'bg-pink-600',
-    'scribblings': 'bg-rose-600',
+    scribblings: 'bg-rose-600',
   };
 
   // Return the mapped color or a default color
