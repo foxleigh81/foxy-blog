@@ -12,6 +12,15 @@ interface SocialSharingProps {
   className?: string;
 }
 
+// Type for our share button configuration
+interface ShareButtonConfig {
+  handler: () => void;
+  icon: React.ReactNode;
+  label: string;
+  className: string;
+  ariaLabel: string;
+}
+
 const SocialSharing: React.FC<SocialSharingProps> = ({
   url,
   title,
@@ -69,53 +78,73 @@ const SocialSharing: React.FC<SocialSharingProps> = ({
       });
   };
 
+  // Share button configurations
+  const shareButtons: ShareButtonConfig[] = [
+    {
+      handler: shareToLinkedIn,
+      icon: <FaLinkedin size={16} />,
+      label: 'LinkedIn',
+      className: 'bg-[#0077B5]',
+      ariaLabel: 'Share on LinkedIn',
+    },
+    {
+      handler: shareToFacebook,
+      icon: <FaFacebook size={16} />,
+      label: 'Facebook',
+      className: 'bg-[#1877F2]',
+      ariaLabel: 'Share on Facebook',
+    },
+    {
+      handler: shareToTwitter,
+      icon: <FaTwitter size={16} />,
+      label: 'Twitter',
+      className: 'bg-[#1DA1F2]',
+      ariaLabel: 'Share on Twitter',
+    },
+    {
+      handler: shareToBluesky,
+      icon: <SiBluesky size={16} />,
+      label: 'Bluesky',
+      className: 'bg-[#0085ff]',
+      ariaLabel: 'Share on Bluesky',
+    },
+  ];
+
   return (
-    <div className={`pt-6 ${className}`}>
+    <div className={`py-6 ${className}`}>
       <h3 className="text-lg font-semibold mb-4">Share this article</h3>
       <div className="flex flex-wrap gap-3">
-        <button
-          onClick={shareToLinkedIn}
-          className="flex items-center gap-2 text-xs text-white bg-[#0077B5] hover:bg-[#005582] transition-colors rounded-md px-3 py-2"
-          aria-label="Share on LinkedIn"
-        >
-          <FaLinkedin size={16} />
-          <span>LinkedIn</span>
-        </button>
-
-        <button
-          onClick={shareToFacebook}
-          className="flex items-center gap-2 text-xs text-white bg-[#1877F2] hover:bg-[#0e5aa7] transition-colors rounded-md px-3 py-2"
-          aria-label="Share on Facebook"
-        >
-          <FaFacebook size={16} />
-          <span>Facebook</span>
-        </button>
-
-        <button
-          onClick={shareToTwitter}
-          className="flex items-center gap-2 text-xs text-white bg-[#1DA1F2] hover:bg-[#0c85d0] transition-colors rounded-md px-3 py-2"
-          aria-label="Share on Twitter"
-        >
-          <FaTwitter size={16} />
-          <span>Twitter</span>
-        </button>
-
-        <button
-          onClick={shareToBluesky}
-          className="flex items-center gap-2 text-xs text-white bg-[#0085ff] hover:bg-[#0066cc] transition-colors rounded-md px-3 py-2"
-          aria-label="Share on Bluesky"
-        >
-          <SiBluesky size={16} />
-          <span>Bluesky</span>
-        </button>
+        {shareButtons.map((button, index) => (
+          <button
+            key={index}
+            onClick={button.handler}
+            className="flex items-center overflow-hidden rounded-md shadow-sm text-xs font-bold group"
+            aria-label={button.ariaLabel}
+          >
+            <span
+              className={`flex items-center justify-center ${button.className} p-2 text-white w-9 transition-all group-hover:w-10`}
+            >
+              {button.icon}
+            </span>
+            <span className="bg-gray-800 text-white px-3 py-2 transition-colors group-hover:bg-gray-700">
+              {button.label}
+            </span>
+          </button>
+        ))}
 
         <button
           onClick={copyToClipboard}
-          className={`flex items-center gap-2 text-xs text-white rounded-md px-3 py-2 transition-colors ${copied ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-800 hover:bg-gray-900'}`}
+          className="flex items-center overflow-hidden rounded-md shadow-sm text-xs font-bold group"
           aria-label="Copy link"
         >
-          <FaLink size={16} />
-          <span>Copy Link</span>
+          <span
+            className={`flex items-center justify-center p-2 text-white w-9 transition-all group-hover:w-10 ${copied ? 'bg-green-600' : 'bg-gray-700'}`}
+          >
+            <FaLink size={16} />
+          </span>
+          <span className="bg-gray-800 text-white px-3 py-2 transition-colors group-hover:bg-gray-700">
+            Copy Link
+          </span>
         </button>
       </div>
 
