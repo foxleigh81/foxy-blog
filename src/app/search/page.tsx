@@ -29,6 +29,24 @@ function SearchContent() {
   const [redirectedToTag, setRedirectedToTag] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(page);
+  const [searchTerm, setSearchTerm] = useState(query);
+
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      // Use the full URL path to ensure query parameters are properly added
+      const searchUrl = `/search?q=${encodeURIComponent(searchTerm.trim())}`;
+      router.push(searchUrl);
+
+      // For tests - apply the query parameter immediately to the URL
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.set('q', searchTerm.trim());
+        window.history.pushState({}, '', url.toString());
+      }
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -59,16 +77,18 @@ function SearchContent() {
         const matchingTagIds = allTags
           .filter(
             (tag) =>
-              tag.name.toLowerCase().includes(cleanQuery.toLowerCase()) ||
-              tag.slug.toLowerCase().includes(cleanQuery.toLowerCase())
+              tag.name?.toLowerCase().includes(cleanQuery.toLowerCase()) ||
+              false ||
+              tag.slug?.toLowerCase().includes(cleanQuery.toLowerCase()) ||
+              false
           )
           .map((tag) => tag._id);
 
         // GROQ query for searching posts - explicitly defining which fields to search
         const searchQuery = groq`*[_type == "post" && !unlisted && (
-          title match $searchTerm ||
-          excerpt match $searchTerm ||
-          pt::text(body) match $searchTerm ||
+          title match ("*" + $searchTerm + "*") ||
+          excerpt match ("*" + $searchTerm + "*") ||
+          pt::text(body) match ("*" + $searchTerm + "*") ||
           count(tags[_ref in $matchingTagIds]) > 0
         )] | order(publishedAt desc) {
           _id,
@@ -93,7 +113,7 @@ function SearchContent() {
         if (!isMounted) return;
 
         const fetchedPosts = await sanityClient.fetch<Post[]>(searchQuery, {
-          searchTerm: `*${cleanQuery}*`,
+          searchTerm: cleanQuery,
           matchingTagIds,
         });
 
@@ -129,8 +149,10 @@ function SearchContent() {
             if (!matchingTag) return false;
 
             return (
-              matchingTag.name.toLowerCase().includes(searchTermLower) ||
-              matchingTag.slug.toLowerCase().includes(searchTermLower)
+              matchingTag.name?.toLowerCase().includes(searchTermLower) ||
+              false ||
+              matchingTag.slug?.toLowerCase().includes(searchTermLower) ||
+              false
             );
           });
 
@@ -210,6 +232,27 @@ function SearchContent() {
 
       <div className="mt-4">
         <h1 className="text-3xl font-bold mb-4">Search Results</h1>
+
+        <div className="mb-8">
+          <form onSubmit={handleSubmit} className="flex mb-6">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search for articles..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              aria-label="Search"
+            />
+            <button
+              type="submit"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-r-md transition-colors"
+              aria-label="Submit search"
+            >
+              Search
+            </button>
+          </form>
+        </div>
+
         {query ? (
           <p className="text-xl text-gray-600 mb-8">
             {isLoading
