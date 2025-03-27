@@ -16,6 +16,7 @@ import AuthorBio from '@/components/AuthorBio';
 import RelatedPosts from '@/components/RelatedPosts';
 import LegacyBanner from '@/components/LegacyBanner';
 import OpinionBanner from '@/components/OpinionBanner';
+import SocialSharing from '@/components/SocialSharing';
 
 // Extended Post type that includes expanded references
 type Post = Omit<BasePost, 'author' | 'relatedPosts'> & {
@@ -125,6 +126,31 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   // Get the canonical URL
   const canonicalUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/${resolvedParams.category}/${resolvedParams.slug}`;
 
+  // Prepare the image URL
+  const imageUrl = post.mainImage
+    ? urlFor(post.mainImage).width(1200).height(630).url()
+    : `${process.env.NEXT_PUBLIC_SITE_URL}/foxy-tail-logo.png`;
+
+  // Calculate approximate reading time
+  const calculateWordCount = (
+    blocks: Array<{ _type: string; children?: Array<{ text?: string }> }>
+  ): number => {
+    let wordCount = 0;
+    blocks.forEach((block) => {
+      if (block._type === 'block' && block.children) {
+        block.children.forEach((child) => {
+          if (child.text) {
+            wordCount += child.text.split(/\s+/).filter((word: string) => word.length > 0).length;
+          }
+        });
+      }
+    });
+    return wordCount;
+  };
+
+  const wordCount = post.body ? calculateWordCount(post.body) : 0;
+  const readingTime = Math.ceil(wordCount / 200); // Avg reading speed of 200 words per minute
+
   return {
     title: post.title,
     description: post.excerpt,
@@ -138,7 +164,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       images: post.mainImage
         ? [
             {
-              url: urlFor(post.mainImage).width(1200).height(630).url(),
+              url: imageUrl,
               width: 1200,
               height: 630,
               alt: post.mainImage.alt || post.title,
@@ -155,8 +181,9 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       card: 'summary_large_image',
       title: post.title,
       description: post.excerpt,
-      images: post.mainImage ? [urlFor(post.mainImage).width(1200).height(630).url()] : undefined,
+      images: [imageUrl],
       creator: '@foxleigh81',
+      site: '@foxleigh81',
     },
     alternates: {
       canonical: canonicalUrl,
@@ -165,6 +192,12 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
     other: {
       ...(post.publishedAt ? { 'article:published_time': post.publishedAt } : {}),
       'article:section': resolvedParams.category,
+      'og:image:width': '1200',
+      'og:image:height': '630',
+      'twitter:label1': 'Written by',
+      'twitter:data1': post.author?.name || 'Alexander Foxleigh',
+      'twitter:label2': 'Reading time',
+      'twitter:data2': `${readingTime} min read`,
     },
   };
 }
@@ -458,6 +491,7 @@ export default async function PostPage({ params }: PostPageProps) {
           author={post.author}
           categories={postCategories}
           mainImage={post.mainImage}
+          readingTime={readingTime}
         />
 
         {isLegacy && <LegacyBanner year={post.publishedAt?.split('-')[0] || ''} />}
@@ -466,10 +500,17 @@ export default async function PostPage({ params }: PostPageProps) {
             {isOpinion && <OpinionBanner />}
             <BlogArticle content={post.body} />
 
+            <SocialSharing
+              url={canonicalUrl}
+              title={post.title}
+              excerpt={post.excerpt}
+              className="border-t border-b border-gray-200"
+            />
+
             {post.author && <AuthorBio author={post.author} />}
           </div>
 
-          <div className="lg:col-span-4">
+          <aside className="lg:col-span-4">
             {relatedPosts.length > 0 && (
               <RelatedPosts posts={relatedPosts} categories={categories} />
             )}
@@ -495,7 +536,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 </a>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
       </article>
     </>

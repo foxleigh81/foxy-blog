@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FaLinkedin, FaGithub, FaInstagram, FaFacebook } from 'react-icons/fa';
+import { FaLinkedin, FaGithub, FaInstagram, FaFacebook, FaGlobe } from 'react-icons/fa';
 import { SiBluesky } from 'react-icons/si';
 
 interface SocialLinksProps {
@@ -16,6 +16,11 @@ const SocialLinks: React.FC<SocialLinksProps> = ({
   iconSize = 22,
 }) => {
   const socialLinks = [
+    {
+      name: 'My Website',
+      url: 'https://www.alexfoxleigh.com',
+      icon: <FaGlobe size={iconSize} />,
+    },
     {
       name: 'LinkedIn',
       url: 'https://www.linkedin.com/in/alexfoxleigh/',

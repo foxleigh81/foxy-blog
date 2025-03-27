@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Righteous, Lato } from 'next/font/google';
 import './globals.css';
 import { Analytics } from '@vercel/analytics/react';
+import { Toaster } from 'react-hot-toast';
 
 import Masthead from '@/components/Masthead';
 import Footer from '@/components/Footer';
@@ -67,6 +68,7 @@ export default async function RootLayout({
         <Footer />
         <Analytics />
         <CookieConsent />
+        <Toaster position="bottom-center" />
       </body>
     </html>
   );
