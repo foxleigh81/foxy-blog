@@ -36,6 +36,10 @@ export function middleware(request: NextRequest) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
+  if (request.nextUrl.pathname === '/_vercel/insights/script.js') {
+    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+
   return response;
 }
 
