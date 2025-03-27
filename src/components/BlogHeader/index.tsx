@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { FaClock } from 'react-icons/fa';
 import { Author } from '@/sanity/schemaTypes/authorType';
 import { Category } from '@/sanity/schemaTypes/categoryType';
 import { urlFor } from '@/sanity/lib/image';
@@ -13,6 +14,7 @@ interface BlogHeaderProps {
   publishedAt?: string;
   author?: Author;
   categories?: Category[];
+  readingTime?: number;
   mainImage?: {
     asset: {
       _id: string;
@@ -37,6 +39,7 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
   publishedAt,
   author,
   categories,
+  readingTime,
   mainImage,
   className = '',
 }) => {
@@ -50,6 +53,13 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
           <time dateTime={publishedAt} className="mr-6">
             {formatDate(publishedAt)}
           </time>
+        )}
+
+        {readingTime && (
+          <div className="flex items-center mr-6">
+            <FaClock className="mr-1" />
+            <span>{readingTime} min read</span>
+          </div>
         )}
 
         {author && (

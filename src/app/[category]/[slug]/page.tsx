@@ -16,6 +16,8 @@ import AuthorBio from '@/components/AuthorBio';
 import RelatedPosts from '@/components/RelatedPosts';
 import LegacyBanner from '@/components/LegacyBanner';
 import OpinionBanner from '@/components/OpinionBanner';
+import SocialSharing from '@/components/SocialSharing';
+import { FaCommentAlt } from 'react-icons/fa';
 
 // Extended Post type that includes expanded references
 type Post = Omit<BasePost, 'author' | 'relatedPosts'> & {
@@ -125,6 +127,31 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   // Get the canonical URL
   const canonicalUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/${resolvedParams.category}/${resolvedParams.slug}`;
 
+  // Prepare the image URL
+  const imageUrl = post.mainImage
+    ? urlFor(post.mainImage).width(1200).height(630).url()
+    : `${process.env.NEXT_PUBLIC_SITE_URL}/foxy-tail-logo.png`;
+
+  // Calculate approximate reading time
+  const calculateWordCount = (
+    blocks: Array<{ _type: string; children?: Array<{ text?: string }> }>
+  ): number => {
+    let wordCount = 0;
+    blocks.forEach((block) => {
+      if (block._type === 'block' && block.children) {
+        block.children.forEach((child) => {
+          if (child.text) {
+            wordCount += child.text.split(/\s+/).filter((word: string) => word.length > 0).length;
+          }
+        });
+      }
+    });
+    return wordCount;
+  };
+
+  const wordCount = post.body ? calculateWordCount(post.body) : 0;
+  const readingTime = Math.ceil(wordCount / 200); // Avg reading speed of 200 words per minute
+
   return {
     title: post.title,
     description: post.excerpt,
@@ -133,26 +160,45 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       description: post.excerpt,
       type: 'article',
       publishedTime: post.publishedAt,
+      modifiedTime: post.publishedAt, // Use published time as modified time if not available
       url: canonicalUrl,
       images: post.mainImage
         ? [
             {
-              url: urlFor(post.mainImage).width(1200).height(630).url(),
+              url: imageUrl,
               width: 1200,
               height: 630,
               alt: post.mainImage.alt || post.title,
             },
           ]
         : undefined,
+      authors: post.author
+        ? [`${process.env.NEXT_PUBLIC_SITE_URL}/author/${post.author.slug?.current || ''}`]
+        : undefined,
+      tags: post.tags?.map((tag) => tag._ref) || [],
+      siteName: "Foxy's Tale",
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
       description: post.excerpt,
-      images: post.mainImage ? [urlFor(post.mainImage).width(1200).height(630).url()] : undefined,
+      images: [imageUrl],
+      creator: '@foxleigh81',
+      site: '@foxleigh81',
     },
     alternates: {
       canonical: canonicalUrl,
+    },
+    robots: post.noindex ? 'noindex, follow' : 'index, follow',
+    other: {
+      ...(post.publishedAt ? { 'article:published_time': post.publishedAt } : {}),
+      'article:section': resolvedParams.category,
+      'og:image:width': '1200',
+      'og:image:height': '630',
+      'twitter:label1': 'Written by',
+      'twitter:data1': post.author?.name || 'Alexander Foxleigh',
+      'twitter:label2': 'Reading time',
+      'twitter:data2': `${readingTime} min read`,
     },
   };
 }
@@ -172,6 +218,10 @@ export default async function PostPage({ params }: PostPageProps) {
     notFound();
   }
 
+  // Generate JSON-LD structured data
+  const canonicalUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/${resolvedParams.category}/${resolvedParams.slug}`;
+  const formattedDate = post.publishedAt ? new Date(post.publishedAt).toISOString() : '';
+
   // Find the post categories
   const postCategories = post.categories
     ? post.categories
@@ -181,6 +231,99 @@ export default async function PostPage({ params }: PostPageProps) {
 
   // Get the first category (for breadcrumb)
   const firstCategory = postCategories.length > 0 ? postCategories[0] : null;
+
+  // Calculate word count and reading time
+  const calculateWordCount = (
+    blocks: Array<{ _type: string; children?: Array<{ text?: string }> }>
+  ): number => {
+    let wordCount = 0;
+    blocks.forEach((block) => {
+      if (block._type === 'block' && block.children) {
+        block.children.forEach((child) => {
+          if (child.text) {
+            wordCount += child.text.split(/\s+/).filter((word: string) => word.length > 0).length;
+          }
+        });
+      }
+    });
+    return wordCount;
+  };
+
+  const wordCount = post.body ? calculateWordCount(post.body) : 0;
+  const readingTime = Math.ceil(wordCount / 200); // Avg reading speed of 200 words per minute
+
+  // Generate JSON-LD for blog post
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt,
+    image: post.mainImage ? urlFor(post.mainImage).width(1200).height(630).url() : undefined,
+    datePublished: formattedDate,
+    dateModified: formattedDate,
+    wordCount,
+    timeRequired: `PT${readingTime}M`,
+    articleSection: postCategories.length > 0 ? postCategories[0].title : undefined,
+    keywords: post.tags ? post.tags.map((tag: { _ref: string }) => tag._ref).join(',') : undefined,
+    inLanguage: 'en-GB',
+    author: post.author
+      ? {
+          '@type': 'Person',
+          name: post.author.name,
+          url: post.author.slug?.current
+            ? `${process.env.NEXT_PUBLIC_SITE_URL}/author/${post.author.slug.current}`
+            : undefined,
+          image: post.author.image
+            ? urlFor(post.author.image).width(96).height(96).url()
+            : undefined,
+          description: post.author.bio,
+          sameAs: [
+            'https://www.alexfoxleigh.com',
+            'https://www.linkedin.com/in/alexfoxleigh/',
+            'https://github.com/foxleigh81',
+            'https://www.instagram.com/foxleigh81',
+            'https://bsky.app/profile/foxleigh81.bsky.social',
+          ],
+        }
+      : undefined,
+    publisher: {
+      '@type': 'Organization',
+      name: "Foxy's Tale",
+      logo: {
+        '@type': 'ImageObject',
+        url: `${process.env.NEXT_PUBLIC_SITE_URL}/foxy-tail-logo.png`,
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+  };
+
+  // Generate breadcrumb schema
+  const breadcrumbsJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: `${process.env.NEXT_PUBLIC_SITE_URL}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: firstCategory?.title || 'Category',
+        item: `${process.env.NEXT_PUBLIC_SITE_URL}/${firstCategory?.slug.current || ''}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: post.title,
+      },
+    ],
+  };
 
   // Fetch additional posts for related posts section if needed
   let relatedPosts = post.relatedPosts || [];
@@ -332,6 +475,14 @@ export default async function PostPage({ params }: PostPageProps) {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }}
+      />
       <Breadcrumbs category={firstCategory} postTitle={post.title} />
       <article className="container mx-auto mt-4">
         <BlogHeader
@@ -341,6 +492,7 @@ export default async function PostPage({ params }: PostPageProps) {
           author={post.author}
           categories={postCategories}
           mainImage={post.mainImage}
+          readingTime={readingTime}
         />
 
         {isLegacy && <LegacyBanner year={post.publishedAt?.split('-')[0] || ''} />}
@@ -348,11 +500,22 @@ export default async function PostPage({ params }: PostPageProps) {
           <div className="lg:col-span-8 mt-4">
             {isOpinion && <OpinionBanner />}
             <BlogArticle content={post.body} />
+            <div className="border-t border-gray-200 py-4 flex justify-center text-sm">
+              <span className="flex items-center gap-2">
+                <FaCommentAlt className="text-gray-600" /> Comments coming soon!
+              </span>
+            </div>
+            <SocialSharing
+              url={canonicalUrl}
+              title={post.title}
+              excerpt={post.excerpt}
+              className="border-t border-gray-200"
+            />
 
             {post.author && <AuthorBio author={post.author} />}
           </div>
 
-          <div className="lg:col-span-4">
+          <aside className="lg:col-span-4 lg:sticky lg:top-8 self-start">
             {relatedPosts.length > 0 && (
               <RelatedPosts posts={relatedPosts} categories={categories} />
             )}
@@ -378,7 +541,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 </a>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
       </article>
     </>
