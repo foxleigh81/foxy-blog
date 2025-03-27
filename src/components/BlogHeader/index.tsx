@@ -51,7 +51,7 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
             {author.slug?.current ? (
               <Link
                 href={`/author/${author.slug.current}`}
-                className="font-medium text-primary ml-1 hover:underline"
+                className="font-medium text-primary ml-1 underline underline-offset-4 hover:no-underline"
               >
                 {author.name}
               </Link>
@@ -77,9 +77,9 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
       </div>
 
       {mainImage?.asset && (
-        <figure className="mb-8 relative w-full h-[450px] rounded-lg overflow-hidden">
+        <figure className="mb-8 relative aspect-square sm:aspect-[1510/450] w-full rounded-lg overflow-hidden">
           <Image
-            src={urlFor(mainImage).width(1510).height(450).fit('crop').crop('entropy').url()}
+            src={urlFor(mainImage).width(1510).height(450).quality(80).url()}
             alt={mainImage.alt || title}
             fill
             priority

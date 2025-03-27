@@ -27,7 +27,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl, isFeatured
 
   // Generate image URL with proper dimensions
   const imageUrl = post.mainImage?.asset
-    ? urlFor(post.mainImage).width(imageWidth).height(imageHeight).fit('crop').crop('entropy').url()
+    ? urlFor(post.mainImage).width(imageWidth).height(imageHeight).url()
     : '';
 
   return (
@@ -49,7 +49,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl, isFeatured
                 }
                 quality={isFeatured ? 90 : 75}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
             </>
           ) : (
             <div className="h-full bg-gray-800 flex items-center justify-center">
@@ -63,7 +63,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl, isFeatured
             </h2>
 
             {post.publishedAt && (
-              <div className="text-white/80 text-xs font-medium mt-2">
+              <div className="text-white/90 text-xs font-medium mt-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                 {formatDate(post.publishedAt)}
               </div>
             )}
