@@ -112,7 +112,7 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
       h2: ({ children }) => <h2 className="text-2xl font-bold mt-4 mb-4 clear-both">{children}</h2>,
       h3: ({ children }) => <h3 className="text-xl font-bold mt-4 mb-3 clear-both">{children}</h3>,
       h4: ({ children }) => <h4 className="text-lg font-bold mt-4 mb-2 clear-both">{children}</h4>,
-      normal: ({ children }) => <p className="mb-4 leading-relaxed">{children}</p>,
+      normal: ({ children }) => <p className="mb-4 mt-0 leading-relaxed">{children}</p>,
       blockquote: ({ children }) => (
         <blockquote className="border-l-4 border-primary pl-4 italic my-6 clear-both">
           {children}
