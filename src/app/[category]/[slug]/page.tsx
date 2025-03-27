@@ -515,7 +515,7 @@ export default async function PostPage({ params }: PostPageProps) {
             {post.author && <AuthorBio author={post.author} />}
           </div>
 
-          <aside className="lg:col-span-4">
+          <aside className="lg:col-span-4 lg:sticky lg:top-8 self-start">
             {relatedPosts.length > 0 && (
               <RelatedPosts posts={relatedPosts} categories={categories} />
             )}
