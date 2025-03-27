@@ -32,25 +32,44 @@ const Tags: React.FC<TagsProps> = ({ tagData }) => {
           // Get the tag colors
           const colors: TagColors = getTagColorsSync(tag.color?.hex || '#6b7280');
 
+          // Ensure text color has good contrast with background
+          const hashColor = determineHashColor(colors.background);
+
           return (
             <Link
               key={tag.name}
               href={`/tag/${tag.name}`}
-              style={{
-                backgroundColor: colors.background,
-                color: colors.text,
-                borderColor: colors.border,
-                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
-              }}
-              className="font-bold px-3 py-1 rounded-full text-sm border hover:opacity-80 transition-opacity"
+              className="flex items-center overflow-hidden rounded-full text-xs font-bold shadow-sm group"
             >
-              #{tag.name}
+              <span
+                style={{ backgroundColor: colors.background }}
+                className="flex items-center justify-center w-7 h-7"
+              >
+                <span style={{ color: hashColor }}>#</span>
+              </span>
+              <span className="px-3 py-1.5 bg-gray-800 text-white transition-colors group-hover:bg-gray-700">
+                {tag.name}
+              </span>
             </Link>
           );
         })}
       </div>
     </div>
   );
+};
+
+// Helper function to determine a contrasting text color
+const determineHashColor = (backgroundColor: string): string => {
+  // Extract the RGB components
+  const r = parseInt(backgroundColor.slice(1, 3), 16);
+  const g = parseInt(backgroundColor.slice(3, 5), 16);
+  const b = parseInt(backgroundColor.slice(5, 7), 16);
+
+  // Calculate perceived brightness (YIQ equation)
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+
+  // Return black for bright backgrounds, white for dark ones
+  return yiq >= 150 ? '#000000' : '#ffffff';
 };
 
 export default Tags;
