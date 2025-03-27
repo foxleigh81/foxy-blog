@@ -149,6 +149,7 @@ export default async function AuthorPage({ params, searchParams }: AuthorPagePro
                 src={urlFor(authorData.image).width(160).height(160).url()}
                 alt={authorData.name}
                 fill
+                sizes="(max-width: 768px) 100vw, 160px"
                 className="object-cover rounded-full"
               />
             </div>
