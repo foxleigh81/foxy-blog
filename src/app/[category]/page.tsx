@@ -70,6 +70,8 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     };
   }
 
+  const categoryUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/${categorySlug}`;
+
   return {
     title: `${category.title} | ${metadata.title}`,
     description: category.description || `Articles in the ${category.title} category`,
@@ -77,7 +79,26 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
       title: `${category.title} | ${metadata.title}`,
       description: category.description || `Articles in the ${category.title} category`,
       type: 'website',
-      url: `/${categorySlug}`,
+      url: categoryUrl,
+      images: [
+        {
+          url: `${process.env.NEXT_PUBLIC_SITE_URL}/foxy-tail-logo.png`,
+          width: 512,
+          height: 512,
+          alt: "Foxy's Tale Logo",
+        },
+      ],
+      siteName: "Foxy's Tale",
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${category.title} | ${metadata.title}`,
+      description: category.description || `Articles in the ${category.title} category`,
+      creator: '@alexfoxleigh',
+      images: [`${process.env.NEXT_PUBLIC_SITE_URL}/foxy-tail-logo.png`],
+    },
+    alternates: {
+      canonical: categoryUrl,
     },
   };
 }
@@ -111,28 +132,52 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   // Fetch all categories for reference
   const categories: Category[] = await sanityClient.fetch(categoriesQuery);
 
+  // Generate JSON-LD for category collection page
+  const categoryJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${category.title} | Foxy's Tale`,
+    description: category.description || `Articles in the ${category.title} category`,
+    url: `${process.env.NEXT_PUBLIC_SITE_URL}/${categorySlug}`,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: "Foxy's Tale",
+      url: process.env.NEXT_PUBLIC_SITE_URL,
+    },
+    about: {
+      '@type': 'Thing',
+      name: category.title,
+    },
+  };
+
   return (
-    <main className="container mx-auto px-4">
-      <Breadcrumbs category={category} />
-
-      <BlogHeader
-        title={category.title}
-        subtitle={category.description || `Articles in the ${category.title} category`}
-        categories={[]}
-        className="mt-4"
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(categoryJsonLd) }}
       />
+      <main className="container mx-auto px-4">
+        <Breadcrumbs category={category} />
 
-      <PostGrid posts={posts} categories={categories} />
+        <BlogHeader
+          title={category.title}
+          subtitle={category.description || `Articles in the ${category.title} category`}
+          categories={[]}
+          className="mt-4"
+        />
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        basePath={`/${categorySlug}`}
-        searchParams={Object.fromEntries(
-          Object.entries(await Promise.resolve(searchParams)).filter(([key]) => key !== 'page')
-        )}
-      />
-    </main>
+        <PostGrid posts={posts} categories={categories} />
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          basePath={`/${categorySlug}`}
+          searchParams={Object.fromEntries(
+            Object.entries(await Promise.resolve(searchParams)).filter(([key]) => key !== 'page')
+          )}
+        />
+      </main>
+    </>
   );
 }
 

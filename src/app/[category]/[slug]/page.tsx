@@ -133,6 +133,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       description: post.excerpt,
       type: 'article',
       publishedTime: post.publishedAt,
+      modifiedTime: post.publishedAt, // Use published time as modified time if not available
       url: canonicalUrl,
       images: post.mainImage
         ? [
@@ -144,15 +145,26 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
             },
           ]
         : undefined,
+      authors: post.author
+        ? [`${process.env.NEXT_PUBLIC_SITE_URL}/author/${post.author.slug?.current || ''}`]
+        : undefined,
+      tags: post.tags?.map((tag) => tag._ref) || [],
+      siteName: "Foxy's Tale",
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
       description: post.excerpt,
       images: post.mainImage ? [urlFor(post.mainImage).width(1200).height(630).url()] : undefined,
+      creator: '@alexfoxleigh', // Replace with actual Twitter handle if available
     },
     alternates: {
       canonical: canonicalUrl,
+    },
+    robots: post.noindex ? 'noindex, follow' : 'index, follow',
+    other: {
+      ...(post.publishedAt ? { 'article:published_time': post.publishedAt } : {}),
+      'article:section': resolvedParams.category,
     },
   };
 }
@@ -171,6 +183,41 @@ export default async function PostPage({ params }: PostPageProps) {
   if (!post) {
     notFound();
   }
+
+  // Generate JSON-LD structured data
+  const canonicalUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/${resolvedParams.category}/${resolvedParams.slug}`;
+  const formattedDate = post.publishedAt ? new Date(post.publishedAt).toISOString() : '';
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt,
+    image: post.mainImage ? urlFor(post.mainImage).width(1200).height(630).url() : undefined,
+    datePublished: formattedDate,
+    dateModified: formattedDate,
+    author: post.author
+      ? {
+          '@type': 'Person',
+          name: post.author.name,
+          url: post.author.slug?.current
+            ? `${process.env.NEXT_PUBLIC_SITE_URL}/author/${post.author.slug.current}`
+            : undefined,
+        }
+      : undefined,
+    publisher: {
+      '@type': 'Organization',
+      name: "Foxy's Tale",
+      logo: {
+        '@type': 'ImageObject',
+        url: `${process.env.NEXT_PUBLIC_SITE_URL}/foxy-tail-logo.png`,
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+  };
 
   // Find the post categories
   const postCategories = post.categories
@@ -332,6 +379,10 @@ export default async function PostPage({ params }: PostPageProps) {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Breadcrumbs category={firstCategory} postTitle={post.title} />
       <article className="container mx-auto mt-4">
         <BlogHeader
