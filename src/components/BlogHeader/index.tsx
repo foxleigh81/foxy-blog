@@ -79,7 +79,7 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
       {mainImage?.asset && (
         <figure className="mb-8 relative w-full h-[450px] rounded-lg overflow-hidden">
           <Image
-            src={urlFor(mainImage).width(1510).height(450).url()}
+            src={urlFor(mainImage).width(1510).height(450).fit('crop').crop('entropy').url()}
             alt={mainImage.alt || title}
             fill
             priority
