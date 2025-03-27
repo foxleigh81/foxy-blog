@@ -1,7 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['cdn.sanity.io', 'storage.ko-fi.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.sanity.io',
+      },
+      {
+        protocol: 'https',
+        hostname: 'storage.ko-fi.com',
+      },
+    ],
   },
   experimental: {
     allowedDevOrigins: ['localhost', '127.0.0.1'],
