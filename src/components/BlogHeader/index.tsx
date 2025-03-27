@@ -84,7 +84,7 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
             fill
             priority
             className="object-cover object-top"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1510px"
+            sizes="100vw"
           />
           {mainImage.attribution && (
             <div className="absolute bottom-1 right-1 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
