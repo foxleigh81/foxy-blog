@@ -11,6 +11,9 @@ const GTMScript: React.FC<GTMScriptProps> = ({ gtmId }) => {
   const [hasConsent, setHasConsent] = useState(false);
 
   useEffect(() => {
+    // Check if in browser environment
+    if (typeof window === 'undefined') return;
+
     // Check initial consent state
     const consent = localStorage.getItem('cookie-consent');
     if (consent === 'accepted') {

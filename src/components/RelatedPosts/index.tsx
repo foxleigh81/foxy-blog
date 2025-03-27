@@ -25,7 +25,7 @@ const RelatedPosts: React.FC<RelatedPostsProps> = ({ posts, categories }) => {
             : `/post/${relatedPost.slug.current}`;
 
           return (
-            <div
+            <article
               key={relatedPost._id}
               className="bg-white rounded-lg shadow-md overflow-hidden h-full flex flex-col"
             >
@@ -57,7 +57,7 @@ const RelatedPosts: React.FC<RelatedPostsProps> = ({ posts, categories }) => {
                   )}
                 </div>
               </a>
-            </div>
+            </article>
           );
         })}
       </div>

@@ -21,7 +21,7 @@ const Navigation: React.FC<NavigationProps> = ({ className = '', categories = []
   ];
 
   return (
-    <div className={`${className}`}>
+    <nav className={`${className}`}>
       <ul className="flex flex-col nav:flex-row items-center nav:items-stretch list-none p-0 m-0">
         {navLinks.map((link) => (
           <li key={link.path} className="nav:ml-6 w-full nav:w-auto">
@@ -34,7 +34,7 @@ const Navigation: React.FC<NavigationProps> = ({ className = '', categories = []
           </li>
         ))}
       </ul>
-    </div>
+    </nav>
   );
 };
 
