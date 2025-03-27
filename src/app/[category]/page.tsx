@@ -94,7 +94,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
       card: 'summary_large_image',
       title: `${category.title} | ${metadata.title}`,
       description: category.description || `Articles in the ${category.title} category`,
-      creator: '@alexfoxleigh',
+      creator: '@foxleigh81',
       images: [`${process.env.NEXT_PUBLIC_SITE_URL}/foxy-tail-logo.png`],
     },
     alternates: {

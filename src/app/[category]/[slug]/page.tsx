@@ -156,7 +156,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       title: post.title,
       description: post.excerpt,
       images: post.mainImage ? [urlFor(post.mainImage).width(1200).height(630).url()] : undefined,
-      creator: '@alexfoxleigh', // Replace with actual Twitter handle if available
+      creator: '@foxleigh81',
     },
     alternates: {
       canonical: canonicalUrl,
