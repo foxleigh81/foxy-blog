@@ -1,7 +1,7 @@
 import { mockPosts, mockAuthors, mockCategories, mockTags } from '@/mocks';
 
 export const sanityClient = {
-  fetch: async (query: string, params?: Record<string, unknown>) => {
+  fetch: async (query: string) => {
     // Return mock data based on the query type
     if (query.includes('_type == "post"')) {
       if (query.includes('slug.current ==')) {
