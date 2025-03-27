@@ -11,7 +11,13 @@
     "sanity": "sanity start",
     "sanity-deploy": "sanity deploy",
     "format": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "NODE_ENV=test playwright test",
+    "test:ui": "NODE_ENV=test playwright test --ui",
+    "test:debug": "NODE_ENV=test playwright test --debug",
+    "test:headed": "NODE_ENV=test playwright test --headed",
+    "test:report": "playwright show-report",
+    "test:install": "playwright install"
   },
   "dependencies": {
     "@portabletext/react": "^3.2.1",
@@ -41,6 +47,8 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.51.1",
+    "@sanity-typed/client-mock": "^4.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
