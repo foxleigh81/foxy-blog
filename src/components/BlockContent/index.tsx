@@ -123,7 +123,7 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
           <Link
             href={value.href}
             rel={rel}
-            className="underline text-purple-700 hover:text-purple-800 hover:no-underline hover:underline-offset-4 transition-colors"
+            className="underline underline-offset-4 text-purple-700 hover:text-purple-800 hover:no-underline transition-colors"
           >
             {children}
           </Link>
