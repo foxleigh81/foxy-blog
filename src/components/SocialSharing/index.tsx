@@ -70,7 +70,7 @@ const SocialSharing: React.FC<SocialSharingProps> = ({
   };
 
   return (
-    <div className={`py-6 ${className}`}>
+    <div className={`pt-6 ${className}`}>
       <h3 className="text-lg font-semibold mb-4">Share this article</h3>
       <div className="flex flex-wrap gap-3">
         <button

@@ -12,7 +12,7 @@ const AuthorBio: React.FC<AuthorBioProps> = ({ author }) => {
   if (!author) return null;
 
   return (
-    <div className="mt-12 pt-6 border-t border-gray-200">
+    <div className="mt-6 pt-6 border-t border-gray-200">
       <div className="flex items-center">
         {author.image?.asset && (
           <div className="mr-4 relative w-20 h-20  aspect-square">
