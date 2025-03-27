@@ -188,6 +188,37 @@ export default async function PostPage({ params }: PostPageProps) {
   const canonicalUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/${resolvedParams.category}/${resolvedParams.slug}`;
   const formattedDate = post.publishedAt ? new Date(post.publishedAt).toISOString() : '';
 
+  // Find the post categories
+  const postCategories = post.categories
+    ? post.categories
+        .map((cat: { _ref: string }) => categories.find((c: Category) => c._id === cat._ref))
+        .filter((cat): cat is Category => Boolean(cat))
+    : [];
+
+  // Get the first category (for breadcrumb)
+  const firstCategory = postCategories.length > 0 ? postCategories[0] : null;
+
+  // Calculate word count and reading time
+  const calculateWordCount = (
+    blocks: Array<{ _type: string; children?: Array<{ text?: string }> }>
+  ): number => {
+    let wordCount = 0;
+    blocks.forEach((block) => {
+      if (block._type === 'block' && block.children) {
+        block.children.forEach((child) => {
+          if (child.text) {
+            wordCount += child.text.split(/\s+/).filter((word: string) => word.length > 0).length;
+          }
+        });
+      }
+    });
+    return wordCount;
+  };
+
+  const wordCount = post.body ? calculateWordCount(post.body) : 0;
+  const readingTime = Math.ceil(wordCount / 200); // Avg reading speed of 200 words per minute
+
+  // Generate JSON-LD for blog post
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -196,6 +227,11 @@ export default async function PostPage({ params }: PostPageProps) {
     image: post.mainImage ? urlFor(post.mainImage).width(1200).height(630).url() : undefined,
     datePublished: formattedDate,
     dateModified: formattedDate,
+    wordCount,
+    timeRequired: `PT${readingTime}M`,
+    articleSection: postCategories.length > 0 ? postCategories[0].title : undefined,
+    keywords: post.tags ? post.tags.map((tag: { _ref: string }) => tag._ref).join(',') : undefined,
+    inLanguage: 'en-GB',
     author: post.author
       ? {
           '@type': 'Person',
@@ -203,6 +239,17 @@ export default async function PostPage({ params }: PostPageProps) {
           url: post.author.slug?.current
             ? `${process.env.NEXT_PUBLIC_SITE_URL}/author/${post.author.slug.current}`
             : undefined,
+          image: post.author.image
+            ? urlFor(post.author.image).width(96).height(96).url()
+            : undefined,
+          description: post.author.bio,
+          sameAs: [
+            'https://www.alexfoxleigh.com',
+            'https://www.linkedin.com/in/alexfoxleigh/',
+            'https://github.com/foxleigh81',
+            'https://www.instagram.com/foxleigh81',
+            'https://bsky.app/profile/foxleigh81.bsky.social',
+          ],
         }
       : undefined,
     publisher: {
@@ -219,15 +266,30 @@ export default async function PostPage({ params }: PostPageProps) {
     },
   };
 
-  // Find the post categories
-  const postCategories = post.categories
-    ? post.categories
-        .map((cat: { _ref: string }) => categories.find((c: Category) => c._id === cat._ref))
-        .filter((cat): cat is Category => Boolean(cat))
-    : [];
-
-  // Get the first category (for breadcrumb)
-  const firstCategory = postCategories.length > 0 ? postCategories[0] : null;
+  // Generate breadcrumb schema
+  const breadcrumbsJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: `${process.env.NEXT_PUBLIC_SITE_URL}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: firstCategory?.title || 'Category',
+        item: `${process.env.NEXT_PUBLIC_SITE_URL}/${firstCategory?.slug.current || ''}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: post.title,
+      },
+    ],
+  };
 
   // Fetch additional posts for related posts section if needed
   let relatedPosts = post.relatedPosts || [];
@@ -382,6 +444,10 @@ export default async function PostPage({ params }: PostPageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }}
       />
       <Breadcrumbs category={firstCategory} postTitle={post.title} />
       <article className="container mx-auto mt-4">

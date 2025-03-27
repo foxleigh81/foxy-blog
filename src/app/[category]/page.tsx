@@ -139,6 +139,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     name: `${category.title} | Foxy's Tale`,
     description: category.description || `Articles in the ${category.title} category`,
     url: `${process.env.NEXT_PUBLIC_SITE_URL}/${categorySlug}`,
+    inLanguage: 'en-GB',
     isPartOf: {
       '@type': 'WebSite',
       name: "Foxy's Tale",
@@ -148,6 +149,37 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       '@type': 'Thing',
       name: category.title,
     },
+    author: {
+      '@type': 'Person',
+      name: 'Alexander Foxleigh',
+      url: 'https://www.alexfoxleigh.com',
+      sameAs: [
+        'https://www.alexfoxleigh.com',
+        'https://www.linkedin.com/in/alexfoxleigh/',
+        'https://github.com/foxleigh81',
+        'https://www.instagram.com/foxleigh81',
+        'https://bsky.app/profile/foxleigh81.bsky.social',
+      ],
+    },
+  };
+
+  // Generate breadcrumb schema
+  const breadcrumbsJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: `${process.env.NEXT_PUBLIC_SITE_URL}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: category.title,
+      },
+    ],
   };
 
   return (
@@ -155,6 +187,10 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(categoryJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }}
       />
       <main className="container mx-auto px-4">
         <Breadcrumbs category={category} />

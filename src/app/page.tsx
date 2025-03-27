@@ -144,6 +144,13 @@ export default async function BlogIndex({ searchParams }: HomePageProps) {
         '@type': 'Person',
         name: 'Alexander Foxleigh',
         url: 'https://www.alexfoxleigh.com',
+        sameAs: [
+          'https://www.alexfoxleigh.com',
+          'https://www.linkedin.com/in/alexfoxleigh/',
+          'https://github.com/foxleigh81',
+          'https://www.instagram.com/foxleigh81',
+          'https://bsky.app/profile/foxleigh81.bsky.social',
+        ],
       },
       potentialAction: {
         '@type': 'SearchAction',
@@ -152,6 +159,18 @@ export default async function BlogIndex({ searchParams }: HomePageProps) {
           urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL}/search?q={search_term_string}`,
         },
         'query-input': 'required name=search_term_string',
+      },
+      sameAs: [
+        'https://www.linkedin.com/in/alexfoxleigh/',
+        'https://github.com/foxleigh81',
+        'https://www.instagram.com/foxleigh81',
+        'https://bsky.app/profile/foxleigh81.bsky.social',
+      ],
+      copyrightYear: new Date().getFullYear(),
+      copyrightHolder: {
+        '@type': 'Person',
+        name: 'Alexander Foxleigh',
+        url: 'https://www.alexfoxleigh.com',
       },
     };
 
