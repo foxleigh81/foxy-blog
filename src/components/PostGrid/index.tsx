@@ -2,6 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import { Post } from '@/sanity/schemaTypes/postType';
 import { Category } from '@/sanity/schemaTypes/categoryType';
 import PostCard from '@/components/PostCard';
+import { urlFor } from '@/sanity/lib/image';
 
 interface PostGridProps {
   posts: Post[];
@@ -55,6 +56,14 @@ const PostGrid: React.FC<PostGridProps> = ({ posts, categories, includesFeatured
     return `/${category.slug.current}/${post.slug.current}`;
   }, []);
 
+  // Memoize the getImageUrl function
+  const getImageUrl = useCallback((post: Post, isFeatured: boolean) => {
+    if (!post.mainImage?.asset) return '';
+    const imageWidth = isFeatured ? 800 : 500;
+    const imageHeight = isFeatured ? 400 : 300;
+    return urlFor(post.mainImage).width(imageWidth).height(imageHeight).url();
+  }, []);
+
   if (!posts || posts.length === 0) {
     return (
       <div className="text-center py-10">
@@ -72,13 +81,15 @@ const PostGrid: React.FC<PostGridProps> = ({ posts, categories, includesFeatured
       {posts.map((post, index) => {
         const category = getPostCategory(post);
         if (!category) return null;
+        const isFeatured = includesFeatured && index === 0;
         return (
           <PostCard
             key={post._id}
             post={post}
             category={category}
             postUrl={getPostUrl(post, category)}
-            isFeatured={includesFeatured && index === 0}
+            isFeatured={isFeatured}
+            imageUrl={getImageUrl(post, isFeatured)}
           />
         );
       })}

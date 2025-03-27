@@ -26,7 +26,16 @@ const postsByTagQuery = groq`*[_type == "post" && references(*[_type == "tag" &&
   slug,
   publishedAt,
   excerpt,
-  mainImage,
+  mainImage {
+    asset->{
+      _id,
+      _type,
+      metadata {
+        lqip
+      }
+    },
+    alt
+  },
   categories,
   tags
 }`;

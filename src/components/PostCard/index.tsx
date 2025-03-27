@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Post } from '@/sanity/schemaTypes/postType';
 import { Category } from '@/sanity/schemaTypes/categoryType';
-import { urlFor } from '@/sanity/lib/image';
 import { formatDate } from '@/utils/formatDate';
 import { getCategoryColor, getCategoryTextColor } from '@/utils/categoryColors';
 
@@ -14,21 +13,19 @@ interface PostCardProps {
   category: Category;
   postUrl: string;
   isFeatured?: boolean;
+  imageUrl: string;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl, isFeatured = false }) => {
+const PostCard: React.FC<PostCardProps> = ({
+  post,
+  category,
+  postUrl,
+  isFeatured = false,
+  imageUrl,
+}) => {
   // Get the category color and text color based on the category slug
   const categoryColor = getCategoryColor(category.slug.current);
   const categoryTextColor = getCategoryTextColor();
-
-  // Calculate image dimensions based on featured status
-  const imageWidth = isFeatured ? 800 : 500;
-  const imageHeight = isFeatured ? 400 : 300;
-
-  // Generate image URL with proper dimensions
-  const imageUrl = post.mainImage?.asset
-    ? urlFor(post.mainImage).width(imageWidth).height(imageHeight).url()
-    : '';
 
   return (
     <Link href={postUrl} className={`block group h-full ${isFeatured ? 'lg:col-span-2' : ''}`}>
@@ -42,6 +39,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl, isFeatured
                 fill
                 className="object-cover"
                 priority={isFeatured}
+                placeholder="blur"
+                blurDataURL={post.mainImage.asset.metadata?.lqip || ''}
                 sizes={
                   isFeatured
                     ? '(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1000px'

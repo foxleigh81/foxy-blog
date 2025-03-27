@@ -15,8 +15,15 @@ interface BlogHeaderProps {
   categories?: Category[];
   mainImage?: {
     asset: {
-      _ref: string;
-      _type: 'reference';
+      _id: string;
+      _type: string;
+      metadata: {
+        dimensions: {
+          width: number;
+          height: number;
+        };
+        lqip: string;
+      };
     };
     alt?: string;
     attribution?: string;
@@ -84,7 +91,9 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
             fill
             priority
             className="object-cover object-top"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1510px"
+            sizes="100vw"
+            placeholder="blur"
+            blurDataURL={mainImage.asset.metadata?.lqip || ''}
           />
           {mainImage.attribution && (
             <div className="absolute bottom-1 right-1 bg-black/50 text-white text-sm px-3 py-1 rounded-full">

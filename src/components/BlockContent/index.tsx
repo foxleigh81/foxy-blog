@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { BlockContent as BlockContentType } from '@/sanity/schemaTypes/blockContentType';
 import {
@@ -8,10 +9,11 @@ import {
   PortableTextComponentProps,
   PortableTextReactComponents,
 } from '@portabletext/react';
-import YouTube from 'react-youtube';
-import InstagramEmbed from '../InstagramEmbed';
 import ImageContainer from '../ImageContainer';
 import { urlFor } from '@/sanity/lib/image';
+
+const YouTube = dynamic(() => import('react-youtube'), { ssr: false });
+const InstagramEmbed = dynamic(() => import('../InstagramEmbed'), { ssr: false });
 
 interface BlockContentProps {
   content: BlockContentType;
@@ -32,6 +34,7 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
               width: number;
               height: number;
             };
+            lqip?: string;
           };
         };
         alt?: string;
@@ -51,6 +54,7 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
             caption={value.caption}
             attribution={value.attribution}
             alignment={value.alignment || 'full'}
+            blurDataURL={value.asset.metadata.lqip || undefined}
           />
         );
       },

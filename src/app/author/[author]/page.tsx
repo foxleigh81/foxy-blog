@@ -18,7 +18,15 @@ const authorQuery = groq`*[_type == "author" && slug.current == $slug][0] {
   _id,
   name,
   slug,
-  image,
+  image {
+    asset->{
+      _id,
+      _type,
+      metadata {
+        lqip
+      }
+    }
+  },
   bio
 }`;
 
@@ -29,7 +37,16 @@ const postsByAuthorQuery = groq`*[_type == "post" && author._ref == $authorId &&
   slug,
   publishedAt,
   excerpt,
-  mainImage,
+  mainImage {
+    asset->{
+      _id,
+      _type,
+      metadata {
+        lqip
+      }
+    },
+    alt
+  },
   categories,
   tags
 }`;
@@ -132,6 +149,7 @@ export default async function AuthorPage({ params, searchParams }: AuthorPagePro
                 src={urlFor(authorData.image).width(160).height(160).url()}
                 alt={authorData.name}
                 fill
+                sizes="(max-width: 768px) 100vw, 160px"
                 className="object-cover rounded-full"
               />
             </div>

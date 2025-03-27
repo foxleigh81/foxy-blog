@@ -14,8 +14,15 @@ export type Post = {
   };
   mainImage?: {
     asset: {
-      _ref: string;
-      _type: 'reference';
+      _id: string;
+      _type: string;
+      metadata: {
+        dimensions: {
+          width: number;
+          height: number;
+        };
+        lqip: string;
+      };
     };
     alt?: string;
   };

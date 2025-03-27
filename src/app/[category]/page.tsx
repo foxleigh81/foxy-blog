@@ -19,7 +19,16 @@ const postsByCategoryQuery = groq`*[_type == "post" && references(*[_type == "ca
   slug,
   publishedAt,
   excerpt,
-  mainImage,
+  mainImage {
+    asset->{
+      _id,
+      _type,
+      metadata {
+        lqip
+      }
+    },
+    alt
+  },
   categories,
   tags
 }`;
