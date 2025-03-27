@@ -42,6 +42,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, category, postUrl, isFeatured
                 fill
                 className="object-cover"
                 priority={isFeatured}
+                placeholder="blur"
+                blurDataURL={post.mainImage.asset.metadata?.lqip || ''}
                 sizes={
                   isFeatured
                     ? '(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1000px'

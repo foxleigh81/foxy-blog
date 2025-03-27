@@ -18,7 +18,15 @@ const authorQuery = groq`*[_type == "author" && slug.current == $slug][0] {
   _id,
   name,
   slug,
-  image,
+  image {
+    asset->{
+      _id,
+      _type,
+      metadata {
+        lqip
+      }
+    }
+  },
   bio
 }`;
 
@@ -29,7 +37,16 @@ const postsByAuthorQuery = groq`*[_type == "post" && author._ref == $authorId &&
   slug,
   publishedAt,
   excerpt,
-  mainImage,
+  mainImage {
+    asset->{
+      _id,
+      _type,
+      metadata {
+        lqip
+      }
+    },
+    alt
+  },
   categories,
   tags
 }`;

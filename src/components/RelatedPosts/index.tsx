@@ -1,28 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Category } from '@/sanity/schemaTypes/categoryType';
-
-// Define the RelatedPost type
-type RelatedPost = {
-  _id: string;
-  title: string;
-  subtitle?: string;
-  slug: {
-    current: string;
-  };
-  mainImage?: {
-    asset: {
-      _ref: string;
-      _type: 'reference';
-    };
-    alt?: string;
-  };
-  excerpt?: string;
-  categories?: Array<{
-    _ref: string;
-    _type: string;
-  }>;
-};
+import { RelatedPost } from '@/types/post';
 import { urlFor } from '@/sanity/lib/image';
 
 interface RelatedPostsProps {
@@ -64,6 +43,8 @@ const RelatedPosts: React.FC<RelatedPostsProps> = ({ posts, categories }) => {
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                       sizes="(max-width: 640px) 100vw, 400px"
+                      placeholder="blur"
+                      blurDataURL={relatedPost.mainImage.asset.metadata.lqip}
                     />
                   </div>
                 )}

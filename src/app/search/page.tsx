@@ -76,7 +76,16 @@ function SearchContent() {
           slug,
           publishedAt,
           excerpt,
-          mainImage,
+          mainImage {
+            asset->{
+              _id,
+              _type,
+              metadata {
+                lqip
+              }
+            },
+            alt
+          },
           categories,
           tags
         }`;

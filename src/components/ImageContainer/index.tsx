@@ -12,6 +12,7 @@ interface ImageContainerProps {
   attribution?: string;
   alignment?: 'full' | 'left' | 'right' | 'center';
   className?: string;
+  blurDataURL?: string;
 }
 
 const ImageContainer: React.FC<ImageContainerProps> = ({
@@ -22,6 +23,7 @@ const ImageContainer: React.FC<ImageContainerProps> = ({
   attribution,
   alignment = 'full',
   className = '',
+  blurDataURL,
 }) => {
   // Determine figure classes based on alignment
   let figureClasses = 'relative mt-0 mb-4 w-full';
@@ -49,9 +51,6 @@ const ImageContainer: React.FC<ImageContainerProps> = ({
     imageClasses += ' object-contain';
   }
 
-  // Calculate aspect ratio class
-  const aspectRatioClass = `aspect-[${dimensions.width}/${dimensions.height}]`;
-
   // Calculate responsive sizes based on alignment
   const getSizes = () => {
     switch (alignment) {
@@ -68,15 +67,18 @@ const ImageContainer: React.FC<ImageContainerProps> = ({
   };
 
   return (
-    <figure className={`${figureClasses} ${aspectRatioClass} ${className}`}>
+    <figure className={`${figureClasses} ${className}`}>
       <Image
         src={src}
         alt={alt}
-        fill
+        width={dimensions.width}
+        height={dimensions.height}
         className={imageClasses}
         sizes={getSizes()}
         loading={alignment === 'full' ? 'eager' : 'lazy'}
         quality={80}
+        placeholder={blurDataURL ? 'blur' : 'empty'}
+        blurDataURL={blurDataURL}
       />
       {attribution && (
         <div className="absolute bottom-1 right-1 bg-black/50 text-white text-sm px-3 py-1 rounded-full">

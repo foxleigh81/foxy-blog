@@ -40,6 +40,9 @@ const postQuery = `*[_type == "post" && slug.current == $slug][0] {
     asset->{
       _id,
       _type,
+      metadata {
+        lqip
+      }
     },
     alt,
     attribution
@@ -56,7 +59,8 @@ const postQuery = `*[_type == "post" && slug.current == $slug][0] {
           dimensions {
             width,
             height
-          }
+          },
+          lqip
         }
       }
     }
@@ -68,7 +72,16 @@ const postQuery = `*[_type == "post" && slug.current == $slug][0] {
     _id,
     title,
     slug,
-    mainImage,
+    mainImage {
+      asset->{
+        _id,
+        _type,
+        metadata {
+          lqip
+        }
+      },
+      alt
+    },
     excerpt,
     categories,
     publishedAt
@@ -192,7 +205,8 @@ export default async function PostPage({ params }: PostPageProps) {
                 dimensions {
                   width,
                   height
-                }
+                },
+                lqip
               }
             },
             alt
@@ -234,7 +248,8 @@ export default async function PostPage({ params }: PostPageProps) {
               dimensions {
                 width,
                 height
-              }
+              },
+              lqip
             }
           },
           alt
@@ -273,7 +288,8 @@ export default async function PostPage({ params }: PostPageProps) {
               dimensions {
                 width,
                 height
-              }
+              },
+              lqip
             }
           },
           alt

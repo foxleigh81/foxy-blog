@@ -32,6 +32,7 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
               width: number;
               height: number;
             };
+            lqip?: string;
           };
         };
         alt?: string;
@@ -51,6 +52,7 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
             caption={value.caption}
             attribution={value.attribution}
             alignment={value.alignment || 'full'}
+            blurDataURL={value.asset.metadata.lqip || undefined}
           />
         );
       },

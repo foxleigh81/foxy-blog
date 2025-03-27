@@ -20,7 +20,8 @@ const postsQuery = groq`*[_type == "post" && !unlisted] | order(publishedAt desc
         dimensions {
           width,
           height
-        }
+        },
+        lqip
       }
     },
     alt
@@ -54,7 +55,8 @@ const featuredPostQuery = groq`*[_type == "featuredPost"][0] {
           dimensions {
             width,
             height
-          }
+          },
+          lqip
         }
       },
       alt
