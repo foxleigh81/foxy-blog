@@ -114,9 +114,9 @@ const SocialSharing: React.FC<SocialSharingProps> = ({
     <div className={`py-6 ${className}`}>
       <h3 className="text-lg font-semibold mb-4">Share this article</h3>
       <div className="flex flex-wrap gap-3">
-        {shareButtons.map((button, index) => (
+        {shareButtons.map((button) => (
           <button
-            key={index}
+            key={button.label}
             onClick={button.handler}
             className="flex items-center overflow-hidden rounded-md shadow-sm text-xs font-bold group"
             aria-label={button.ariaLabel}
