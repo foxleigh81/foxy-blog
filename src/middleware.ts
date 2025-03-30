@@ -1,11 +1,30 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { mockPosts, mockAuthors, mockCategories, mockTags } from '@/mocks';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  // Log the current request path for debugging
+  console.log(`[Middleware] Processing: ${request.nextUrl.pathname}`);
+
+  // Create a response object that we can modify and return
+  const response = NextResponse.next();
+
+  // Initialize the Supabase middleware client
+  const supabase = createMiddlewareClient({ req: request, res: response });
+
+  // Refresh the user's session if needed
+  const sessionResult = await supabase.auth.getSession();
+  console.log(`[Middleware] Session check for ${request.nextUrl.pathname}:`, {
+    hasSession: !!sessionResult.data.session,
+    hasUser: !!sessionResult.data.session?.user?.id,
+    userId: sessionResult.data.session?.user?.id,
+  });
+
   // Only intercept requests during testing
   if (process.env.NODE_ENV !== 'test') {
-    return NextResponse.next();
+    // Add CSP and other headers even when not in test mode
+    return addSecurityHeaders(response);
   }
 
   // Check if this is a Sanity API request
@@ -62,12 +81,19 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  const response = NextResponse.next();
+  // Add security headers to the response
+  return addSecurityHeaders(response);
+}
 
+// Helper function to add security headers
+function addSecurityHeaders(response: NextResponse) {
   // Add caching headers for GTM resources
-  if (request.nextUrl.hostname === 'www.googletagmanager.com') {
-    response.headers.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
-    response.headers.set('Vary', 'Accept-Encoding');
+  if (response.headers && response.headers.has('x-middleware-request-url')) {
+    const requestUrl = new URL(response.headers.get('x-middleware-request-url') || '');
+    if (requestUrl.hostname === 'www.googletagmanager.com') {
+      response.headers.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+      response.headers.set('Vary', 'Accept-Encoding');
+    }
   }
 
   // Add Content Security Policy headers
@@ -78,7 +104,7 @@ export function middleware(request: NextRequest) {
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live;
     img-src 'self' blob: data: https://cdn.sanity.io https://storage.ko-fi.com https://vercel.live https://vercel.com https://*.cdninstagram.com https://i.ytimg.com;
     font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com;
-    connect-src 'self' https://www.google-analytics.com https://*.sanity.io https://vercel.live wss://ws-us3.pusher.com https://region1.google-analytics.com https://va.vercel-scripts.com https://www.instagram.com;
+    connect-src 'self' https://www.google-analytics.com https://*.sanity.io https://vercel.live wss://ws-us3.pusher.com https://region1.google-analytics.com https://va.vercel-scripts.com https://www.instagram.com https://*.supabase.co;
     frame-src 'self' https://www.googletagmanager.com https://vercel.live https://www.youtube.com https://www.instagram.com;
     object-src 'none';
     base-uri 'self';
@@ -96,13 +122,16 @@ export function middleware(request: NextRequest) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-  if (request.nextUrl.pathname === '/_vercel/insights/script.js') {
-    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+  if (response.headers.has('x-middleware-request-url')) {
+    const requestUrl = new URL(response.headers.get('x-middleware-request-url') || '');
+    if (requestUrl.pathname === '/_vercel/insights/script.js') {
+      response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    }
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)', '/api/:path*'],
 };
