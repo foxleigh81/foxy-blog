@@ -17,7 +17,7 @@ import RelatedPosts from '@/components/RelatedPosts';
 import LegacyBanner from '@/components/LegacyBanner';
 import OpinionBanner from '@/components/OpinionBanner';
 import SocialSharing from '@/components/SocialSharing';
-import { FaCommentAlt } from 'react-icons/fa';
+import Comments from '@/components/Comments/Comments';
 
 // Extended Post type that includes expanded references
 type Post = Omit<BasePost, 'author' | 'relatedPosts'> & {
@@ -500,10 +500,8 @@ export default async function PostPage({ params }: PostPageProps) {
           <div className="lg:col-span-8 mt-4">
             {isOpinion && <OpinionBanner />}
             <BlogArticle content={post.body} />
-            <div className="border-t border-gray-200 py-4 flex justify-center text-sm">
-              <span className="flex items-center gap-2">
-                <FaCommentAlt className="text-gray-600" /> Comments coming soon!
-              </span>
+            <div className="border-t border-gray-200 py-4">
+              <Comments postId={post._id} />
             </div>
             <SocialSharing
               url={canonicalUrl}
