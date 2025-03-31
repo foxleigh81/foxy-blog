@@ -35,8 +35,8 @@ const UserAuthStatus: React.FC<UserAuthStatusProps> = ({ className = '' }) => {
         <div className="flex items-center space-x-2">
           {profile.avatar_url ? (
             <img
-              src={profile.avatar_url}
-              alt={profile.display_name}
+              src={profile.avatar_url || undefined}
+              alt={profile.display_name || 'User'}
               className="w-8 h-8 rounded-full"
             />
           ) : (

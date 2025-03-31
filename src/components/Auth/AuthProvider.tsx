@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/utils/supabase';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -37,6 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const supabase = createClientComponentClient<Database>();
 
   useEffect(() => {
     // Get initial session
@@ -47,7 +48,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } = await supabase.auth.getSession();
         setSession(initialSession);
 
-        if (initialSession?.user && initialSession.user.email_confirmed_at) {
+        if (initialSession?.user) {
           setUser(initialSession.user);
           await fetchProfile(initialSession.user.id);
         }
@@ -67,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Auth state changed:', event, currentSession?.user?.id);
       setSession(currentSession);
 
-      if (currentSession?.user && currentSession.user.email_confirmed_at) {
+      if (currentSession?.user) {
         setUser(currentSession.user);
         try {
           // Check if profile exists
