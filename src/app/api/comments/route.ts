@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '10');
   const includePending = searchParams.get('includePending') === 'true';
+  const userId = searchParams.get('userId');
 
   if (!postId) {
     return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
   const offset = (page - 1) * limit;
 
   try {
-    console.log('Fetching comments with params:', { postId, page, limit, includePending });
+    console.log('Fetching comments with params:', { postId, page, limit, includePending, userId });
 
     // Create Supabase client - now awaiting it
     const supabase = await createClient();
@@ -114,9 +115,18 @@ export async function GET(request: NextRequest) {
       )
       .eq('post_id', postId);
 
-    // Only include approved comments if includePending is false
+    // Filter comments based on status:
+    // 1. If includePending is true (moderator is viewing), show all comments for the post
+    // 2. If userId is provided, show approved comments + that user's pending comments
+    // 3. Otherwise, show only approved comments
     if (!includePending) {
-      query = query.eq('status', 'approved');
+      if (userId) {
+        // Show approved comments OR pending comments created by this user
+        query = query.or(`status.eq.approved,and(status.eq.pending,user_id.eq.${userId})`);
+      } else {
+        // Show only approved comments
+        query = query.eq('status', 'approved');
+      }
     }
 
     // Get comments with pagination

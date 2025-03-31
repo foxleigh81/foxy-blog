@@ -2,7 +2,16 @@
 
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { FaUser, FaReply, FaCheck, FaTimes, FaEdit, FaTrash, FaShieldAlt } from 'react-icons/fa';
+import {
+  FaUser,
+  FaReply,
+  FaCheck,
+  FaTimes,
+  FaEdit,
+  FaTrash,
+  FaShieldAlt,
+  FaClock,
+} from 'react-icons/fa';
 import { useAuth } from '../Auth/AuthProvider';
 import CommentInput from './CommentInput';
 
@@ -49,6 +58,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const isPending = status === 'pending';
   const isCurrentUserModerator = profile?.is_moderator === true;
   const isCommentOwner = profile?.id === user.id;
+  // Either approved comments or the user's own pending comments should be visible
+  const isVisible = status === 'approved' || (isPending && isCommentOwner);
 
   // Format comment content to highlight mentions
   const formatCommentWithMentions = (text: string) => {
@@ -60,7 +71,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
         // Remove the @ symbol and trim
         const mentionName = part.slice(1).trim();
         return (
-          <span key={index} className="text-blue-600 font-medium">
+          <span key={index} className="font-bold">
             @{mentionName}
           </span>
         );
@@ -118,10 +129,19 @@ const CommentItem: React.FC<CommentItemProps> = ({
     onReplySubmitted();
   };
 
+  // If comment is not visible based on status and ownership, don't render it
+  if (!isVisible && !isCurrentUserModerator) {
+    return null;
+  }
+
   return (
     <div
       className={`p-4 border rounded-lg mb-4 ${
-        isPending ? 'border-red-300 border-dashed bg-red-50' : 'border-gray-200'
+        isPending
+          ? isCommentOwner
+            ? 'border-amber-300 border-dashed bg-amber-50 opacity-75'
+            : 'border-red-300 border-dashed bg-red-50'
+          : 'border-gray-200'
       }`}
     >
       <div className="flex items-start space-x-3">
@@ -140,6 +160,12 @@ const CommentItem: React.FC<CommentItemProps> = ({
               <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded mr-2 flex items-center">
                 <FaShieldAlt className="mr-1" />
                 Moderator
+              </span>
+            )}
+            {isPending && isCommentOwner && (
+              <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded mr-2 flex items-center">
+                <FaClock className="mr-1" />
+                Awaiting Approval
               </span>
             )}
             <span className="text-xs text-gray-500">
@@ -168,7 +194,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 </>
               )}
 
-              {!isPending && (isCommentOwner || isCurrentUserModerator) && (
+              {/* Allow comment owners to edit/delete their pending comments too */}
+              {(isCommentOwner || isCurrentUserModerator) && (
                 <>
                   {isCommentOwner && (
                     <button
@@ -209,11 +236,18 @@ const CommentItem: React.FC<CommentItemProps> = ({
               </button>
             </div>
           ) : (
-            <div className="text-gray-800 mb-3">{formatCommentWithMentions(content)}</div>
+            <div className="text-gray-800 mb-3">
+              {formatCommentWithMentions(content)}
+              {isPending && isCommentOwner && (
+                <p className="text-amber-600 text-xs mt-2 italic">
+                  Your comment is awaiting moderation. It will be visible to others once approved.
+                </p>
+              )}
+            </div>
           )}
 
-          {/* Show reply button only for approved comments */}
-          {!isPending && profile && (
+          {/* Show reply button only for approved comments or to moderators */}
+          {(!isPending || isCurrentUserModerator) && profile && (
             <div className="flex">
               <button
                 onClick={toggleReply}

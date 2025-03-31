@@ -47,18 +47,32 @@ const CommentsList: React.FC<CommentsListProps> = ({
 
   const totalPages = Math.ceil(totalComments / commentsPerPage);
   const isUserModerator = !!profile?.is_moderator;
+  const userId = profile?.id;
 
   const fetchComments = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
+      // Include a new parameter to fetch the user's own pending comments
+      const queryParams = new URLSearchParams({
+        postId: postId,
+        page: currentPage.toString(),
+        limit: commentsPerPage.toString(),
+      });
+
+      // Add includePending for moderators
+      if (isUserModerator) {
+        queryParams.append('includePending', 'true');
+      }
+
+      // Add new parameter to include the current user's pending comments
+      if (userId) {
+        queryParams.append('userId', userId);
+      }
+
       // Fetch comments from the API
-      const response = await fetch(
-        `/api/comments?postId=${postId}&page=${currentPage}&limit=${commentsPerPage}${
-          isUserModerator ? '&includePending=true' : ''
-        }`
-      );
+      const response = await fetch(`/api/comments?${queryParams.toString()}`);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -76,7 +90,7 @@ const CommentsList: React.FC<CommentsListProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [postId, currentPage, commentsPerPage, isUserModerator]);
+  }, [postId, currentPage, commentsPerPage, isUserModerator, userId]);
 
   useEffect(() => {
     fetchComments();
