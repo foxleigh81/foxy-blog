@@ -158,30 +158,57 @@ const CommentsList: React.FC<CommentsListProps> = ({
     const commentsByParent: Record<string, Comment[]> = {};
     const topLevelComments: Comment[] = [];
 
+    // First pass: find all top-level comments and create a map of comment IDs to their top-level parent
+    const topLevelParentMap: Record<string, string> = {};
     comments.forEach((comment) => {
       if (comment.parent_id) {
-        if (!commentsByParent[comment.parent_id]) {
-          commentsByParent[comment.parent_id] = [];
+        let topLevelParentId = comment.parent_id;
+        let parentComment = comments.find((c) => c.id === comment.parent_id);
+        while (parentComment?.parent_id) {
+          topLevelParentId = parentComment.parent_id;
+          parentComment = comments.find((c) => c.id === parentComment?.parent_id);
         }
-        commentsByParent[comment.parent_id].push(comment);
+        topLevelParentMap[comment.id] = topLevelParentId;
+      }
+    });
+
+    // Second pass: group comments by their top-level parent
+    comments.forEach((comment) => {
+      if (comment.parent_id) {
+        const topLevelParentId = topLevelParentMap[comment.id];
+        if (!commentsByParent[topLevelParentId]) {
+          commentsByParent[topLevelParentId] = [];
+        }
+        // Create a new comment object with the top-level parent_id
+        commentsByParent[topLevelParentId].push({
+          ...comment,
+          parent_id: topLevelParentId,
+        });
       } else {
         topLevelComments.push(comment);
       }
     });
 
+    // Sort replies by timestamp within each group
+    Object.keys(commentsByParent).forEach((parentId) => {
+      commentsByParent[parentId].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+    });
+
     // Render a comment and its replies
-    const renderCommentWithReplies = (comment: Comment, depth = 0) => {
+    const renderCommentWithReplies = (comment: Comment) => {
       const replies = commentsByParent[comment.id] || [];
 
       return (
-        <div key={comment.id} style={{ marginLeft: depth > 0 ? `${depth * 20}px` : '0' }}>
+        <div key={comment.id}>
           <CommentItem
             id={comment.id}
             content={comment.content}
             createdAt={comment.created_at}
             user={{
               id: comment.user.id,
-              displayName: comment.user.display_name,
+              displayName: comment.user.display_name || 'Anonymous',
               avatarUrl: comment.user.avatar_url,
               isModerator: comment.user.is_moderator,
             }}
@@ -191,8 +218,30 @@ const CommentsList: React.FC<CommentsListProps> = ({
             onReplySubmitted={fetchComments}
           />
 
-          {/* Render replies */}
-          {replies.map((reply) => renderCommentWithReplies(reply, depth + 1))}
+          {/* Render all replies in a container with margin */}
+          {replies.length > 0 && (
+            <div className="ml-6">
+              {replies.map((reply) => (
+                <div key={reply.id}>
+                  <CommentItem
+                    id={reply.id}
+                    content={reply.content}
+                    createdAt={reply.created_at}
+                    user={{
+                      id: reply.user.id,
+                      displayName: reply.user.display_name || 'Anonymous',
+                      avatarUrl: reply.user.avatar_url,
+                      isModerator: reply.user.is_moderator,
+                    }}
+                    status={reply.status}
+                    postId={postId}
+                    onStatusChange={handleStatusChange}
+                    onReplySubmitted={fetchComments}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     };

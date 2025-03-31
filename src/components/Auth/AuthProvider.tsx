@@ -4,8 +4,27 @@ import React, { createContext, useState, useEffect, useContext, ReactNode } from
 import { User, Session } from '@supabase/supabase-js';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
+import crypto from 'crypto';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
+
+const getGravatarUrl = (email: string, size: number = 80): string => {
+  const hash = crypto.createHash('md5').update(email.toLowerCase().trim()).digest('hex');
+  return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404`;
+};
+
+const checkGravatar = async (email: string): Promise<string | null> => {
+  const url = getGravatarUrl(email);
+  try {
+    const response = await fetch(url);
+    if (response.ok) {
+      return url;
+    }
+  } catch (error) {
+    console.error('Error checking Gravatar:', error);
+  }
+  return null;
+};
 
 type AuthContextType = {
   user: User | null;
@@ -82,6 +101,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           if (profileError && profileError.code === 'PGRST116') {
             console.log('Creating new profile for user:', currentSession.user.id);
+            // Check for Gravatar
+            const gravatarUrl = currentSession.user.email
+              ? await checkGravatar(currentSession.user.email)
+              : null;
+
             // Profile doesn't exist, create it
             const { data: newProfile, error: insertError } = await supabase
               .from('profiles')
@@ -89,6 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 id: currentSession.user.id,
                 display_name: currentSession.user.user_metadata.display_name || 'Anonymous',
                 is_moderator: false,
+                avatar_url: gravatarUrl,
               })
               .select()
               .single();

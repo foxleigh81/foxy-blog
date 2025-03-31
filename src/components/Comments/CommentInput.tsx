@@ -44,7 +44,8 @@ const CommentInput: React.FC<CommentInputProps> = ({
 
   // Function to extract mentions from comment
   const extractMentions = (text: string): string[] => {
-    const mentionRegex = /@([a-zA-Z0-9_-]+)/g;
+    // Match @ followed by any characters until a space or end of string
+    const mentionRegex = /@([^\s]+)/g;
     const mentions: string[] = [];
     let match;
 

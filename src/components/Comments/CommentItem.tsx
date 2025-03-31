@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { FaUser, FaReply, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaUser, FaReply, FaCheck, FaTimes, FaEdit, FaTrash, FaShieldAlt } from 'react-icons/fa';
 import { useAuth } from '../Auth/AuthProvider';
 import CommentInput from './CommentInput';
 
@@ -22,6 +22,8 @@ interface CommentItemProps {
   postId: string;
   onStatusChange?: (id: string, status: CommentStatus) => Promise<void>;
   onReplySubmitted: () => void;
+  onDelete?: (id: string) => Promise<void>;
+  onEdit?: (id: string, newContent: string) => Promise<void>;
   highlightMentions?: boolean;
 }
 
@@ -34,24 +36,32 @@ const CommentItem: React.FC<CommentItemProps> = ({
   postId,
   onStatusChange,
   onReplySubmitted,
+  onDelete,
+  onEdit,
   highlightMentions = true,
 }) => {
   const [isReplying, setIsReplying] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(content);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { profile } = useAuth();
 
   const isPending = status === 'pending';
   const isCurrentUserModerator = profile?.is_moderator === true;
+  const isCommentOwner = profile?.id === user.id;
 
   // Format comment content to highlight mentions
   const formatCommentWithMentions = (text: string) => {
     if (!highlightMentions) return text;
 
-    return text.split(/(@[a-zA-Z0-9_-]+)/).map((part, index) => {
+    // Split by spaces to handle full names
+    return text.split(/(\s+)/).map((part, index) => {
       if (part.startsWith('@')) {
+        // Remove the @ symbol and trim
+        const mentionName = part.slice(1).trim();
         return (
           <span key={index} className="text-blue-600 font-medium">
-            {part}
+            @{mentionName}
           </span>
         );
       }
@@ -67,6 +77,33 @@ const CommentItem: React.FC<CommentItemProps> = ({
       await onStatusChange(id, newStatus);
     } catch (error) {
       console.error('Error updating comment status:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!onDelete || (!isCommentOwner && !isCurrentUserModerator)) return;
+
+    setIsSubmitting(true);
+    try {
+      await onDelete(id);
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!onEdit || !isCommentOwner) return;
+
+    setIsSubmitting(true);
+    try {
+      await onEdit(id, editedContent);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error editing comment:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -100,7 +137,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
           <div className="flex flex-wrap items-center mb-2">
             <span className="font-semibold mr-2">{user.displayName}</span>
             {user.isModerator && (
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded mr-2">
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded mr-2 flex items-center">
+                <FaShieldAlt className="mr-1" />
                 Moderator
               </span>
             )}
@@ -108,29 +146,71 @@ const CommentItem: React.FC<CommentItemProps> = ({
               {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
             </span>
 
-            {isPending && isCurrentUserModerator && (
-              <div className="ml-auto flex space-x-2">
-                <button
-                  onClick={() => handleStatusChange('approved')}
-                  disabled={isSubmitting}
-                  className="flex items-center text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
-                >
-                  <FaCheck className="mr-1" />
-                  Approve
-                </button>
-                <button
-                  onClick={() => handleStatusChange('rejected')}
-                  disabled={isSubmitting}
-                  className="flex items-center text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors"
-                >
-                  <FaTimes className="mr-1" />
-                  Reject
-                </button>
-              </div>
-            )}
+            <div className="ml-auto flex space-x-2">
+              {isPending && isCurrentUserModerator && (
+                <>
+                  <button
+                    onClick={() => handleStatusChange('approved')}
+                    disabled={isSubmitting}
+                    className="flex items-center text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
+                  >
+                    <FaCheck className="mr-1" />
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => handleStatusChange('rejected')}
+                    disabled={isSubmitting}
+                    className="flex items-center text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors"
+                  >
+                    <FaTimes className="mr-1" />
+                    Reject
+                  </button>
+                </>
+              )}
+
+              {!isPending && (isCommentOwner || isCurrentUserModerator) && (
+                <>
+                  {isCommentOwner && (
+                    <button
+                      onClick={() => setIsEditing(!isEditing)}
+                      className="flex items-center text-xs text-gray-600 hover:text-blue-600"
+                    >
+                      <FaEdit className="mr-1" />
+                      {isEditing ? 'Cancel' : 'Edit'}
+                    </button>
+                  )}
+                  <button
+                    onClick={handleDelete}
+                    disabled={isSubmitting}
+                    className="flex items-center text-xs text-red-600 hover:text-red-700"
+                  >
+                    <FaTrash className="mr-1" />
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
-          <div className="text-gray-800 mb-3">{formatCommentWithMentions(content)}</div>
+          {isEditing ? (
+            <div className="mb-3">
+              <textarea
+                value={editedContent}
+                onChange={(e) => setEditedContent(e.target.value)}
+                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                rows={3}
+              />
+              <button
+                onClick={handleEdit}
+                disabled={isSubmitting}
+                className="mt-2 text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
+          ) : (
+            <div className="text-gray-800 mb-3">{formatCommentWithMentions(content)}</div>
+          )}
 
           {/* Show reply button only for approved comments */}
           {!isPending && profile && (

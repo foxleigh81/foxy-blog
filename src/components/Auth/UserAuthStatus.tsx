@@ -35,13 +35,13 @@ const UserAuthStatus: React.FC<UserAuthStatusProps> = ({ className = '' }) => {
         <div className="flex items-center space-x-2">
           {profile.avatar_url ? (
             <img
-              src={profile.avatar_url || undefined}
+              src={profile.avatar_url}
               alt={profile.display_name || 'User'}
-              className="w-8 h-8 rounded-full"
+              className="w-10 h-10 rounded-full p-0.5"
             />
           ) : (
-            <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-              <FaUser className="w-4 h-4" />
+            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center p-0.5">
+              <FaUser className="w-5 h-5" />
             </div>
           )}
           <div>
