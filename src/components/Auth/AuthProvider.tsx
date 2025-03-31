@@ -61,15 +61,44 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const pathname = usePathname();
 
   const supabase = createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  // Define fetchProfile first before it's used
+  const fetchProfile = useCallback(
+    async (userId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (error) {
+          // If the error is because the profile doesn't exist, don't log it as an error
+          if (error.code === 'PGRST116') {
+            return null;
+          }
+          console.error('Error fetching profile:', error);
+          return null;
+        }
+
+        setProfile(data);
+        return data;
+      } catch (error) {
+        console.error('Error in fetchProfile:', error);
+        return null;
+      }
+    },
+    [supabase]
   );
 
   // This useEffect detects path changes and refreshes the profile
@@ -77,7 +106,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (user) {
       fetchProfile(user.id);
     }
-  }, [pathname, user]);
+  }, [pathname, user, fetchProfile]);
 
   useEffect(() => {
     // Get initial session
@@ -196,28 +225,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
-
-      if (error) {
-        // If the error is because the profile doesn't exist, don't log it as an error
-        if (error.code === 'PGRST116') {
-          return null;
-        }
-        console.error('Error fetching profile:', error);
-        return null;
-      }
-
-      setProfile(data);
-      return data;
-    } catch (error) {
-      console.error('Error in fetchProfile:', error);
-      return null;
-    }
-  };
+  }, [supabase, fetchProfile]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -308,7 +316,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Error in refetchProfile:', error);
       return null;
     }
-  }, [user]);
+  }, [user, supabase]);
 
   const value = {
     user,
