@@ -19,6 +19,7 @@ import LegacyBanner from '@/components/LegacyBanner';
 import OpinionBanner from '@/components/OpinionBanner';
 import SocialSharing from '@/components/SocialSharing';
 import Comments from '@/components/Comments/Comments';
+import { Suspense } from 'react';
 
 // Extended Post type that includes expanded references
 type Post = Omit<BasePost, 'author' | 'relatedPosts'> & {
@@ -502,7 +503,9 @@ export default async function PostPage({ params }: PostPageProps) {
             {isOpinion && <OpinionBanner />}
             <BlogArticle content={post.body} />
             <div className="border-t border-gray-200 py-4">
-              <Comments postId={post._id} />
+              <Suspense fallback={<div className="py-8 text-center">Loading comments...</div>}>
+                <Comments postId={post._id} />
+              </Suspense>
             </div>
             <SocialSharing
               url={canonicalUrl}

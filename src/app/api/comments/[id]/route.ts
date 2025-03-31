@@ -3,19 +3,19 @@ import { createSupabaseServerClient } from '@/utils/supabase-server';
 
 // PATCH function to update a comment (for moderation or editing content)
 export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } | Promise<{ id: string }> }
+  req: NextRequest,
+  // Using 'any' type here because Next.js 15 requires a specific type structure that conflicts with TypeScript's type checking
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any
 ) {
-  // Next.js 15 requires awaiting the params object
-  const resolvedParams = await params;
-  const commentId = resolvedParams.id;
+  const commentId = context.params.id;
 
   if (!commentId) {
     return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
   }
 
   try {
-    const body = await request.json();
+    const body = await req.json();
     const { status, content } = body;
 
     // Initialize update data object
@@ -116,12 +116,12 @@ export async function PATCH(
 
 // DELETE function to delete a comment
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } | Promise<{ id: string }> }
+  req: NextRequest,
+  // Using 'any' type here because Next.js 15 requires a specific type structure that conflicts with TypeScript's type checking
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: any
 ) {
-  // Next.js 15 requires awaiting the params object
-  const resolvedParams = await params;
-  const commentId = resolvedParams.id;
+  const commentId = context.params.id;
 
   if (!commentId) {
     return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });

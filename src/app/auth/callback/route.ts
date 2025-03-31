@@ -8,8 +8,6 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
 
-  console.log('Auth callback route called with code:', !!code);
-
   if (code) {
     const cookieStore = await cookies();
 
@@ -20,7 +18,6 @@ export async function GET(request: NextRequest) {
         cookies: {
           getAll: async () => {
             const cookies = Array.from(cookieStore.getAll());
-            console.log('Current cookies:', cookies.map((c) => c.name).join(', '));
             return cookies.map((cookie) => ({
               name: cookie.name,
               value: cookie.value,
@@ -28,7 +25,6 @@ export async function GET(request: NextRequest) {
           },
           setAll: async (cookiesList) => {
             try {
-              console.log('Setting cookies:', cookiesList.map((c) => c.name).join(', '));
               cookiesList.forEach((cookie) => {
                 cookieStore.set(cookie.name, cookie.value, cookie.options || {});
               });
@@ -43,12 +39,10 @@ export async function GET(request: NextRequest) {
 
     try {
       // Exchange the code for a session
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (error) {
         console.error('Error exchanging code for session:', error);
-      } else {
-        console.log('Successfully exchanged code for session, user ID:', data?.session?.user?.id);
       }
     } catch (error) {
       console.error('Exception during code exchange:', error);
@@ -57,9 +51,6 @@ export async function GET(request: NextRequest) {
 
   // URL to redirect to after sign in process completes
   const response = NextResponse.redirect(requestUrl.origin);
-
-  // Log redirection
-  console.log('Redirecting to:', requestUrl.origin);
 
   return response;
 }
