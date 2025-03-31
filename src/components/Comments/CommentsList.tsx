@@ -97,6 +97,28 @@ const CommentsList: React.FC<CommentsListProps> = ({
     fetchComments();
   }, [fetchComments]);
 
+  // Listen for profile updates and refresh comments
+  useEffect(() => {
+    const handleProfileUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log('CommentsList: Detected profile update event:', customEvent.detail);
+      fetchComments();
+    };
+
+    const handleCommentAdded = () => {
+      console.log('CommentsList: Detected comment added event');
+      fetchComments();
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    window.addEventListener('comment-added', handleCommentAdded);
+
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+      window.removeEventListener('comment-added', handleCommentAdded);
+    };
+  }, [fetchComments]);
+
   const handleStatusChange = useCallback(
     async (commentId: string, newStatus: 'pending' | 'approved' | 'rejected') => {
       if (!isUserModerator) return;
@@ -275,7 +297,7 @@ const CommentsList: React.FC<CommentsListProps> = ({
       const replies = commentsByParent[comment.id] || [];
 
       return (
-        <div key={comment.id}>
+        <div key={`comment-${comment.id}`}>
           <CommentItem
             id={comment.id}
             content={comment.content}
@@ -299,7 +321,7 @@ const CommentsList: React.FC<CommentsListProps> = ({
           {replies.length > 0 && (
             <div className="ml-6">
               {replies.map((reply) => (
-                <div key={reply.id}>
+                <div key={`reply-${reply.id}`}>
                   <CommentItem
                     id={reply.id}
                     content={reply.content}

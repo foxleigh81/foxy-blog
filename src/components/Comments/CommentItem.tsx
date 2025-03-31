@@ -60,6 +60,19 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const isPending = status === 'pending';
   const isCurrentUserModerator = profile?.is_moderator === true;
   const isCommentOwner = profile?.id === user.id;
+
+  // Use current user's profile data for their own comments
+  const displayUser = useMemo(() => {
+    if (isCommentOwner && profile) {
+      return {
+        ...user,
+        displayName: profile.username || user.displayName,
+        avatarUrl: profile.avatar_url || user.avatarUrl,
+      };
+    }
+    return user;
+  }, [user, profile, isCommentOwner]);
+
   // Either approved comments or the user's own pending comments should be visible
   const isVisible = status === 'approved' || (isPending && isCommentOwner);
 
@@ -158,8 +171,12 @@ const CommentItem: React.FC<CommentItemProps> = ({
   return (
     <div className={containerClass}>
       <div className="flex items-start space-x-3">
-        {user.avatarUrl ? (
-          <img src={user.avatarUrl} alt={user.displayName} className="w-10 h-10 rounded-full" />
+        {displayUser.avatarUrl ? (
+          <img
+            src={displayUser.avatarUrl}
+            alt={displayUser.displayName}
+            className="w-10 h-10 rounded-full"
+          />
         ) : (
           <div className="w-10 h-10 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center">
             <FaUser className="w-5 h-5" />
@@ -168,14 +185,14 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
         <div className="flex-1">
           <div className="flex flex-wrap items-center mb-2">
-            <span className="font-semibold mr-2">{user.displayName}</span>
-            {user.isModerator && (
+            <span className="font-semibold mr-2">{displayUser.displayName}</span>
+            {displayUser.isModerator && (
               <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded mr-2 flex items-center">
                 <FaShieldAlt className="mr-1" />
                 Moderator
               </span>
             )}
-            {!user.isModerator && user.isTrusted && (
+            {!displayUser.isModerator && displayUser.isTrusted && (
               <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded mr-2 flex items-center">
                 <FaStar className="mr-1" />
                 Top Contributor
@@ -283,7 +300,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               <CommentInput
                 postId={postId}
                 parentId={id}
-                replyToUser={user.displayName}
+                replyToUser={displayUser.displayName}
                 onCancelReply={() => setIsReplying(false)}
                 onCommentSubmitted={handleReplySubmitted}
               />

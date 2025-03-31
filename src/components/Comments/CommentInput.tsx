@@ -105,6 +105,12 @@ const CommentInput: React.FC<CommentInputProps> = ({
         setComment('');
         onCommentSubmitted();
 
+        // Dispatch a custom event to notify components about the new comment
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('comment-added'));
+          console.log('CommentInput: comment-added event dispatched');
+        }
+
         // If this was a reply, also call onCancelReply
         if (parentId && onCancelReply) {
           onCancelReply();

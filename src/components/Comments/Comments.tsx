@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { AuthProvider } from '../Auth/AuthProvider';
 import UserAuthStatus from '../Auth/UserAuthStatus';
 import CommentInput from './CommentInput';
@@ -26,6 +26,22 @@ const Comments: React.FC<CommentsProps> = ({ postId, className = '' }) => {
 
   const handleCommentSubmitted = useCallback(() => {
     setRefreshComments((prev) => !prev);
+  }, []);
+
+  // Listen for global events that should refresh comments
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log('Comments: Refreshing comments due to external event');
+      setRefreshComments((prev) => !prev);
+    };
+
+    window.addEventListener('profileUpdated', handleRefresh);
+    window.addEventListener('comment-added', handleRefresh);
+
+    return () => {
+      window.removeEventListener('profileUpdated', handleRefresh);
+      window.removeEventListener('comment-added', handleRefresh);
+    };
   }, []);
 
   // Memoize the components to prevent unnecessary re-renders

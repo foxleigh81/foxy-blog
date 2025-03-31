@@ -1,16 +1,22 @@
 'use client';
 
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  ReactNode,
+  useCallback,
+} from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '@/types/supabase';
+import { usePathname } from 'next/navigation';
 import crypto from 'crypto';
-import { useRouter, usePathname } from 'next/navigation';
-import { validateUsername } from '@/utils/validation';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
-const getGravatarUrl = (email: string, size: number = 80): string => {
+const getGravatarUrl = (email: string, size = 200): string => {
   const hash = crypto.createHash('md5').update(email.toLowerCase().trim()).digest('hex');
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404`;
 };
@@ -28,16 +34,17 @@ const checkGravatar = async (email: string): Promise<string | null> => {
   return null;
 };
 
-type AuthContextType = {
+interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   session: Session | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, username: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ user: User | null; error: Error | null }>;
+  signUp: (email: string, password: string) => Promise<{ user: User | null; error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (profile: Partial<Profile>) => Promise<void>;
-};
+  refetchProfile: () => Promise<Profile | null>;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -58,7 +65,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
   const pathname = usePathname();
 
   const supabase = createBrowserClient<Database>(
@@ -229,65 +235,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      return { user: data.user, error: error };
     } catch (error) {
       console.error('Error signing in:', error);
-      throw error;
+      return { user: null, error: error as Error };
     }
   };
 
-  const signUp = async (email: string, password: string, username: string) => {
+  const signUp = async (email: string, password: string) => {
     try {
-      console.log('Starting signup process for:', { email, username });
-
-      // Validate username
-      const { isValid, error } = validateUsername(username);
-      if (!isValid) {
-        console.log('Username validation failed:', error);
-        throw new Error(error || 'Invalid username');
-      }
-
-      console.log('Username validation successful, proceeding with signup');
-
-      // Sign up the user with auth metadata containing the username
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            username: username, // Store username in user metadata
-          },
-          emailRedirectTo: `${location.origin}/auth/callback`,
-        },
       });
-
-      if (signUpError) {
-        console.error('Error signing up:', signUpError);
-        throw signUpError;
-      }
-
-      // Use the user object from the sign-up response
-      const user = data.user;
-      if (!user) {
-        console.error('No user returned from sign up');
-        throw new Error('No user returned from sign up');
-      }
-
-      console.log('User created:', user);
-
-      // The profile will be created by the onAuthStateChange handler
-      // which is triggered after signup and already has the necessary permissions
-
-      router.refresh();
+      return { user: data.user, error: error };
     } catch (error) {
-      console.error('Error in signup process:', error);
-      if (error instanceof Error) {
-        throw error;
-      } else {
-        console.error('Non-error object thrown:', JSON.stringify(error, null, 2));
-        throw new Error('An unexpected error occurred during signup');
-      }
+      console.error('Error signing up:', error);
+      return { user: null, error: error as Error };
     }
   };
 
@@ -305,17 +270,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       if (!user) throw new Error('No user logged in');
 
-      const { error } = await supabase.from('profiles').update(profileData).eq('id', user.id);
+      console.log('AuthProvider: Starting profile update with data:', profileData);
 
-      if (error) throw error;
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', user.id)
+        .select();
+
+      if (error) {
+        console.error('AuthProvider: Error updating profile:', error);
+        throw error;
+      }
+
+      console.log('AuthProvider: Profile updated successfully:', data);
 
       // Refetch the profile to get the updated data
-      await fetchProfile(user.id);
+      await refetchProfile();
+      console.log('AuthProvider: Profile refetched after update');
+
+      // Dispatch a custom event to notify components of profile update
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('profileUpdated', {
+          detail: { userId: user.id },
+        });
+        window.dispatchEvent(event);
+        console.log('AuthProvider: profileUpdated event dispatched');
+      }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('AuthProvider: Error in updateProfile function:', error);
       throw error;
     }
   };
+
+  const refetchProfile = useCallback(async () => {
+    if (!user) return null;
+
+    try {
+      console.log('Refetching profile for user:', user.id);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+
+      // Update the profile state with the latest data
+      if (data) {
+        setProfile(data);
+        console.log('Profile updated from refetch:', data);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in refetchProfile:', error);
+      return null;
+    }
+  }, [user]);
 
   const value = {
     user,
@@ -326,6 +341,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signUp,
     signOut,
     updateProfile,
+    refetchProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
