@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   FaUser,
   FaReply,
@@ -11,6 +11,7 @@ import {
   FaShieldAlt,
   FaClock,
   FaStar,
+  FaEllipsisV,
 } from 'react-icons/fa';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '../Auth/AuthProvider';
@@ -55,6 +56,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const { profile } = useAuth();
 
   const isPending = status === 'pending';
@@ -163,6 +166,24 @@ const CommentItem: React.FC<CommentItemProps> = ({
     [isPending, isCommentOwner]
   );
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const toggleMenu = useCallback(() => {
+    setIsMenuOpen((prev) => !prev);
+  }, []);
+
   // If comment is not visible based on status and ownership, don't render it
   if (!isVisible && !isCurrentUserModerator) {
     return null;
@@ -230,27 +251,46 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 </>
               )}
 
-              {/* Allow comment owners to edit/delete their pending comments too */}
-              {(isCommentOwner || isCurrentUserModerator) && (
-                <>
-                  {isCommentOwner && (
-                    <button
-                      onClick={() => setIsEditing(!isEditing)}
-                      className="flex items-center text-xs text-gray-600 hover:text-blue-600"
-                    >
-                      <FaEdit className="mr-1" />
-                      {isEditing ? 'Cancel' : 'Edit'}
-                    </button>
-                  )}
+              {/* Replace edit/delete buttons with dropdown menu */}
+              {(isCommentOwner || isCurrentUserModerator) && !isEditing && (
+                <div className="relative" ref={menuRef}>
                   <button
-                    onClick={handleDelete}
-                    disabled={isSubmitting}
-                    className="flex items-center text-xs text-red-600 hover:text-red-700"
+                    onClick={toggleMenu}
+                    className="p-1 text-gray-500 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100"
                   >
-                    <FaTrash className="mr-1" />
-                    Delete
+                    <FaEllipsisV />
                   </button>
-                </>
+
+                  {isMenuOpen && (
+                    <div className="absolute right-0 mt-1 w-36 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                      <div className="py-1">
+                        {isCommentOwner && !isEditing && (
+                          <button
+                            onClick={() => {
+                              setIsEditing(true);
+                              setIsMenuOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                          >
+                            <FaEdit className="mr-2" />
+                            Edit
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            handleDelete();
+                            setIsMenuOpen(false);
+                          }}
+                          disabled={isSubmitting}
+                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
+                        >
+                          <FaTrash className="mr-2" />
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -263,13 +303,21 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={3}
               />
-              <button
-                onClick={handleEdit}
-                disabled={isSubmitting}
-                className="mt-2 text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
-              >
-                Save Changes
-              </button>
+              <div className="flex space-x-2 mt-2">
+                <button
+                  onClick={handleEdit}
+                  disabled={isSubmitting}
+                  className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           ) : (
             <div className="text-gray-800 mb-3">

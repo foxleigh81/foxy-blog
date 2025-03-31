@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/utils/supabase-server';
 
 // PATCH function to update a comment (for moderation or editing content)
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
-  const commentId = params.id;
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } | Promise<{ id: string }> }
+) {
+  // Next.js 15 requires awaiting the params object
+  const resolvedParams = await params;
+  const commentId = resolvedParams.id;
 
   if (!commentId) {
     return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
@@ -40,21 +45,21 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // Get authenticated user
     const supabase = await createSupabaseServerClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
 
-    if (!session?.user) {
+    // First authenticate the user with getUser (secure)
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !userData.user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const user = session.user;
+    const userId = userData.user.id;
 
-    // Check if user is a moderator
+    // Then get profile data using the authenticated user ID
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('is_moderator')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single();
 
     if (profileError || !profile) {
@@ -82,7 +87,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       }
 
       // Only comment owners can edit their comments
-      if (comment.user_id !== user.id && !profile.is_moderator) {
+      if (comment.user_id !== userId && !profile.is_moderator) {
         return NextResponse.json(
           { error: 'Unauthorized: Only the comment owner can edit this comment' },
           { status: 403 }
@@ -110,8 +115,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 // DELETE function to delete a comment
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
-  const commentId = params.id;
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } | Promise<{ id: string }> }
+) {
+  // Next.js 15 requires awaiting the params object
+  const resolvedParams = await params;
+  const commentId = resolvedParams.id;
 
   if (!commentId) {
     return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
@@ -120,21 +130,21 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   try {
     // Get authenticated user
     const supabase = await createSupabaseServerClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
 
-    if (!session?.user) {
+    // First authenticate the user with getUser (secure)
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !userData.user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const user = session.user;
+    const userId = userData.user.id;
 
-    // Check if user is a moderator
+    // Then get profile data using the authenticated user ID
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('is_moderator')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single();
 
     if (profileError || !profile) {
@@ -153,7 +163,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     // Only comment owners or moderators can delete comments
-    if (comment.user_id !== user.id && !profile.is_moderator) {
+    if (comment.user_id !== userId && !profile.is_moderator) {
       return NextResponse.json(
         { error: 'Unauthorized: Only the comment owner or moderators can delete this comment' },
         { status: 403 }
