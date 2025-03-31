@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   FaUser,
   FaReply,
@@ -13,6 +12,7 @@ import {
   FaClock,
   FaStar,
 } from 'react-icons/fa';
+import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '../Auth/AuthProvider';
 import CommentInput from './CommentInput';
 
@@ -64,38 +64,44 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const isVisible = status === 'approved' || (isPending && isCommentOwner);
 
   // Format comment content to highlight mentions
-  const formatCommentWithMentions = (text: string) => {
-    if (!highlightMentions) return text;
+  const formatCommentWithMentions = useCallback(
+    (text: string) => {
+      if (!highlightMentions) return text;
 
-    // Split by spaces to handle full names
-    return text.split(/(\s+)/).map((part, index) => {
-      if (part.startsWith('@')) {
-        // Remove the @ symbol and trim
-        const mentionName = part.slice(1).trim();
-        return (
-          <span key={index} className="font-bold">
-            @{mentionName}
-          </span>
-        );
+      // Split by spaces to handle full names
+      return text.split(/(\s+)/).map((part, index) => {
+        if (part.startsWith('@')) {
+          // Remove the @ symbol and trim
+          const mentionName = part.slice(1).trim();
+          return (
+            <span key={index} className="font-bold">
+              @{mentionName}
+            </span>
+          );
+        }
+        return part;
+      });
+    },
+    [highlightMentions]
+  );
+
+  const handleStatusChange = useCallback(
+    async (newStatus: CommentStatus) => {
+      if (!onStatusChange || !isCurrentUserModerator) return;
+
+      setIsSubmitting(true);
+      try {
+        await onStatusChange(id, newStatus);
+      } catch (error) {
+        console.error('Error updating comment status:', error);
+      } finally {
+        setIsSubmitting(false);
       }
-      return part;
-    });
-  };
+    },
+    [onStatusChange, isCurrentUserModerator, id]
+  );
 
-  const handleStatusChange = async (newStatus: CommentStatus) => {
-    if (!onStatusChange || !isCurrentUserModerator) return;
-
-    setIsSubmitting(true);
-    try {
-      await onStatusChange(id, newStatus);
-    } catch (error) {
-      console.error('Error updating comment status:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!onDelete || (!isCommentOwner && !isCurrentUserModerator)) return;
 
     setIsSubmitting(true);
@@ -106,9 +112,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [onDelete, isCommentOwner, isCurrentUserModerator, id]);
 
-  const handleEdit = async () => {
+  const handleEdit = useCallback(async () => {
     if (!onEdit || !isCommentOwner) return;
 
     setIsSubmitting(true);
@@ -120,16 +126,29 @@ const CommentItem: React.FC<CommentItemProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [onEdit, isCommentOwner, id, editedContent]);
 
-  const toggleReply = () => {
-    setIsReplying(!isReplying);
-  };
+  const toggleReply = useCallback(() => {
+    setIsReplying((prev) => !prev);
+  }, []);
 
-  const handleReplySubmitted = () => {
+  const handleReplySubmitted = useCallback(() => {
     setIsReplying(false);
     onReplySubmitted();
-  };
+  }, [onReplySubmitted]);
+
+  // Calculate the container class only when status changes
+  const containerClass = useMemo(
+    () =>
+      `p-4 border rounded-lg mb-4 ${
+        isPending
+          ? isCommentOwner
+            ? 'border-amber-300 border-dashed bg-amber-50 opacity-75'
+            : 'border-red-300 border-dashed bg-red-50'
+          : 'border-gray-200'
+      }`,
+    [isPending, isCommentOwner]
+  );
 
   // If comment is not visible based on status and ownership, don't render it
   if (!isVisible && !isCurrentUserModerator) {
@@ -137,15 +156,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   }
 
   return (
-    <div
-      className={`p-4 border rounded-lg mb-4 ${
-        isPending
-          ? isCommentOwner
-            ? 'border-amber-300 border-dashed bg-amber-50 opacity-75'
-            : 'border-red-300 border-dashed bg-red-50'
-          : 'border-gray-200'
-      }`}
-    >
+    <div className={containerClass}>
       <div className="flex items-start space-x-3">
         {user.avatarUrl ? (
           <img src={user.avatarUrl} alt={user.displayName} className="w-10 h-10 rounded-full" />
@@ -284,4 +295,4 @@ const CommentItem: React.FC<CommentItemProps> = ({
   );
 };
 
-export default CommentItem;
+export default React.memo(CommentItem);

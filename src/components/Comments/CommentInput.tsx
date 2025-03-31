@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../Auth/AuthProvider';
 import AuthModal from '../Auth/AuthModal';
 import { FaPaperPlane } from 'react-icons/fa';
@@ -43,7 +43,7 @@ const CommentInput: React.FC<CommentInputProps> = ({
   }, [replyToUser]);
 
   // Function to extract mentions from comment
-  const extractMentions = (text: string): string[] => {
+  const extractMentions = useCallback((text: string): string[] => {
     // Match @ followed by any characters until a space or end of string
     const mentionRegex = /@([^\s]+)/g;
     const mentions: string[] = [];
@@ -54,71 +54,74 @@ const CommentInput: React.FC<CommentInputProps> = ({
     }
 
     return mentions;
-  };
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    if (!user || !profile) {
-      setIsModalOpen(true);
-      return;
-    }
-
-    if (!comment.trim()) {
-      setError('Comment cannot be empty');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError('');
-
-    try {
-      // Extract mentions from the comment
-      const mentions = extractMentions(comment);
-
-      // Determine comment status based on moderator status
-      const status = profile.is_moderator ? 'approved' : 'pending';
-
-      // Create new comment in Supabase
-      const response = await fetch('/api/comments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          content: comment.trim(),
-          postId,
-          parentId,
-          mentions: mentions.length > 0 ? mentions : null,
-          status,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to submit comment');
+      if (!user || !profile) {
+        setIsModalOpen(true);
+        return;
       }
 
-      // Clear input and notify parent
-      setComment('');
-      onCommentSubmitted();
+      if (!comment.trim()) {
+        setError('Comment cannot be empty');
+        return;
+      }
 
-      // If this was a reply, also call onCancelReply
-      if (parentId && onCancelReply) {
-        onCancelReply();
+      setIsSubmitting(true);
+      setError('');
+
+      try {
+        // Extract mentions from the comment
+        const mentions = extractMentions(comment);
+
+        // Determine comment status based on moderator status
+        const status = profile.is_moderator ? 'approved' : 'pending';
+
+        // Create new comment in Supabase
+        const response = await fetch('/api/comments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            content: comment.trim(),
+            postId,
+            parentId,
+            mentions: mentions.length > 0 ? mentions : null,
+            status,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to submit comment');
+        }
+
+        // Clear input and notify parent
+        setComment('');
+        onCommentSubmitted();
+
+        // If this was a reply, also call onCancelReply
+        if (parentId && onCancelReply) {
+          onCancelReply();
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError('Failed to submit comment. Please try again.');
+        }
+        console.error('Error submitting comment:', error);
+      } finally {
+        setIsSubmitting(false);
       }
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to submit comment. Please try again.');
-      }
-      console.error('Error submitting comment:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    },
+    [user, profile, comment, extractMentions, postId, parentId, onCommentSubmitted, onCancelReply]
+  );
 
   // If user is not logged in, show prompt
   if (!user) {
@@ -179,4 +182,4 @@ const CommentInput: React.FC<CommentInputProps> = ({
   );
 };
 
-export default CommentInput;
+export default React.memo(CommentInput);

@@ -6,6 +6,7 @@ import type { Post as BasePost } from '@/sanity/schemaTypes/postType';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 import type { Author } from '@/sanity/schemaTypes/authorType';
 import type { RelatedPost } from '@/types/post';
+import { metadata as siteMetadata } from '@/app/page';
 
 // Import components
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -153,7 +154,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   const readingTime = Math.ceil(wordCount / 200); // Avg reading speed of 200 words per minute
 
   return {
-    title: post.title,
+    title: post.title + ' | ' + siteMetadata.title,
     description: post.excerpt,
     openGraph: {
       title: post.title,

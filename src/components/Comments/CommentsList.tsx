@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { FaRegCommentAlt } from 'react-icons/fa';
 import { useSearchParams } from 'next/navigation';
 import CommentItem from './CommentItem';
@@ -97,145 +97,116 @@ const CommentsList: React.FC<CommentsListProps> = ({
     fetchComments();
   }, [fetchComments]);
 
-  const handleStatusChange = async (
-    commentId: string,
-    newStatus: 'pending' | 'approved' | 'rejected'
-  ) => {
-    if (!isUserModerator) return;
+  const handleStatusChange = useCallback(
+    async (commentId: string, newStatus: 'pending' | 'approved' | 'rejected') => {
+      if (!isUserModerator) return;
 
-    try {
-      const response = await fetch(`/api/comments/${commentId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
+      try {
+        const response = await fetch(`/api/comments/${commentId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: newStatus }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to update comment status');
+        if (!response.ok) {
+          throw new Error('Failed to update comment status');
+        }
+
+        // Update the comment in the local state
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment.id === commentId ? { ...comment, status: newStatus } : comment
+          )
+        );
+
+        // If the comment was rejected, we might want to refetch to get updated counts
+        if (newStatus === 'rejected') {
+          fetchComments();
+        }
+      } catch (error) {
+        console.error('Error updating comment status:', error);
+        throw error;
       }
+    },
+    [isUserModerator, fetchComments]
+  );
 
-      // Update the comment in the local state
-      setComments(
-        comments.map((comment) =>
-          comment.id === commentId ? { ...comment, status: newStatus } : comment
-        )
-      );
+  const handleDelete = useCallback(
+    async (commentId: string) => {
+      if (!profile) return;
 
-      // If the comment was rejected, we might want to refetch to get updated counts
-      if (newStatus === 'rejected') {
-        fetchComments();
+      try {
+        const response = await fetch(`/api/comments/${commentId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete comment');
+        }
+
+        // Remove the comment from state
+        setComments((prevComments) => prevComments.filter((comment) => comment.id !== commentId));
+
+        // If deleting a parent comment, also filter out all replies to that comment
+        setComments((prevComments) =>
+          prevComments.filter((comment) => comment.parent_id !== commentId)
+        );
+
+        // Update total count
+        setTotalComments((prev) => Math.max(0, prev - 1));
+      } catch (error) {
+        console.error('Error deleting comment:', error);
+        throw error;
       }
-    } catch (error) {
-      console.error('Error updating comment status:', error);
-      throw error;
-    }
-  };
+    },
+    [profile]
+  );
 
-  const handleDelete = async (commentId: string) => {
-    if (!profile) return;
+  const handleEdit = useCallback(
+    async (commentId: string, newContent: string) => {
+      if (!profile) return;
 
-    try {
-      const response = await fetch(`/api/comments/${commentId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      try {
+        const response = await fetch(`/api/comments/${commentId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ content: newContent }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete comment');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update comment');
+        }
+
+        await response.json();
+
+        // Update the comment in state
+        setComments((prevComments) =>
+          prevComments.map((c) => (c.id === commentId ? { ...c, content: newContent } : c))
+        );
+      } catch (error) {
+        console.error('Error editing comment:', error);
+        throw error;
       }
+    },
+    [profile]
+  );
 
-      // Remove the comment from state
-      setComments(comments.filter((comment) => comment.id !== commentId));
-
-      // If deleting a parent comment, also filter out all replies to that comment
-      setComments((prevComments) =>
-        prevComments.filter((comment) => comment.parent_id !== commentId)
-      );
-
-      // Update total count
-      setTotalComments((prev) => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-      throw error;
-    }
-  };
-
-  const handleEdit = async (commentId: string, newContent: string) => {
-    if (!profile) return;
-
-    try {
-      const response = await fetch(`/api/comments/${commentId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content: newContent }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update comment');
-      }
-
-      await response.json();
-
-      // Update the comment in state
-      setComments(comments.map((c) => (c.id === commentId ? { ...c, content: newContent } : c)));
-    } catch (error) {
-      console.error('Error editing comment:', error);
-      throw error;
-    }
-  };
-
-  const renderComments = () => {
-    if (isLoading) {
-      return Array(3)
-        .fill(0)
-        .map((_, index) => (
-          <div
-            key={`skeleton-${index}`}
-            className="animate-pulse p-4 border border-gray-200 rounded-lg mb-4"
-          >
-            <div className="flex items-start space-x-3">
-              <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-              <div className="flex-1">
-                <div className="h-4 bg-gray-200 rounded mb-2 w-1/4"></div>
-                <div className="h-3 bg-gray-200 rounded mb-3 w-1/6"></div>
-                <div className="h-4 bg-gray-200 rounded mb-1 w-full"></div>
-                <div className="h-4 bg-gray-200 rounded mb-1 w-4/5"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/5"></div>
-              </div>
-            </div>
-          </div>
-        ));
-    }
-
-    if (error) {
-      return (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">{error}</div>
-      );
-    }
-
-    if (comments.length === 0) {
-      return (
-        <div className="p-6 text-center text-gray-500">
-          <FaRegCommentAlt className="mx-auto mb-3 h-8 w-8 text-gray-400" />
-          <p>No comments yet. Be the first to share your thoughts!</p>
-        </div>
-      );
-    }
-
-    // Group comments by parent_id for threaded view
+  // Memoize the grouped and sorted comments structure to prevent recalculations on every render
+  const { commentsByParent, topLevelComments } = useMemo(() => {
     const commentsByParent: Record<string, Comment[]> = {};
     const topLevelComments: Comment[] = [];
+    const topLevelParentMap: Record<string, string> = {};
 
     // First pass: find all top-level comments and create a map of comment IDs to their top-level parent
-    const topLevelParentMap: Record<string, string> = {};
     comments.forEach((comment) => {
       if (comment.parent_id) {
         let topLevelParentId = comment.parent_id;
@@ -272,8 +243,35 @@ const CommentsList: React.FC<CommentsListProps> = ({
       );
     });
 
-    // Render a comment and its replies
-    const renderCommentWithReplies = (comment: Comment) => {
+    return { commentsByParent, topLevelComments };
+  }, [comments]);
+
+  // Memoize the skeleton loader to prevent recreation on each render when loading
+  const skeletonLoader = useMemo(() => {
+    return Array(3)
+      .fill(0)
+      .map((_, index) => (
+        <div
+          key={`skeleton-${index}`}
+          className="animate-pulse p-4 border border-gray-200 rounded-lg mb-4"
+        >
+          <div className="flex items-start space-x-3">
+            <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+            <div className="flex-1">
+              <div className="h-4 bg-gray-200 rounded mb-2 w-1/4"></div>
+              <div className="h-3 bg-gray-200 rounded mb-3 w-1/6"></div>
+              <div className="h-4 bg-gray-200 rounded mb-1 w-full"></div>
+              <div className="h-4 bg-gray-200 rounded mb-1 w-4/5"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/5"></div>
+            </div>
+          </div>
+        </div>
+      ));
+  }, []);
+
+  // Memoize the renderCommentWithReplies function
+  const renderCommentWithReplies = useCallback(
+    (comment: Comment) => {
       const replies = commentsByParent[comment.id] || [];
 
       return (
@@ -326,30 +324,73 @@ const CommentsList: React.FC<CommentsListProps> = ({
           )}
         </div>
       );
-    };
+    },
+    [commentsByParent, postId, handleStatusChange, fetchComments, handleDelete, handleEdit]
+  );
 
-    return topLevelComments.map((comment) => renderCommentWithReplies(comment));
-  };
+  // Memoize the rendered comments to prevent recreation
+  const renderedComments = useMemo(() => {
+    if (isLoading) {
+      return skeletonLoader;
+    }
 
-  return (
-    <div className={className}>
+    if (error) {
+      return (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">{error}</div>
+      );
+    }
+
+    if (comments.length === 0) {
+      return (
+        <div className="p-6 text-center text-gray-500">
+          <FaRegCommentAlt className="mx-auto mb-3 h-8 w-8 text-gray-400" />
+          <p>No comments yet. Be the first to share your thoughts!</p>
+        </div>
+      );
+    }
+
+    return topLevelComments.map(renderCommentWithReplies);
+  }, [
+    isLoading,
+    error,
+    comments.length,
+    topLevelComments,
+    skeletonLoader,
+    renderCommentWithReplies,
+  ]);
+
+  // Memoize the header text
+  const headerText = useMemo(
+    () => (
       <div className="mb-6">
         <h3 className="text-xl font-bold">Comments</h3>
         <p className="text-sm text-gray-600">
           Showing {totalComments} comment{totalComments !== 1 ? 's' : ''}
         </p>
       </div>
+    ),
+    [totalComments]
+  );
 
-      <div className="space-y-4">{renderComments()}</div>
-
-      {totalPages > 1 && (
+  // Memoize the pagination component
+  const paginationComponent = useMemo(
+    () =>
+      totalPages > 1 && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
           basePath=""
           searchParams={{ postId }}
         />
-      )}
+      ),
+    [totalPages, currentPage, postId]
+  );
+
+  return (
+    <div className={className}>
+      {headerText}
+      <div className="space-y-4">{renderedComments}</div>
+      {paginationComponent}
     </div>
   );
 };

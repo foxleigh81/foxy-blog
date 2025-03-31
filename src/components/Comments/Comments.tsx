@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { AuthProvider } from '../Auth/AuthProvider';
 import UserAuthStatus from '../Auth/UserAuthStatus';
 import CommentInput from './CommentInput';
@@ -24,25 +24,35 @@ interface CommentsProps {
 const Comments: React.FC<CommentsProps> = ({ postId, className = '' }) => {
   const [refreshComments, setRefreshComments] = useState(false);
 
-  const handleCommentSubmitted = () => {
+  const handleCommentSubmitted = useCallback(() => {
     setRefreshComments((prev) => !prev);
-  };
+  }, []);
+
+  // Memoize the components to prevent unnecessary re-renders
+  const userAuthStatusComponent = useMemo(() => <UserAuthStatus />, []);
+
+  const commentInputComponent = useMemo(
+    () => (
+      <CommentInput postId={postId} onCommentSubmitted={handleCommentSubmitted} className="mb-8" />
+    ),
+    [postId, handleCommentSubmitted]
+  );
+
+  // We use the key prop to force a re-render when refreshComments changes
+  const commentsListComponent = useMemo(
+    () => <CommentsList postId={postId} key={`comments-list-${refreshComments}`} />,
+    [postId, refreshComments]
+  );
 
   return (
     <AuthProvider>
       <div className={`space-y-6 ${className}`}>
-        <UserAuthStatus />
-
-        <CommentInput
-          postId={postId}
-          onCommentSubmitted={handleCommentSubmitted}
-          className="mb-8"
-        />
-
-        <CommentsList postId={postId} key={`comments-list-${refreshComments}`} />
+        {userAuthStatusComponent}
+        {commentInputComponent}
+        {commentsListComponent}
       </div>
     </AuthProvider>
   );
 };
 
-export default Comments;
+export default React.memo(Comments);
