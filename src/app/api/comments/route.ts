@@ -86,19 +86,28 @@ export async function GET(request: NextRequest) {
   const offset = (page - 1) * limit;
 
   try {
-    console.log('Fetching comments with params:', { postId, page, limit, includePending, userId });
+    // Include a new parameter to fetch the user's own pending comments
+    const queryParams = new URLSearchParams({
+      postId: postId,
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    // Add includePending for moderators
+    if (includePending) {
+      queryParams.append('includePending', 'true');
+    }
+
+    // Add new parameter to include the current user's pending comments
+    if (userId) {
+      queryParams.append('userId', userId);
+    }
 
     // Create Supabase client - now awaiting it
     const supabase = await createClient();
 
     // First get session to maintain cookies
     await supabase.auth.getSession();
-
-    // Then use getUser to get authenticated user data for better security
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    console.log('User check in GET:', { isAuthenticated: !!user, userId: user?.id });
 
     // Start building query for comments
     let query = supabase
@@ -212,7 +221,6 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    console.log('Successfully fetched comments:', { count: transformedComments.length });
     return NextResponse.json({
       comments: transformedComments,
       total: count || 0,
@@ -234,41 +242,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { content, postId, parentId, mentions, status } = body;
 
-    // Log request information
-    console.log('POST /api/comments - Request received:', {
-      postId,
-      hasParentId: !!parentId,
-      contentLength: content?.length || 0,
-    });
-
-    // Debug: Check request headers and cookies
-    const authHeader = request.headers.get('authorization');
-    const cookieHeader = request.headers.get('cookie');
-    console.log('Request headers:', {
-      hasAuthHeader: !!authHeader,
-      hasCookieHeader: !!cookieHeader,
-      cookieHeaderLength: cookieHeader?.length || 0,
-      cookies: cookieHeader ? cookieHeader.substring(0, 100) + '...' : 'none',
-    });
-
     // Create Supabase client - now awaiting it
     const supabase = await createClient();
-
-    // First get session to maintain cookies
-    const { data: sessionData } = await supabase.auth.getSession();
-    console.log('Session check in POST:', {
-      hasSession: !!sessionData.session,
-      sessionExpires: sessionData.session?.expires_at
-        ? new Date(sessionData.session.expires_at * 1000).toISOString()
-        : 'no expiry',
-    });
 
     // Then use getUser to get authenticated user data for better security
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
-    console.log('User check in POST:', { isAuthenticated: !!user, userId: user?.id });
 
     if (userError) {
       console.error('Error getting user:', userError);
@@ -285,12 +266,6 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-
-    console.log('Authenticated user found:', {
-      id: user.id,
-      email: user.email,
-      hasMetadata: !!user.user_metadata,
-    });
 
     // Validate required fields
     if (!content || !postId) {
@@ -312,7 +287,6 @@ export async function POST(request: NextRequest) {
 
       // If the profile doesn't exist, create one
       if (profileError.code === 'PGRST116') {
-        console.log('Creating profile for user:', user.id);
         // Create a new profile for the user
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
@@ -334,7 +308,6 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Failed to create user profile' }, { status: 500 });
         }
 
-        console.log('Profile created successfully:', newProfile);
         const safeProfile = newProfile as unknown as DBProfile;
 
         // Determine comment status
@@ -366,11 +339,6 @@ export async function POST(request: NextRequest) {
         // Type assertion for the returned comment
         const safeComment = comment as unknown as DBComment;
 
-        console.log('Comment created successfully with new profile:', {
-          commentId: safeComment.id,
-          status: commentStatus,
-        });
-
         return NextResponse.json({
           success: true,
           comment: safeComment,
@@ -389,11 +357,6 @@ export async function POST(request: NextRequest) {
 
     // Type assertion for profile
     const safeProfile = profile as unknown as DBProfile;
-    console.log('Profile found:', {
-      username: safeProfile.username,
-      isModerator: safeProfile.is_moderator,
-      isTrusted: safeProfile.is_trusted,
-    });
 
     // Determine the comment status based on user's role:
     // - Moderators and trusted users get automatic approval
@@ -428,11 +391,6 @@ export async function POST(request: NextRequest) {
 
     // Type assertion for the returned comment
     const safeComment = comment as unknown as DBComment;
-
-    console.log('Comment created successfully:', {
-      commentId: safeComment.id,
-      status: commentStatus,
-    });
 
     return NextResponse.json({
       success: true,

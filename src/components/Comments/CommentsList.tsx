@@ -81,7 +81,6 @@ const CommentsList: React.FC<CommentsListProps> = ({
       }
 
       const data = await response.json();
-      console.log('Fetched comments:', data);
       setComments(data.comments);
       setTotalComments(data.total);
     } catch (error) {
@@ -99,14 +98,11 @@ const CommentsList: React.FC<CommentsListProps> = ({
 
   // Listen for profile updates and refresh comments
   useEffect(() => {
-    const handleProfileUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      console.log('CommentsList: Detected profile update event:', customEvent.detail);
+    const handleProfileUpdate = () => {
       fetchComments();
     };
 
     const handleCommentAdded = () => {
-      console.log('CommentsList: Detected comment added event');
       fetchComments();
     };
 

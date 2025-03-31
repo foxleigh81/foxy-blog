@@ -114,8 +114,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      console.log('Auth state changed:', event, currentSession?.user?.id);
-
       if (currentSession) {
         setSession(currentSession);
 
@@ -128,24 +126,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(authUser);
           try {
             // Check if profile exists
-            const { data: existingProfile, error: profileError } = await supabase
+            const { error: profileError } = await supabase
               .from('profiles')
               .select('*')
               .eq('id', authUser.id)
               .single();
 
-            console.log('Profile check result:', { existingProfile, profileError });
-
             if (profileError && profileError.code === 'PGRST116') {
-              console.log('Creating new profile for user:', authUser.id);
-
               // Get username from metadata
               const username =
                 authUser.user_metadata?.username ||
                 authUser.user_metadata?.display_name ||
                 'Anonymous';
-
-              console.log('Using username from metadata:', username);
 
               // Check for Gravatar
               let avatarUrl = null;
@@ -175,11 +167,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 .select()
                 .single();
 
-              console.log('Profile creation result:', { newProfile, insertError });
-
               if (insertError) {
                 console.error('Error creating profile:', insertError);
-                console.error('Error details:', JSON.stringify(insertError, null, 2));
               } else {
                 // Set the profile directly to avoid extra fetch
                 setProfile(newProfile);
@@ -211,20 +200,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
-      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
 
       if (error) {
         // If the error is because the profile doesn't exist, don't log it as an error
         if (error.code === 'PGRST116') {
-          console.log('Profile not found for user:', userId);
           return null;
         }
         console.error('Error fetching profile:', error);
         return null;
       }
 
-      console.log('Profile fetched successfully:', data);
       setProfile(data);
       return data;
     } catch (error) {
@@ -270,24 +256,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       if (!user) throw new Error('No user logged in');
 
-      console.log('AuthProvider: Starting profile update with data:', profileData);
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .update(profileData)
         .eq('id', user.id)
         .select();
 
       if (error) {
-        console.error('AuthProvider: Error updating profile:', error);
+        console.error('Error updating profile:', error);
         throw error;
       }
 
-      console.log('AuthProvider: Profile updated successfully:', data);
-
       // Refetch the profile to get the updated data
       await refetchProfile();
-      console.log('AuthProvider: Profile refetched after update');
 
       // Dispatch a custom event to notify components of profile update
       if (typeof window !== 'undefined') {
@@ -295,10 +276,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           detail: { userId: user.id },
         });
         window.dispatchEvent(event);
-        console.log('AuthProvider: profileUpdated event dispatched');
       }
     } catch (error) {
-      console.error('AuthProvider: Error in updateProfile function:', error);
+      console.error('Error in updateProfile function:', error);
       throw error;
     }
   };
@@ -307,7 +287,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return null;
 
     try {
-      console.log('Refetching profile for user:', user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -322,7 +301,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Update the profile state with the latest data
       if (data) {
         setProfile(data);
-        console.log('Profile updated from refetch:', data);
       }
 
       return data;

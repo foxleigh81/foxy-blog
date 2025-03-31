@@ -23,8 +23,6 @@ export async function POST(request: NextRequest) {
 
     const { userId, username, avatarUrl } = await request.json();
 
-    console.log('API: Creating profile for user:', { userId, username });
-
     if (!userId || !username) {
       return NextResponse.json({ error: 'User ID and username are required' }, { status: 400 });
     }
@@ -46,7 +44,6 @@ export async function POST(request: NextRequest) {
 
     // If profile already exists, just return success
     if (existingProfile) {
-      console.log('API: Profile already exists for user:', userId);
       return NextResponse.json({
         success: true,
         message: 'Profile already exists',
@@ -62,8 +59,6 @@ export async function POST(request: NextRequest) {
       is_moderator: false,
     };
 
-    console.log('API: Inserting profile data via admin client:', profileData);
-
     const { data: newProfile, error: insertError } = await supabaseAdmin
       .from('profiles')
       .insert(profileData)
@@ -78,7 +73,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('API: Profile created successfully:', newProfile);
     return NextResponse.json({
       success: true,
       profile: newProfile,

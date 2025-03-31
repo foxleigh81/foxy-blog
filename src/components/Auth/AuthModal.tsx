@@ -56,9 +56,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
         await signIn(email, password);
         onClose();
       } else {
-        console.log('Attempting to sign up with:', { email, username });
-        await signUp(email, password, username);
-        console.log('Signup successful, showing confirmation message');
+        await signUp(email, password);
         setShowConfirmationMessage(true);
       }
     } catch (error) {

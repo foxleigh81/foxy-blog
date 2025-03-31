@@ -47,7 +47,6 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
-    console.log('Starting profile update process');
 
     try {
       let avatarUrl = profile?.avatar_url;
@@ -56,7 +55,6 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
       if (avatar && avatarEditorRef.current) {
         try {
           setIsUploading(true);
-          console.log('Processing avatar image');
 
           // Get the cropped canvas from the editor
           const canvas = avatarEditorRef.current.getImageScaledToCanvas();
@@ -83,7 +81,6 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
 
             // Create a unique filename
             const fileName = `avatar-${user?.id}-${Date.now()}.jpg`;
-            console.log('Uploading avatar with filename:', fileName);
 
             // Upload to Supabase storage
             const { error: uploadError } = await supabase.storage
@@ -101,7 +98,6 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
             // Get the public URL
             const { data: urlData } = supabase.storage.from('user-avatars').getPublicUrl(fileName);
             avatarUrl = urlData.publicUrl;
-            console.log('Avatar uploaded successfully, URL:', avatarUrl);
           }
         } catch (avatarError) {
           console.error('Error processing avatar:', avatarError);
@@ -116,12 +112,10 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
 
       // Update the profile with the new information
       try {
-        console.log('Updating profile with:', { username, avatarUrl });
         await updateProfile({
           username,
           avatar_url: avatarUrl,
         });
-        console.log('Profile updated successfully');
       } catch (profileError) {
         console.error('Profile update error:', profileError);
         setError(profileError instanceof Error ? profileError.message : 'Failed to update profile');
@@ -132,13 +126,11 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
       // Update email if it has changed
       if (email !== user?.email) {
         try {
-          console.log('Updating email from', user?.email, 'to', email);
           const { error: emailError } = await supabase.auth.updateUser({ email });
           if (emailError) {
             console.error('Email update error:', emailError);
             throw new Error(`Error updating email: ${emailError.message}`);
           }
-          console.log('Email update initiated');
         } catch (emailError) {
           console.error('Email update error:', emailError);
           setError(emailError instanceof Error ? emailError.message : 'Failed to update email');
@@ -147,7 +139,6 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
         }
       }
 
-      console.log('All updates completed, closing modal');
       onClose();
     } catch (error) {
       console.error('Error updating profile (general catch):', error);

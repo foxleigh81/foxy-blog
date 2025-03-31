@@ -31,7 +31,6 @@ const Comments: React.FC<CommentsProps> = ({ postId, className = '' }) => {
   // Listen for global events that should refresh comments
   useEffect(() => {
     const handleRefresh = () => {
-      console.log('Comments: Refreshing comments due to external event');
       setRefreshComments((prev) => !prev);
     };
 
