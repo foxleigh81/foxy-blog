@@ -5,6 +5,8 @@ import { User, Session } from '@supabase/supabase-js';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
 import crypto from 'crypto';
+import { useRouter } from 'next/navigation';
+import { validateUsername } from '@/utils/validation';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -32,7 +34,7 @@ type AuthContextType = {
   session: Session | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signUp: (email: string, password: string, username: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (profile: Partial<Profile>) => Promise<void>;
 };
@@ -56,6 +58,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
   const supabase = createClientComponentClient<Database>();
 
   useEffect(() => {
@@ -69,6 +72,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (initialSession?.user) {
           setUser(initialSession.user);
+          // Wait for fetchProfile to complete
           await fetchProfile(initialSession.user.id);
         }
       } catch (error) {
@@ -101,19 +105,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           if (profileError && profileError.code === 'PGRST116') {
             console.log('Creating new profile for user:', currentSession.user.id);
+
+            // Get username from metadata
+            const username =
+              currentSession.user.user_metadata?.username ||
+              currentSession.user.user_metadata?.display_name ||
+              'Anonymous';
+
+            console.log('Using username from metadata:', username);
+
             // Check for Gravatar
-            const gravatarUrl = currentSession.user.email
-              ? await checkGravatar(currentSession.user.email)
-              : null;
+            let avatarUrl = null;
+            try {
+              if (currentSession.user.email) {
+                avatarUrl = await checkGravatar(currentSession.user.email);
+                if (!avatarUrl) {
+                  avatarUrl = `https://www.gravatar.com/avatar/${crypto
+                    .createHash('md5')
+                    .update(currentSession.user.email.toLowerCase().trim())
+                    .digest('hex')}`;
+                }
+              }
+            } catch (error) {
+              console.error('Error checking gravatar:', error);
+            }
 
             // Profile doesn't exist, create it
             const { data: newProfile, error: insertError } = await supabase
               .from('profiles')
               .insert({
                 id: currentSession.user.id,
-                display_name: currentSession.user.user_metadata.display_name || 'Anonymous',
+                username: username,
                 is_moderator: false,
-                avatar_url: gravatarUrl,
+                avatar_url: avatarUrl,
               })
               .select()
               .single();
@@ -122,11 +146,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             if (insertError) {
               console.error('Error creating profile:', insertError);
-              return;
+              console.error('Error details:', JSON.stringify(insertError, null, 2));
+            } else {
+              // Set the profile directly to avoid extra fetch
+              setProfile(newProfile);
+              return; // Skip fetchProfile since we already have the profile
             }
           }
 
-          await fetchProfile(currentSession.user.id);
+          // Fetch the profile with await to make sure it completes
+          const profileData = await fetchProfile(currentSession.user.id);
+          if (profileData) {
+            setProfile(profileData);
+          }
         } catch (error) {
           console.error('Error in auth state change handler:', error);
         }
@@ -145,21 +177,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
 
       if (error) {
         // If the error is because the profile doesn't exist, don't log it as an error
         if (error.code === 'PGRST116') {
           console.log('Profile not found for user:', userId);
-          return;
+          return null;
         }
         console.error('Error fetching profile:', error);
-        return;
+        return null;
       }
 
+      console.log('Profile fetched successfully:', data);
       setProfile(data);
+      return data;
     } catch (error) {
       console.error('Error in fetchProfile:', error);
+      return null;
     }
   };
 
@@ -173,20 +209,57 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signUp = async (email: string, password: string, displayName: string) => {
+  const signUp = async (email: string, password: string, username: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log('Starting signup process for:', { email, username });
+
+      // Validate username
+      const { isValid, error } = validateUsername(username);
+      if (!isValid) {
+        console.log('Username validation failed:', error);
+        throw new Error(error || 'Invalid username');
+      }
+
+      console.log('Username validation successful, proceeding with signup');
+
+      // Sign up the user with auth metadata containing the username
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { display_name: displayName },
+          data: {
+            username: username, // Store username in user metadata
+          },
+          emailRedirectTo: `${location.origin}/auth/callback`,
         },
       });
 
-      if (error) throw error;
+      if (signUpError) {
+        console.error('Error signing up:', signUpError);
+        throw signUpError;
+      }
+
+      // Use the user object from the sign-up response
+      const user = data.user;
+      if (!user) {
+        console.error('No user returned from sign up');
+        throw new Error('No user returned from sign up');
+      }
+
+      console.log('User created:', user);
+
+      // The profile will be created by the onAuthStateChange handler
+      // which is triggered after signup and already has the necessary permissions
+
+      router.refresh();
     } catch (error) {
-      console.error('Error signing up:', error);
-      throw error;
+      console.error('Error in signup process:', error);
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        console.error('Non-error object thrown:', JSON.stringify(error, null, 2));
+        throw new Error('An unexpected error occurred during signup');
+      }
     }
   };
 

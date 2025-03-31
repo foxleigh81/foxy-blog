@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from './AuthProvider';
 import { FaUser, FaLock, FaEnvelope } from 'react-icons/fa';
+import { validateUsername } from '@/utils/validation';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -14,7 +15,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
+  const [usernameError, setUsernameError] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
@@ -23,24 +25,61 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
   if (!isOpen) return null;
 
+  const validateUsernameInput = (value: string) => {
+    if (mode === 'signup') {
+      const { isValid, error } = validateUsername(value);
+      setUsernameError(error || '');
+      return isValid;
+    }
+    return true;
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUsername(value);
+    validateUsernameInput(value);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
+
+    if (mode === 'signup' && !validateUsernameInput(username)) {
+      setIsSubmitting(false);
+      setError(usernameError);
+      return;
+    }
 
     try {
       if (mode === 'login') {
         await signIn(email, password);
         onClose();
       } else {
-        await signUp(email, password, displayName);
+        console.log('Attempting to sign up with:', { email, username });
+        await signUp(email, password, username);
+        console.log('Signup successful, showing confirmation message');
         setShowConfirmationMessage(true);
       }
     } catch (error) {
+      console.error('Auth error in modal:', error);
       if (error instanceof Error) {
-        setError(error.message);
+        // Handle Error objects
+        setError(error.message || 'Failed to authenticate');
+      } else if (typeof error === 'object' && error !== null) {
+        // Try to extract error information from objects
+        const errorObj = error as Record<string, unknown>;
+        if (typeof errorObj.message === 'string') {
+          setError(errorObj.message);
+        } else if (typeof errorObj.error_description === 'string') {
+          setError(errorObj.error_description);
+        } else {
+          setError('An unexpected error occurred. Please try again.');
+        }
+        console.error('Detailed error:', JSON.stringify(error, null, 2));
       } else {
-        setError('An unexpected error occurred');
+        // Fallback for other error types
+        setError('An unexpected error occurred. Please try again.');
       }
     } finally {
       setIsSubmitting(false);
@@ -50,6 +89,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const toggleMode = () => {
     setMode(mode === 'login' ? 'signup' : 'login');
     setError('');
+    setUsernameError('');
     setShowConfirmationMessage(false);
   };
 
@@ -71,8 +111,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
               <p className="font-medium">Check your email</p>
               <p className="text-sm mt-1">
-                We've sent you a confirmation link. Please check your email and click the link to
-                verify your account.
+                We&apos;ve sent you a confirmation link. Please check your email and click the link
+                to verify your account.
               </p>
             </div>
           )}
@@ -81,8 +121,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             <form onSubmit={handleSubmit}>
               {mode === 'signup' && (
                 <div className="mb-4">
-                  <label htmlFor="displayName" className="block mb-2 text-sm font-medium">
-                    Display Name
+                  <label htmlFor="username" className="block mb-2 text-sm font-medium">
+                    Username
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -90,14 +130,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                     </div>
                     <input
                       type="text"
-                      id="displayName"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5"
-                      placeholder="Your display name"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
+                      id="username"
+                      className={`bg-gray-50 border ${usernameError ? 'border-red-300' : 'border-gray-300'} text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5`}
+                      placeholder="Your username"
+                      value={username}
+                      onChange={handleUsernameChange}
                       required
                     />
                   </div>
+                  {usernameError && <p className="mt-1 text-xs text-red-500">{usernameError}</p>}
                 </div>
               )}
 

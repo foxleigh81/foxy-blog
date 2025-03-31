@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FaRegCommentAlt } from 'react-icons/fa';
 import { useSearchParams } from 'next/navigation';
 import CommentItem from './CommentItem';
 import Pagination from '../Pagination';
 import { useAuth } from '../Auth/AuthProvider';
 import { Database } from '@/types/supabase';
+
+type CommentStatus = 'pending' | 'approved' | 'rejected';
 
 type Comment = {
   id: string;
@@ -15,7 +17,7 @@ type Comment = {
   status: Database['public']['Tables']['comments']['Row']['status'];
   user: {
     id: string;
-    display_name: string;
+    username: string | null;
     avatar_url: string | null;
     is_moderator: boolean;
   };
@@ -46,7 +48,7 @@ const CommentsList: React.FC<CommentsListProps> = ({
   const totalPages = Math.ceil(totalComments / commentsPerPage);
   const isUserModerator = !!profile?.is_moderator;
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -74,11 +76,11 @@ const CommentsList: React.FC<CommentsListProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [postId, currentPage, commentsPerPage, isUserModerator]);
 
   useEffect(() => {
     fetchComments();
-  }, [postId, currentPage, isUserModerator]);
+  }, [fetchComments]);
 
   const handleStatusChange = async (
     commentId: string,
@@ -208,11 +210,11 @@ const CommentsList: React.FC<CommentsListProps> = ({
             createdAt={comment.created_at}
             user={{
               id: comment.user.id,
-              displayName: comment.user.display_name || 'Anonymous',
+              displayName: comment.user.username || 'Anonymous',
               avatarUrl: comment.user.avatar_url,
               isModerator: comment.user.is_moderator,
             }}
-            status={comment.status}
+            status={comment.status as CommentStatus}
             postId={postId}
             onStatusChange={handleStatusChange}
             onReplySubmitted={fetchComments}
@@ -229,11 +231,11 @@ const CommentsList: React.FC<CommentsListProps> = ({
                     createdAt={reply.created_at}
                     user={{
                       id: reply.user.id,
-                      displayName: reply.user.display_name || 'Anonymous',
+                      displayName: reply.user.username || 'Anonymous',
                       avatarUrl: reply.user.avatar_url,
                       isModerator: reply.user.is_moderator,
                     }}
-                    status={reply.status}
+                    status={reply.status as CommentStatus}
                     postId={postId}
                     onStatusChange={handleStatusChange}
                     onReplySubmitted={fetchComments}

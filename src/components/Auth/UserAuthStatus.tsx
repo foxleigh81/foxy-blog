@@ -1,74 +1,50 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaUser } from 'react-icons/fa';
 import { useAuth } from './AuthProvider';
 import AuthModal from './AuthModal';
 
-interface UserAuthStatusProps {
-  className?: string;
-}
+export function UserAuthStatus() {
+  const { user, profile, signOut } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-const UserAuthStatus: React.FC<UserAuthStatusProps> = ({ className = '' }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const { user, profile, signOut, isLoading } = useAuth();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
-  // Don't show anything while loading
-  if (isLoading) {
-    return <div className={`h-8 w-full bg-gray-100 animate-pulse rounded ${className}`} />;
-  }
-
-  // User is logged in
-  if (user && profile) {
+  if (!user) {
     return (
-      <div
-        className={`flex items-center justify-between p-2 bg-gray-50 rounded-lg shadow-sm ${className}`}
-      >
-        <div className="flex items-center space-x-2">
-          {profile.avatar_url ? (
-            <img
-              src={profile.avatar_url}
-              alt={profile.display_name || 'User'}
-              className="w-10 h-10 rounded-full p-0.5"
-            />
-          ) : (
-            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center p-0.5">
-              <FaUser className="w-5 h-5" />
-            </div>
-          )}
-          <div>
-            <p className="text-sm font-medium">{profile.display_name}</p>
-            {profile.is_moderator && (
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                Moderator
-              </span>
-            )}
-          </div>
-        </div>
+      <>
         <button
-          onClick={handleSignOut}
-          className="text-xs text-gray-700 hover:text-red-600 transition-colors"
+          onClick={() => setIsAuthModalOpen(true)}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
-          Sign Out
+          Sign In
         </button>
-      </div>
+        <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      </>
     );
   }
 
-  // User is not logged in
   return (
-    <>
-      <AuthModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-    </>
+    <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2">
+        <img
+          src={
+            profile?.avatar_url ||
+            `https://www.gravatar.com/avatar/${user.email?.toLowerCase().trim()}`
+          }
+          alt={profile?.username || 'User avatar'}
+          className="h-8 w-8 rounded-full"
+        />
+        <span className="text-sm font-medium text-gray-700">
+          {profile?.username || 'Anonymous'}
+        </span>
+      </div>
+      <button
+        onClick={() => signOut()}
+        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        Sign Out
+      </button>
+    </div>
   );
-};
+}
 
 export default UserAuthStatus;

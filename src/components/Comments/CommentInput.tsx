@@ -108,9 +108,6 @@ const CommentInput: React.FC<CommentInputProps> = ({
       if (parentId && onCancelReply) {
         onCancelReply();
       }
-
-      // Force a refresh of the comments list
-      window.location.reload();
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);

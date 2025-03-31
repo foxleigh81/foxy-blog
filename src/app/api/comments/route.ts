@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import type { Database } from '@/types/supabase';
 
 // Define simple types that avoid the complex Supabase generics
 type DBProfile = {
   id: string;
-  display_name: string | null;
+  username: string | null;
   avatar_url: string | null;
   is_moderator: boolean;
 };
@@ -29,23 +29,54 @@ type Comment = {
   status: 'pending' | 'approved' | 'rejected';
   user: {
     id: string;
-    display_name: string;
+    username: string | null;
     avatar_url: string | null;
     is_moderator: boolean;
   };
   parent_id: string | null;
 };
 
+// Helper function to create a Supabase client with proper cookie handling
+// Using the direct approach recommended in the GitHub issue
+async function createClient() {
+  // Cookies must be awaited in Next.js 15
+  const cookieStore = await cookies();
+
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: async () => {
+          return Array.from(cookieStore.getAll()).map((cookie) => ({
+            name: cookie.name,
+            value: cookie.value,
+          }));
+        },
+        setAll: async (cookiesList) => {
+          cookiesList.forEach((cookie) => {
+            try {
+              cookieStore.set(cookie.name, cookie.value, cookie.options || {});
+            } catch {
+              // This try/catch is needed for middleware and read-only contexts
+            }
+          });
+        },
+      },
+    }
+  );
+}
+
 // GET function to fetch comments
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const postId = searchParams.get('postId');
   const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '15');
+  const limit = parseInt(searchParams.get('limit') || '10');
   const includePending = searchParams.get('includePending') === 'true';
 
   if (!postId) {
-    return NextResponse.json({ error: 'Missing required parameter: postId' }, { status: 400 });
+    return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
   }
 
   // Calculate offset for pagination
@@ -54,11 +85,8 @@ export async function GET(request: NextRequest) {
   try {
     console.log('Fetching comments with params:', { postId, page, limit, includePending });
 
-    // Create a Supabase client with the route handler
-
-    const cookieStore = await cookies();
-    // @ts-expect-error - cookies() returns Promise in Next.js 15
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    // Create Supabase client - now awaiting it
+    const supabase = await createClient();
 
     // Get the session first
     const {
@@ -69,13 +97,22 @@ export async function GET(request: NextRequest) {
     // Start building query for comments
     let query = supabase
       .from('comments')
-      .select('*', { count: 'exact' })
-      // @ts-expect-error - post_id is a string
+      .select(
+        `
+        *,
+        profiles:user_id (
+          id,
+          username,
+          avatar_url,
+          is_moderator
+        )
+      `,
+        { count: 'exact' }
+      )
       .eq('post_id', postId);
 
     // Only include approved comments if includePending is false
     if (!includePending) {
-      // @ts-expect-error - status is a string
       query = query.eq('status', 'approved');
     }
 
@@ -102,8 +139,7 @@ export async function GET(request: NextRequest) {
     const userIds = safeComments.map((comment) => comment.user_id);
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, display_name, avatar_url, is_moderator')
-      // @ts-expect-error - userIds is an array of strings
+      .select('id, username, avatar_url, is_moderator')
       .in('id', userIds);
 
     if (profilesError) {
@@ -137,7 +173,7 @@ export async function GET(request: NextRequest) {
           parent_id: comment.parent_id,
           user: {
             id: comment.user_id,
-            display_name: 'Anonymous',
+            username: null,
             avatar_url: null,
             is_moderator: false,
           },
@@ -151,7 +187,7 @@ export async function GET(request: NextRequest) {
         parent_id: comment.parent_id,
         user: {
           id: profile.id,
-          display_name: profile.display_name || 'Anonymous',
+          username: profile.username || 'Anonymous',
           avatar_url: profile.avatar_url,
           is_moderator: profile.is_moderator,
         },
@@ -196,13 +232,8 @@ export async function POST(request: NextRequest) {
       cookieHeaderLength: cookieHeader?.length || 0,
     });
 
-    // Create Supabase client with route handler
-    /* @next-codemod-ignore */
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({
-      // @ts-expect-error - cookies() returns Promise in Next.js 15
-      cookies: () => cookieStore,
-    });
+    // Create Supabase client - now awaiting it
+    const supabase = await createClient();
 
     // Get the session using the auth client
     const {
@@ -239,7 +270,6 @@ export async function POST(request: NextRequest) {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      // @ts-expect-error - id is a string
       .eq('id', user.id)
       .single();
 
@@ -271,7 +301,6 @@ export async function POST(request: NextRequest) {
     // Insert the comment
     const { data: comment, error: insertError } = await supabase
       .from('comments')
-      // @ts-expect-error - commentData is an object
       .insert(commentData)
       .select()
       .single();

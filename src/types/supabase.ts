@@ -11,8 +11,7 @@ export interface Database {
           post_id: string;
           user_id: string;
           parent_id: string | null;
-          mentions: string[] | null;
-          status: 'pending' | 'approved' | 'rejected';
+          status: string;
         };
         Insert: {
           id?: string;
@@ -21,8 +20,7 @@ export interface Database {
           post_id: string;
           user_id: string;
           parent_id?: string | null;
-          mentions?: string[] | null;
-          status?: 'pending' | 'approved' | 'rejected';
+          status?: string;
         };
         Update: {
           id?: string;
@@ -31,8 +29,7 @@ export interface Database {
           post_id?: string;
           user_id?: string;
           parent_id?: string | null;
-          mentions?: string[] | null;
-          status?: 'pending' | 'approved' | 'rejected';
+          status?: string;
         };
         Relationships: [
           {
@@ -55,21 +52,21 @@ export interface Database {
         Row: {
           id: string;
           created_at: string;
-          display_name: string | null;
+          username: string | null;
           avatar_url: string | null;
           is_moderator: boolean;
         };
         Insert: {
           id: string;
           created_at?: string;
-          display_name?: string | null;
+          username: string | null;
           avatar_url?: string | null;
           is_moderator?: boolean;
         };
         Update: {
           id?: string;
           created_at?: string;
-          display_name?: string | null;
+          username?: string | null;
           avatar_url?: string | null;
           is_moderator?: boolean;
         };
