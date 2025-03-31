@@ -88,11 +88,14 @@ export async function GET(request: NextRequest) {
     // Create Supabase client - now awaiting it
     const supabase = await createClient();
 
-    // Get the session first
+    // First get session to maintain cookies
+    await supabase.auth.getSession();
+
+    // Then use getUser to get authenticated user data for better security
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    console.log('Session in GET:', { hasSession: !!session, userId: session?.user?.id });
+      data: { user },
+    } = await supabase.auth.getUser();
+    console.log('User check in GET:', { isAuthenticated: !!user, userId: user?.id });
 
     // Start building query for comments
     let query = supabase
@@ -223,39 +226,55 @@ export async function POST(request: NextRequest) {
       contentLength: content?.length || 0,
     });
 
-    // Debug: Check request headers
+    // Debug: Check request headers and cookies
     const authHeader = request.headers.get('authorization');
     const cookieHeader = request.headers.get('cookie');
     console.log('Request headers:', {
       hasAuthHeader: !!authHeader,
       hasCookieHeader: !!cookieHeader,
       cookieHeaderLength: cookieHeader?.length || 0,
+      cookies: cookieHeader ? cookieHeader.substring(0, 100) + '...' : 'none',
     });
 
     // Create Supabase client - now awaiting it
     const supabase = await createClient();
 
-    // Get the session using the auth client
+    // First get session to maintain cookies
+    const { data: sessionData } = await supabase.auth.getSession();
+    console.log('Session check in POST:', {
+      hasSession: !!sessionData.session,
+      sessionExpires: sessionData.session?.expires_at
+        ? new Date(sessionData.session.expires_at * 1000).toISOString()
+        : 'no expiry',
+    });
+
+    // Then use getUser to get authenticated user data for better security
     const {
-      data: { session },
-      error,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    console.log('User check in POST:', { isAuthenticated: !!user, userId: user?.id });
 
-    if (error) {
-      console.error('Error getting session:', error);
-      return NextResponse.json({ error: 'Authentication error' }, { status: 401 });
+    if (userError) {
+      console.error('Error getting user:', userError);
+      return NextResponse.json(
+        { error: 'Authentication error: ' + userError.message },
+        { status: 401 }
+      );
     }
 
-    if (!session) {
-      console.error('No session found');
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    if (!user) {
+      console.error('No user found');
+      return NextResponse.json(
+        { error: 'Authentication required - no user found' },
+        { status: 401 }
+      );
     }
-
-    const user = session.user;
 
     console.log('Authenticated user found:', {
       id: user.id,
       email: user.email,
+      hasMetadata: !!user.user_metadata,
     });
 
     // Validate required fields
@@ -275,7 +294,76 @@ export async function POST(request: NextRequest) {
 
     if (profileError) {
       console.error('Error fetching profile:', profileError);
-      return NextResponse.json({ error: 'Error fetching user profile' }, { status: 500 });
+
+      // If the profile doesn't exist, create one
+      if (profileError.code === 'PGRST116') {
+        console.log('Creating profile for user:', user.id);
+        // Create a new profile for the user
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            username:
+              user.user_metadata?.username ||
+              user.user_metadata?.name ||
+              user.email?.split('@')[0] ||
+              'Anonymous',
+            is_moderator: false,
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          return NextResponse.json({ error: 'Failed to create user profile' }, { status: 500 });
+        }
+
+        console.log('Profile created successfully:', newProfile);
+        const safeProfile = newProfile as unknown as DBProfile;
+
+        // Determine comment status
+        const commentStatus = safeProfile.is_moderator ? 'approved' : status || 'pending';
+
+        // Create comment data
+        const commentData = {
+          content,
+          post_id: postId,
+          user_id: user.id,
+          parent_id: parentId || null,
+          mentions,
+          status: commentStatus,
+        };
+
+        // Insert the comment
+        const { data: comment, error: insertError } = await supabase
+          .from('comments')
+          .insert(commentData)
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Error inserting comment:', insertError);
+          return NextResponse.json({ error: 'Failed to save comment' }, { status: 500 });
+        }
+
+        // Type assertion for the returned comment
+        const safeComment = comment as unknown as DBComment;
+
+        console.log('Comment created successfully with new profile:', {
+          commentId: safeComment.id,
+          status: commentStatus,
+        });
+
+        return NextResponse.json({
+          success: true,
+          comment: safeComment,
+        });
+      }
+
+      return NextResponse.json(
+        { error: 'Error fetching user profile: ' + profileError.message },
+        { status: 500 }
+      );
     }
 
     if (!profile) {
@@ -284,6 +372,10 @@ export async function POST(request: NextRequest) {
 
     // Type assertion for profile
     const safeProfile = profile as unknown as DBProfile;
+    console.log('Profile found:', {
+      username: safeProfile.username,
+      isModerator: safeProfile.is_moderator,
+    });
 
     // Determine the comment status based on user's moderator status
     const commentStatus = safeProfile.is_moderator ? 'approved' : status || 'pending';
@@ -307,7 +399,10 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Error inserting comment:', insertError);
-      return NextResponse.json({ error: 'Failed to save comment' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to save comment: ' + insertError.message },
+        { status: 500 }
+      );
     }
 
     // Type assertion for the returned comment

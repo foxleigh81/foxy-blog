@@ -2,10 +2,10 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '@/types/supabase';
 import crypto from 'crypto';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { validateUsername } from '@/utils/validation';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -59,21 +59,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const supabase = createClientComponentClient<Database>();
+  const pathname = usePathname();
+
+  const supabase = createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  // This useEffect detects path changes and refreshes the profile
+  useEffect(() => {
+    if (user) {
+      fetchProfile(user.id);
+    }
+  }, [pathname, user]);
 
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
       try {
+        // First get session to maintain cookies
         const {
           data: { session: initialSession },
         } = await supabase.auth.getSession();
-        setSession(initialSession);
 
-        if (initialSession?.user) {
-          setUser(initialSession.user);
-          // Wait for fetchProfile to complete
-          await fetchProfile(initialSession.user.id);
+        if (initialSession) {
+          setSession(initialSession);
+
+          // Now use getUser to get authenticated user data
+          const {
+            data: { user: authUser },
+          } = await supabase.auth.getUser();
+
+          if (authUser) {
+            setUser(authUser);
+            await fetchProfile(authUser.id);
+          }
         }
       } catch (error) {
         console.error('Error fetching initial session:', error);
@@ -89,78 +109,86 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       console.log('Auth state changed:', event, currentSession?.user?.id);
-      setSession(currentSession);
 
-      if (currentSession?.user) {
-        setUser(currentSession.user);
-        try {
-          // Check if profile exists
-          const { data: existingProfile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentSession.user.id)
-            .single();
+      if (currentSession) {
+        setSession(currentSession);
 
-          console.log('Profile check result:', { existingProfile, profileError });
+        // Use getUser to get authenticated user data
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
 
-          if (profileError && profileError.code === 'PGRST116') {
-            console.log('Creating new profile for user:', currentSession.user.id);
-
-            // Get username from metadata
-            const username =
-              currentSession.user.user_metadata?.username ||
-              currentSession.user.user_metadata?.display_name ||
-              'Anonymous';
-
-            console.log('Using username from metadata:', username);
-
-            // Check for Gravatar
-            let avatarUrl = null;
-            try {
-              if (currentSession.user.email) {
-                avatarUrl = await checkGravatar(currentSession.user.email);
-                if (!avatarUrl) {
-                  avatarUrl = `https://www.gravatar.com/avatar/${crypto
-                    .createHash('md5')
-                    .update(currentSession.user.email.toLowerCase().trim())
-                    .digest('hex')}`;
-                }
-              }
-            } catch (error) {
-              console.error('Error checking gravatar:', error);
-            }
-
-            // Profile doesn't exist, create it
-            const { data: newProfile, error: insertError } = await supabase
+        if (authUser) {
+          setUser(authUser);
+          try {
+            // Check if profile exists
+            const { data: existingProfile, error: profileError } = await supabase
               .from('profiles')
-              .insert({
-                id: currentSession.user.id,
-                username: username,
-                is_moderator: false,
-                avatar_url: avatarUrl,
-              })
-              .select()
+              .select('*')
+              .eq('id', authUser.id)
               .single();
 
-            console.log('Profile creation result:', { newProfile, insertError });
+            console.log('Profile check result:', { existingProfile, profileError });
 
-            if (insertError) {
-              console.error('Error creating profile:', insertError);
-              console.error('Error details:', JSON.stringify(insertError, null, 2));
-            } else {
-              // Set the profile directly to avoid extra fetch
-              setProfile(newProfile);
-              return; // Skip fetchProfile since we already have the profile
+            if (profileError && profileError.code === 'PGRST116') {
+              console.log('Creating new profile for user:', authUser.id);
+
+              // Get username from metadata
+              const username =
+                authUser.user_metadata?.username ||
+                authUser.user_metadata?.display_name ||
+                'Anonymous';
+
+              console.log('Using username from metadata:', username);
+
+              // Check for Gravatar
+              let avatarUrl = null;
+              try {
+                if (authUser.email) {
+                  avatarUrl = await checkGravatar(authUser.email);
+                  if (!avatarUrl) {
+                    avatarUrl = `https://www.gravatar.com/avatar/${crypto
+                      .createHash('md5')
+                      .update(authUser.email.toLowerCase().trim())
+                      .digest('hex')}`;
+                  }
+                }
+              } catch (error) {
+                console.error('Error checking gravatar:', error);
+              }
+
+              // Profile doesn't exist, create it
+              const { data: newProfile, error: insertError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: authUser.id,
+                  username: username,
+                  is_moderator: false,
+                  avatar_url: avatarUrl,
+                })
+                .select()
+                .single();
+
+              console.log('Profile creation result:', { newProfile, insertError });
+
+              if (insertError) {
+                console.error('Error creating profile:', insertError);
+                console.error('Error details:', JSON.stringify(insertError, null, 2));
+              } else {
+                // Set the profile directly to avoid extra fetch
+                setProfile(newProfile);
+                return; // Skip fetchProfile since we already have the profile
+              }
             }
-          }
 
-          // Fetch the profile with await to make sure it completes
-          const profileData = await fetchProfile(currentSession.user.id);
-          if (profileData) {
-            setProfile(profileData);
+            // Fetch the profile with await to make sure it completes
+            const profileData = await fetchProfile(authUser.id);
+            if (profileData) {
+              setProfile(profileData);
+            }
+          } catch (error) {
+            console.error('Error in auth state change handler:', error);
           }
-        } catch (error) {
-          console.error('Error in auth state change handler:', error);
         }
       } else {
         setUser(null);
