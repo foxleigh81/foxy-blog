@@ -59,10 +59,12 @@ const CommentsList: React.FC<CommentsListProps> = ({
       );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch comments');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch comments');
       }
 
       const data = await response.json();
+      console.log('Fetched comments:', data);
       setComments(data.comments);
       setTotalComments(data.total);
     } catch (error) {
