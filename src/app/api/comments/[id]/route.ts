@@ -8,7 +8,7 @@ export async function PATCH(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context: any
 ) {
-  const commentId = context.params.id;
+  const { id: commentId } = await context.params;
 
   if (!commentId) {
     return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
@@ -121,7 +121,7 @@ export async function DELETE(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context: any
 ) {
-  const commentId = context.params.id;
+  const { id: commentId } = await context.params;
 
   if (!commentId) {
     return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });

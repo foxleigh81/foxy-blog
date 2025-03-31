@@ -6,6 +6,7 @@ import { FaUser, FaEnvelope } from 'react-icons/fa';
 import AvatarEditor from 'react-avatar-editor';
 import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '@/types/supabase';
+import { validateUsername } from '@/utils/validation';
 
 interface ProfileEditModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ interface ProfileEditModalProps {
 const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) => {
   const { user, profile, updateProfile } = useAuth();
   const [username, setUsername] = useState('');
+  const [usernameError, setUsernameError] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,6 +39,18 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  const validateUsernameInput = (value: string) => {
+    const { isValid, error } = validateUsername(value);
+    setUsernameError(error || '');
+    return isValid;
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUsername(value);
+    validateUsernameInput(value);
+  };
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setAvatar(e.target.files[0]);
@@ -47,6 +61,13 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
+
+    // Validate username
+    if (!validateUsernameInput(username)) {
+      setError(usernameError);
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       let avatarUrl = profile?.avatar_url;
@@ -237,13 +258,14 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
                 <input
                   type="text"
                   id="username"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5"
+                  className={`bg-gray-50 border ${usernameError ? 'border-red-300' : 'border-gray-300'} text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5`}
                   placeholder="Your username"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={handleUsernameChange}
                   required
                 />
               </div>
+              {usernameError && <p className="mt-1 text-xs text-red-500">{usernameError}</p>}
             </div>
 
             <div className="mb-6">
