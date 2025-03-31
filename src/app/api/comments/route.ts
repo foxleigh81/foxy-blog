@@ -9,6 +9,7 @@ type DBProfile = {
   username: string | null;
   avatar_url: string | null;
   is_moderator: boolean;
+  is_trusted: boolean;
 };
 
 type DBComment = {
@@ -32,6 +33,7 @@ type Comment = {
     username: string | null;
     avatar_url: string | null;
     is_moderator: boolean;
+    is_trusted: boolean;
   };
   parent_id: string | null;
 };
@@ -108,7 +110,8 @@ export async function GET(request: NextRequest) {
           id,
           username,
           avatar_url,
-          is_moderator
+          is_moderator,
+          is_trusted
         )
       `,
         { count: 'exact' }
@@ -152,7 +155,7 @@ export async function GET(request: NextRequest) {
     const userIds = safeComments.map((comment) => comment.user_id);
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, username, avatar_url, is_moderator')
+      .select('id, username, avatar_url, is_moderator, is_trusted')
       .in('id', userIds);
 
     if (profilesError) {
@@ -189,6 +192,7 @@ export async function GET(request: NextRequest) {
             username: null,
             avatar_url: null,
             is_moderator: false,
+            is_trusted: false,
           },
         };
       }
@@ -203,6 +207,7 @@ export async function GET(request: NextRequest) {
           username: profile.username || 'Anonymous',
           avatar_url: profile.avatar_url,
           is_moderator: profile.is_moderator,
+          is_trusted: profile.is_trusted,
         },
       };
     });
@@ -319,6 +324,7 @@ export async function POST(request: NextRequest) {
               user.email?.split('@')[0] ||
               'Anonymous',
             is_moderator: false,
+            is_trusted: false,
           })
           .select()
           .single();
@@ -332,7 +338,8 @@ export async function POST(request: NextRequest) {
         const safeProfile = newProfile as unknown as DBProfile;
 
         // Determine comment status
-        const commentStatus = safeProfile.is_moderator ? 'approved' : status || 'pending';
+        const commentStatus =
+          safeProfile.is_moderator || safeProfile.is_trusted ? 'approved' : status || 'pending';
 
         // Create comment data
         const commentData = {
@@ -385,10 +392,14 @@ export async function POST(request: NextRequest) {
     console.log('Profile found:', {
       username: safeProfile.username,
       isModerator: safeProfile.is_moderator,
+      isTrusted: safeProfile.is_trusted,
     });
 
-    // Determine the comment status based on user's moderator status
-    const commentStatus = safeProfile.is_moderator ? 'approved' : status || 'pending';
+    // Determine the comment status based on user's role:
+    // - Moderators and trusted users get automatic approval
+    // - Regular users need moderation
+    const commentStatus =
+      safeProfile.is_moderator || safeProfile.is_trusted ? 'approved' : status || 'pending';
 
     // Create comment data with proper type
     const commentData = {

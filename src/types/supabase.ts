@@ -55,6 +55,7 @@ export interface Database {
           username: string | null;
           avatar_url: string | null;
           is_moderator: boolean;
+          is_trusted: boolean;
         };
         Insert: {
           id: string;
@@ -62,6 +63,7 @@ export interface Database {
           username: string | null;
           avatar_url?: string | null;
           is_moderator?: boolean;
+          is_trusted?: boolean;
         };
         Update: {
           id?: string;
@@ -69,6 +71,7 @@ export interface Database {
           username?: string | null;
           avatar_url?: string | null;
           is_moderator?: boolean;
+          is_trusted?: boolean;
         };
         Relationships: [
           {

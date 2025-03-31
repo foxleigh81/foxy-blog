@@ -11,6 +11,7 @@ import {
   FaTrash,
   FaShieldAlt,
   FaClock,
+  FaStar,
 } from 'react-icons/fa';
 import { useAuth } from '../Auth/AuthProvider';
 import CommentInput from './CommentInput';
@@ -26,6 +27,7 @@ interface CommentItemProps {
     displayName: string;
     avatarUrl?: string | null;
     isModerator: boolean;
+    isTrusted?: boolean;
   };
   status: CommentStatus;
   postId: string;
@@ -160,6 +162,12 @@ const CommentItem: React.FC<CommentItemProps> = ({
               <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded mr-2 flex items-center">
                 <FaShieldAlt className="mr-1" />
                 Moderator
+              </span>
+            )}
+            {!user.isModerator && user.isTrusted && (
+              <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded mr-2 flex items-center">
+                <FaStar className="mr-1" />
+                Top Contributor
               </span>
             )}
             {isPending && isCommentOwner && (

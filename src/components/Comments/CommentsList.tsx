@@ -20,6 +20,7 @@ type Comment = {
     username: string | null;
     avatar_url: string | null;
     is_moderator: boolean;
+    is_trusted: boolean;
   };
   parent_id: string | null;
 };
@@ -286,6 +287,7 @@ const CommentsList: React.FC<CommentsListProps> = ({
               displayName: comment.user.username || 'Anonymous',
               avatarUrl: comment.user.avatar_url,
               isModerator: comment.user.is_moderator,
+              isTrusted: comment.user.is_trusted,
             }}
             status={comment.status as CommentStatus}
             postId={postId}
@@ -309,6 +311,7 @@ const CommentsList: React.FC<CommentsListProps> = ({
                       displayName: reply.user.username || 'Anonymous',
                       avatarUrl: reply.user.avatar_url,
                       isModerator: reply.user.is_moderator,
+                      isTrusted: reply.user.is_trusted,
                     }}
                     status={reply.status as CommentStatus}
                     postId={postId}
