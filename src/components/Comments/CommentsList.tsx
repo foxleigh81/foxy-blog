@@ -118,6 +118,65 @@ const CommentsList: React.FC<CommentsListProps> = ({
     }
   };
 
+  const handleDelete = async (commentId: string) => {
+    if (!profile) return;
+
+    try {
+      const response = await fetch(`/api/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete comment');
+      }
+
+      // Remove the comment from state
+      setComments(comments.filter((comment) => comment.id !== commentId));
+
+      // If deleting a parent comment, also filter out all replies to that comment
+      setComments((prevComments) =>
+        prevComments.filter((comment) => comment.parent_id !== commentId)
+      );
+
+      // Update total count
+      setTotalComments((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      throw error;
+    }
+  };
+
+  const handleEdit = async (commentId: string, newContent: string) => {
+    if (!profile) return;
+
+    try {
+      const response = await fetch(`/api/comments/${commentId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: newContent }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update comment');
+      }
+
+      await response.json();
+
+      // Update the comment in state
+      setComments(comments.map((c) => (c.id === commentId ? { ...c, content: newContent } : c)));
+    } catch (error) {
+      console.error('Error editing comment:', error);
+      throw error;
+    }
+  };
+
   const renderComments = () => {
     if (isLoading) {
       return Array(3)
@@ -218,6 +277,8 @@ const CommentsList: React.FC<CommentsListProps> = ({
             postId={postId}
             onStatusChange={handleStatusChange}
             onReplySubmitted={fetchComments}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
           />
 
           {/* Render all replies in a container with margin */}
@@ -239,6 +300,8 @@ const CommentsList: React.FC<CommentsListProps> = ({
                     postId={postId}
                     onStatusChange={handleStatusChange}
                     onReplySubmitted={fetchComments}
+                    onDelete={handleDelete}
+                    onEdit={handleEdit}
                   />
                 </div>
               ))}

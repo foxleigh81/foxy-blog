@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/utils/supabase';
+import { createSupabaseServerClient } from '@/utils/supabase-server';
 
-// PATCH function to update a comment (primarily for moderation)
+// PATCH function to update a comment (for moderation or editing content)
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const commentId = params.id;
 
@@ -11,20 +11,40 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
   try {
     const body = await request.json();
-    const { status } = body;
+    const { status, content } = body;
 
-    // Validate status
-    if (!status || !['pending', 'approved', 'rejected'].includes(status)) {
-      return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
+    // Initialize update data object
+    const updateData: { status?: string; content?: string } = {};
+
+    // Check if this is a status update
+    if (status) {
+      // Validate status
+      if (!['pending', 'approved', 'rejected'].includes(status)) {
+        return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
+      }
+      updateData.status = status;
     }
 
-    // Get the session from the request cookie
+    // Check if this is a content update
+    if (content !== undefined) {
+      if (typeof content !== 'string' || content.trim().length === 0) {
+        return NextResponse.json({ error: 'Content cannot be empty' }, { status: 400 });
+      }
+      updateData.content = content.trim();
+    }
+
+    // Ensure we have something to update
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No valid update fields provided' }, { status: 400 });
+    }
+
+    // Get authenticated user
+    const supabase = await createSupabaseServerClient();
     const {
       data: { session },
-      error: sessionError,
     } = await supabase.auth.getSession();
 
-    if (sessionError || !session?.user) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
@@ -41,18 +61,39 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
-    // Only moderators can update comment status
-    if (!profile.is_moderator) {
+    // For status updates, only moderators can perform them
+    if (updateData.status && !profile.is_moderator) {
       return NextResponse.json(
         { error: 'Unauthorized: Only moderators can update comment status' },
         { status: 403 }
       );
     }
 
+    // For content updates, get the comment to check ownership
+    if (updateData.content) {
+      const { data: comment, error: commentError } = await supabase
+        .from('comments')
+        .select('user_id')
+        .eq('id', commentId)
+        .single();
+
+      if (commentError || !comment) {
+        return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
+      }
+
+      // Only comment owners can edit their comments
+      if (comment.user_id !== user.id && !profile.is_moderator) {
+        return NextResponse.json(
+          { error: 'Unauthorized: Only the comment owner can edit this comment' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Update the comment
     const { data, error } = await supabase
       .from('comments')
-      .update({ status })
+      .update(updateData)
       .eq('id', commentId)
       .select();
 
@@ -65,5 +106,71 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   } catch (error) {
     console.error('Error updating comment:', error);
     return NextResponse.json({ error: 'Failed to update comment' }, { status: 500 });
+  }
+}
+
+// DELETE function to delete a comment
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  const commentId = params.id;
+
+  if (!commentId) {
+    return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
+  }
+
+  try {
+    // Get authenticated user
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const user = session.user;
+
+    // Check if user is a moderator
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('is_moderator')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    }
+
+    // Get the comment to check ownership
+    const { data: comment, error: commentError } = await supabase
+      .from('comments')
+      .select('user_id')
+      .eq('id', commentId)
+      .single();
+
+    if (commentError || !comment) {
+      return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
+    }
+
+    // Only comment owners or moderators can delete comments
+    if (comment.user_id !== user.id && !profile.is_moderator) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Only the comment owner or moderators can delete this comment' },
+        { status: 403 }
+      );
+    }
+
+    // Delete the comment
+    const { error: deleteError } = await supabase.from('comments').delete().eq('id', commentId);
+
+    if (deleteError) throw deleteError;
+
+    return NextResponse.json({
+      success: true,
+      message: 'Comment deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    return NextResponse.json({ error: 'Failed to delete comment' }, { status: 500 });
   }
 }
