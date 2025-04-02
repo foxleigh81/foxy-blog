@@ -93,6 +93,7 @@ export default function BlockContent({ content }: BlockContentProps) {
         );
       },
       internalLink: ({ children, value }) => {
+        if (!value?.reference?.slug?.current) return <>{children}</>;
         const href = `/${value.reference._type}/${value.reference.slug.current}`;
         return (
           <Link
@@ -106,7 +107,7 @@ export default function BlockContent({ content }: BlockContentProps) {
       strong: ({ children }) => <strong className="font-bold">{children}</strong>,
       em: ({ children }) => <em className="italic">{children}</em>,
       code: ({ children }) => (
-        <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono">
+        <code className="bg-gray-200 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono font-normal before:content-none after:content-none">
           {children}
         </code>
       ),

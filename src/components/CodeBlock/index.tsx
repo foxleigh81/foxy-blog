@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useLayoutEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { codeToHtml } from 'shiki/bundle/web';
 import type { BundledLanguage } from 'shiki/bundle/web';
 
@@ -12,7 +12,7 @@ interface CodeBlockProps {
 export default function CodeBlock({ code, language = 'typescript' }: CodeBlockProps) {
   const [highlightedCode, setHighlightedCode] = useState<string>('');
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const highlight = async () => {
       try {
         const html = await codeToHtml(code, {
