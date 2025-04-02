@@ -7,6 +7,9 @@
 import { visionTool } from '@sanity/vision';
 import { defineConfig } from 'sanity';
 import { structureTool } from 'sanity/structure';
+import { dashboardTool } from '@sanity/dashboard';
+import { projectInfoWidget } from '@sanity/dashboard';
+import { documentListWidget } from 'sanity-plugin-dashboard-widget-document-list';
 
 // Plugins
 import { codeInput } from '@sanity/code-input';
@@ -31,6 +34,18 @@ export default defineConfig({
   // Add and edit the content schema in the './sanity/schemaTypes' folder
   schema,
   plugins: [
+    dashboardTool({
+      widgets: [
+        projectInfoWidget(),
+        documentListWidget({
+          title: 'Recent Posts',
+          order: '_createdAt desc',
+          limit: 5,
+          types: ['post'],
+          createButtonText: 'Create new post',
+        }),
+      ],
+    }),
     structureTool({ structure }),
     // Vision is for querying with GROQ from inside the Studio
     // https://www.sanity.io/docs/the-vision-plugin
