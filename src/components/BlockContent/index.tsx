@@ -1,8 +1,6 @@
-'use client';
-
 import React from 'react';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import type { BundledLanguage } from 'shiki';
 import { BlockContent as BlockContentType } from '@/sanity/schemaTypes/blockContentType';
 import {
   PortableText,
@@ -11,16 +9,14 @@ import {
 } from '@portabletext/react';
 import ImageContainer from '../ImageContainer';
 import { urlFor } from '@/sanity/lib/image';
-
-const YouTube = dynamic(() => import('react-youtube'), { ssr: false });
-const InstagramEmbed = dynamic(() => import('../InstagramEmbed'), { ssr: false });
-const CodeBlock = dynamic(() => import('../CodeBlock'), { ssr: false });
+import CodeBlock from '../CodeBlock';
+import { YouTubeComponent, InstagramComponent } from './ClientComponents';
 
 interface BlockContentProps {
   content: BlockContentType;
 }
 
-const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
+export default function BlockContent({ content }: BlockContentProps) {
   const components: Partial<PortableTextReactComponents> = {
     types: {
       image: ({
@@ -59,47 +55,12 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
           />
         );
       },
-      youtube: ({
-        value,
-      }: PortableTextComponentProps<{
-        video?: { id: string };
-        autoplay?: boolean;
-        controls?: boolean;
-      }>) => {
-        if (!value?.video?.id) {
-          return null;
-        }
-
-        return (
-          <div className="my-4 aspect-video clear-both">
-            <YouTube
-              videoId={value.video.id}
-              opts={{
-                width: '100%',
-                height: '100%',
-                playerVars: {
-                  autoplay: value.autoplay ? 1 : 0,
-                  controls: value.controls ? 1 : 0,
-                },
-              }}
-              className="w-full h-full"
-            />
-          </div>
-        );
-      },
+      youtube: YouTubeComponent,
       code: ({ value }: PortableTextComponentProps<{ code?: string; language?: string }>) => {
-        return <CodeBlock code={value.code} language={value.language} />;
+        if (!value?.code) return null;
+        return <CodeBlock code={value.code} language={value.language as BundledLanguage} />;
       },
-      instagram: ({ value }: PortableTextComponentProps<{ url?: string }>) => {
-        if (!value?.url) {
-          return null;
-        }
-        return (
-          <div className="clear-both">
-            <InstagramEmbed url={value.url} />
-          </div>
-        );
-      },
+      instagram: InstagramComponent,
       hr: () => {
         return <hr className="my-8 border-t-2 border-gray-200 clear-both" />;
       },
@@ -163,6 +124,4 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
       <PortableText value={content} components={components} />
     </div>
   );
-};
-
-export default BlockContent;
+}
