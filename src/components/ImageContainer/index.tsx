@@ -26,7 +26,7 @@ const ImageContainer: React.FC<ImageContainerProps> = ({
   blurDataURL,
 }) => {
   // Determine figure classes based on alignment
-  let figureClasses = 'relative mt-0 mb-4 w-full';
+  let figureClasses = 'relative mt-0 mb-4 w-full flex flex-col justify-center items-center';
   switch (alignment) {
     case 'left':
       figureClasses += ' md:mx-0 md:float-left md:mr-6 w-full md:max-w-[50%]';
@@ -44,7 +44,7 @@ const ImageContainer: React.FC<ImageContainerProps> = ({
   }
 
   // Determine image classes based on alignment
-  let imageClasses = 'rounded-md overflow-hidden';
+  let imageClasses = 'rounded-md overflow-hidden mx-auto my-0';
   if (alignment === 'full') {
     imageClasses += ' object-cover';
   } else {
@@ -68,23 +68,25 @@ const ImageContainer: React.FC<ImageContainerProps> = ({
 
   return (
     <figure className={`${figureClasses} ${className}`}>
-      <Image
-        src={src}
-        alt={alt}
-        width={dimensions.width}
-        height={dimensions.height}
-        className={imageClasses}
-        sizes={getSizes()}
-        loading={alignment === 'full' ? 'eager' : 'lazy'}
-        quality={80}
-        placeholder={blurDataURL ? 'blur' : 'empty'}
-        blurDataURL={blurDataURL}
-      />
-      {attribution && (
-        <div className="absolute bottom-1 right-1 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
-          &copy; Copyright {attribution}
-        </div>
-      )}
+      <div className="relative w-full">
+        <Image
+          src={src}
+          alt={alt}
+          width={dimensions.width}
+          height={dimensions.height}
+          className={imageClasses}
+          sizes={getSizes()}
+          loading={alignment === 'full' ? 'eager' : 'lazy'}
+          quality={80}
+          placeholder={blurDataURL ? 'blur' : 'empty'}
+          blurDataURL={blurDataURL}
+        />
+        {attribution && (
+          <div className="absolute bottom-1 right-1 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
+            &copy; Copyright {attribution}
+          </div>
+        )}
+      </div>
       {caption && (
         <figcaption
           className={`text-sm text-gray-600 mt-2 ${alignment === 'center' ? 'text-center' : ''}`}

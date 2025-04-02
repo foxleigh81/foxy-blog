@@ -8,6 +8,7 @@ import { tagType } from './tagType';
 import { instagramPost } from './instagramPost';
 import { hr } from './hr';
 import { featuredPostType } from './featuredPostType';
+import { internalLinkType } from './internalLinkType';
 
 export const schema: { types: SchemaTypeDefinition[] } = {
   types: [
@@ -19,5 +20,6 @@ export const schema: { types: SchemaTypeDefinition[] } = {
     instagramPost,
     hr,
     featuredPostType,
+    internalLinkType,
   ],
 };

@@ -1,5 +1,6 @@
 import { defineType, defineArrayMember } from 'sanity';
 import { ImageIcon } from '@sanity/icons';
+import { internalLinkType } from './internalLinkType';
 
 /**
  * This is the schema type for block content used in the post document type
@@ -18,7 +19,7 @@ export type BlockContent = Array<
       children: Array<{
         _type: 'span';
         text: string;
-        marks?: string[];
+        marks?: Array<'strong' | 'em' | 'code' | 'strike-through'>;
       }>;
       style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote';
       markDefs?: Array<{
@@ -45,6 +46,11 @@ export type BlockContent = Array<
   | {
       _type: 'hr';
     }
+  | {
+      _type: 'code';
+      code?: string;
+      language?: string;
+    }
 >;
 
 export const blockContentType = defineType({
@@ -69,12 +75,6 @@ export const blockContentType = defineType({
       lists: [{ title: 'Bullet', value: 'bullet' }],
       // Marks let you mark up inline text in the Portable Text Editor
       marks: {
-        // Decorators usually describe a single property – e.g. a typographic
-        // preference or highlighting
-        decorators: [
-          { title: 'Strong', value: 'strong' },
-          { title: 'Emphasis', value: 'em' },
-        ],
         // Annotations can be any object structure – e.g. a link or a footnote.
         annotations: [
           {
@@ -89,6 +89,7 @@ export const blockContentType = defineType({
               },
             ],
           },
+          internalLinkType,
         ],
       },
     }),
@@ -137,7 +138,45 @@ export const blockContentType = defineType({
       ],
     }),
     defineArrayMember({
-      type: 'code',
+      type: 'object',
+      name: 'code',
+      title: 'Code Block',
+      fields: [
+        {
+          name: 'code',
+          type: 'text',
+          title: 'Code',
+        },
+        {
+          name: 'language',
+          type: 'string',
+          title: 'Language',
+          options: {
+            list: [
+              { title: 'Plain Text', value: 'plaintext' },
+              { title: 'JavaScript', value: 'javascript' },
+              { title: 'TypeScript', value: 'typescript' },
+              { title: 'HTML', value: 'markup' },
+              { title: 'CSS', value: 'css' },
+              { title: 'Python', value: 'python' },
+              { title: 'Java', value: 'java' },
+              { title: 'C++', value: 'cpp' },
+              { title: 'C#', value: 'csharp' },
+              { title: 'Ruby', value: 'ruby' },
+              { title: 'PHP', value: 'php' },
+              { title: 'Go', value: 'go' },
+              { title: 'Rust', value: 'rust' },
+              { title: 'Swift', value: 'swift' },
+              { title: 'Kotlin', value: 'kotlin' },
+              { title: 'Bash', value: 'bash' },
+              { title: 'SQL', value: 'sql' },
+              { title: 'JSON', value: 'json' },
+              { title: 'YAML', value: 'yaml' },
+            ],
+          },
+          initialValue: 'plaintext',
+        },
+      ],
     }),
     defineArrayMember({
       name: 'youtube',

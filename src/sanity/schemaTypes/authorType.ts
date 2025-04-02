@@ -1,5 +1,6 @@
 import { UserIcon } from '@sanity/icons';
 import { defineArrayMember, defineField, defineType } from 'sanity';
+import { BlockContent } from './blockContentType';
 
 export type Author = {
   _id: string;
@@ -13,14 +14,7 @@ export type Author = {
       _type: 'reference';
     };
   };
-  bio?: Array<{
-    _type: 'block';
-    children: Array<{
-      _type: 'span';
-      text: string;
-      marks?: string[];
-    }>;
-  }>;
+  bio?: BlockContent;
 };
 
 export const authorType = defineType({

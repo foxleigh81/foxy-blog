@@ -6,6 +6,7 @@ import type { Post as BasePost } from '@/sanity/schemaTypes/postType';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 import type { Author } from '@/sanity/schemaTypes/authorType';
 import type { RelatedPost } from '@/types/post';
+import type { BlockContent } from '@/sanity/schemaTypes/blockContentType';
 import { metadata as siteMetadata } from '@/app/page';
 
 // Import components
@@ -22,9 +23,10 @@ import Comments from '@/components/Comments/Comments';
 import { Suspense } from 'react';
 
 // Extended Post type that includes expanded references
-type Post = Omit<BasePost, 'author' | 'relatedPosts'> & {
+type Post = Omit<BasePost, 'author' | 'relatedPosts' | 'body'> & {
   author: Author;
   relatedPosts?: RelatedPost[];
+  body: BlockContent;
 };
 
 // Query to fetch a specific post

@@ -1,5 +1,6 @@
 import { DocumentTextIcon } from '@sanity/icons';
 import { defineArrayMember, defineField, defineType } from 'sanity';
+import { BlockContent } from './blockContentType';
 
 export type Post = {
   _id: string;
@@ -31,14 +32,7 @@ export type Post = {
     _type: 'reference';
   }>;
   publishedAt?: string;
-  body: Array<{
-    _type: 'block';
-    children: Array<{
-      _type: 'span';
-      text: string;
-      marks?: string[];
-    }>;
-  }>;
+  body: BlockContent;
   excerpt?: string;
   tags?: Array<{
     _ref: string;

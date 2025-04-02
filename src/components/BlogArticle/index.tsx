@@ -1,15 +1,9 @@
 import React from 'react';
 import BlockContent from '@/components/BlockContent';
+import { BlockContent as BlockContentType } from '@/sanity/schemaTypes/blockContentType';
 
 interface BlogArticleProps {
-  content: Array<{
-    _type: 'block';
-    children: Array<{
-      _type: 'span';
-      text: string;
-      marks?: string[];
-    }>;
-  }>;
+  content: BlockContentType;
 }
 
 const BlogArticle: React.FC<BlogArticleProps> = ({ content }) => {
