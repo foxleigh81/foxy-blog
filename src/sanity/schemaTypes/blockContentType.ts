@@ -46,6 +46,11 @@ export type BlockContent = Array<
   | {
       _type: 'hr';
     }
+  | {
+      _type: 'code';
+      code?: string;
+      language?: string;
+    }
 >;
 
 export const blockContentType = defineType({
@@ -133,7 +138,45 @@ export const blockContentType = defineType({
       ],
     }),
     defineArrayMember({
-      type: 'code',
+      type: 'object',
+      name: 'code',
+      title: 'Code Block',
+      fields: [
+        {
+          name: 'code',
+          type: 'text',
+          title: 'Code',
+        },
+        {
+          name: 'language',
+          type: 'string',
+          title: 'Language',
+          options: {
+            list: [
+              { title: 'Plain Text', value: 'plaintext' },
+              { title: 'JavaScript', value: 'javascript' },
+              { title: 'TypeScript', value: 'typescript' },
+              { title: 'HTML', value: 'markup' },
+              { title: 'CSS', value: 'css' },
+              { title: 'Python', value: 'python' },
+              { title: 'Java', value: 'java' },
+              { title: 'C++', value: 'cpp' },
+              { title: 'C#', value: 'csharp' },
+              { title: 'Ruby', value: 'ruby' },
+              { title: 'PHP', value: 'php' },
+              { title: 'Go', value: 'go' },
+              { title: 'Rust', value: 'rust' },
+              { title: 'Swift', value: 'swift' },
+              { title: 'Kotlin', value: 'kotlin' },
+              { title: 'Bash', value: 'bash' },
+              { title: 'SQL', value: 'sql' },
+              { title: 'JSON', value: 'json' },
+              { title: 'YAML', value: 'yaml' },
+            ],
+          },
+          initialValue: 'plaintext',
+        },
+      ],
     }),
     defineArrayMember({
       name: 'youtube',

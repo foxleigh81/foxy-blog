@@ -14,6 +14,7 @@ import { urlFor } from '@/sanity/lib/image';
 
 const YouTube = dynamic(() => import('react-youtube'), { ssr: false });
 const InstagramEmbed = dynamic(() => import('../InstagramEmbed'), { ssr: false });
+const CodeBlock = dynamic(() => import('../CodeBlock'), { ssr: false });
 
 interface BlockContentProps {
   content: BlockContentType;
@@ -86,12 +87,8 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
           </div>
         );
       },
-      code: ({ value }: PortableTextComponentProps<{ code?: string }>) => {
-        return (
-          <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto my-4 clear-both">
-            <code>{value.code}</code>
-          </pre>
-        );
+      code: ({ value }: PortableTextComponentProps<{ code?: string; language?: string }>) => {
+        return <CodeBlock code={value.code} language={value.language} />;
       },
       instagram: ({ value }: PortableTextComponentProps<{ url?: string }>) => {
         if (!value?.url) {
