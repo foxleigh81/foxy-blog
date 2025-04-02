@@ -1,6 +1,7 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
-import type { BundledLanguage } from 'shiki';
 import { BlockContent as BlockContentType } from '@/sanity/schemaTypes/blockContentType';
 import {
   PortableText,
@@ -9,8 +10,8 @@ import {
 } from '@portabletext/react';
 import ImageContainer from '../ImageContainer';
 import { urlFor } from '@/sanity/lib/image';
-import CodeBlock from '../CodeBlock';
 import { YouTubeComponent, InstagramComponent } from './ClientComponents';
+import CodeBlock from '../CodeBlock';
 
 interface BlockContentProps {
   content: BlockContentType;
@@ -56,9 +57,9 @@ export default function BlockContent({ content }: BlockContentProps) {
         );
       },
       youtube: YouTubeComponent,
-      code: ({ value }: PortableTextComponentProps<{ code?: string; language?: string }>) => {
+      code: ({ value }) => {
         if (!value?.code) return null;
-        return <CodeBlock code={value.code} language={value.language as BundledLanguage} />;
+        return <CodeBlock code={value.code} language={value.language} />;
       },
       instagram: InstagramComponent,
       hr: () => {
