@@ -93,6 +93,7 @@ export default function BlockContent({ content }: BlockContentProps) {
         );
       },
       internalLink: ({ children, value }) => {
+        if (!value?.reference?.slug?.current) return <>{children}</>;
         const href = `/${value.reference._type}/${value.reference.slug.current}`;
         return (
           <Link
