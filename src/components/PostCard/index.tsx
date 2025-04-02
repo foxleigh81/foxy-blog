@@ -71,7 +71,7 @@ const PostCard: React.FC<PostCardProps> = ({
           </div>
 
           <div className="p-4 flex-grow">
-            <p className="font-body text-gray-600 text-m line-clamp-3">{post.excerpt}</p>
+            <p className="font-body text-gray-600 text-m">{post.excerpt}</p>
           </div>
 
           <div
