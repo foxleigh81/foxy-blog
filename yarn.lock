@@ -3010,6 +3010,11 @@
     "@sanity/comlink" "^3.0.1"
     "@sanity/visual-editing-types" "^1.0.11"
 
+"@sanity/presentation@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@sanity/presentation/-/presentation-2.0.0.tgz#a9a7ec04f07d82066b8ac846cd17858fec387bd3"
+  integrity sha512-JZuWjOWTz1L7u4pl5ut5pPg+hMA9DPA8K6sQoNN9Z1qlvQYURQGBxaGkqtCa35iaj3zOkmgoOAhp5jIowlsmWA==
+
 "@sanity/preview-kit@^6.0.3":
   version "6.0.3"
   resolved "https://registry.npmjs.org/@sanity/preview-kit/-/preview-kit-6.0.3.tgz"

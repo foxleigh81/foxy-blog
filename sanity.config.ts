@@ -10,6 +10,7 @@ import { structureTool } from 'sanity/structure';
 import { dashboardTool } from '@sanity/dashboard';
 import { projectInfoWidget } from '@sanity/dashboard';
 import { documentListWidget } from 'sanity-plugin-dashboard-widget-document-list';
+import { presentationTool } from 'sanity/presentation';
 
 // Plugins
 import { codeInput } from '@sanity/code-input';
@@ -47,6 +48,17 @@ export default defineConfig({
       ],
     }),
     structureTool({ structure }),
+    presentationTool({
+      previewUrl: {
+        origin: process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : 'http://localhost:3000',
+        previewMode: {
+          enable: '/api/draft-mode/enable',
+          disable: '/api/draft-mode/disable',
+        },
+      },
+    }),
     // Vision is for querying with GROQ from inside the Studio
     // https://www.sanity.io/docs/the-vision-plugin
     visionTool({ defaultApiVersion: apiVersion }),
