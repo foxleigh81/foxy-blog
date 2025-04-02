@@ -133,8 +133,25 @@ const BlockContent: React.FC<BlockContentProps> = ({ content }) => {
           </Link>
         );
       },
+      internalLink: ({ children, value }) => {
+        const href = `/${value.reference._type}/${value.reference.slug.current}`;
+        return (
+          <Link
+            href={href}
+            className="underline underline-offset-4 text-purple-700 hover:text-purple-800 hover:no-underline transition-colors"
+          >
+            {children}
+          </Link>
+        );
+      },
       strong: ({ children }) => <strong className="font-bold">{children}</strong>,
       em: ({ children }) => <em className="italic">{children}</em>,
+      code: ({ children }) => (
+        <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono">
+          {children}
+        </code>
+      ),
+      'strike-through': ({ children }) => <del className="line-through">{children}</del>,
     },
     list: {
       bullet: ({ children }) => <ul className="list-disc pl-6 mb-4 clear-both">{children}</ul>,

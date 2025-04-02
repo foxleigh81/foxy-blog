@@ -1,5 +1,6 @@
 import { defineType, defineArrayMember } from 'sanity';
 import { ImageIcon } from '@sanity/icons';
+import { internalLinkType } from './internalLinkType';
 
 /**
  * This is the schema type for block content used in the post document type
@@ -18,7 +19,7 @@ export type BlockContent = Array<
       children: Array<{
         _type: 'span';
         text: string;
-        marks?: string[];
+        marks?: Array<'strong' | 'em' | 'code' | 'strike-through'>;
       }>;
       style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote';
       markDefs?: Array<{
@@ -69,12 +70,6 @@ export const blockContentType = defineType({
       lists: [{ title: 'Bullet', value: 'bullet' }],
       // Marks let you mark up inline text in the Portable Text Editor
       marks: {
-        // Decorators usually describe a single property – e.g. a typographic
-        // preference or highlighting
-        decorators: [
-          { title: 'Strong', value: 'strong' },
-          { title: 'Emphasis', value: 'em' },
-        ],
         // Annotations can be any object structure – e.g. a link or a footnote.
         annotations: [
           {
@@ -89,6 +84,7 @@ export const blockContentType = defineType({
               },
             ],
           },
+          internalLinkType,
         ],
       },
     }),
