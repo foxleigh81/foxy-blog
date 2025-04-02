@@ -73,12 +73,16 @@ interface HomePageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
+const title = "Foxy's Tale - The inane mutterings of Alexander Foxleigh";
+const description =
+  "Hi. I'm Alex, I'm a senior full-stack developer with a passion for building performant, accessible and highly usable web applications.\nYou can find out more about me by reading my blog, taking a look at my website or having a look at my social links which are below in the footer.\nHere is an assorted collection of my rants, ravings and general ramblings. I apologise in advance.";
+
 export const metadata: Metadata = {
-  title: "Foxy's Tale - Home",
-  description: 'The inane mutterings of Alexander Foxleigh',
+  title,
+  description,
   openGraph: {
-    title: "Foxy's Tale - Home",
-    description: 'The inane mutterings of Alexander Foxleigh',
+    title,
+    description,
     type: 'website',
     url: process.env.NEXT_PUBLIC_SITE_URL,
     images: [
@@ -93,8 +97,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Foxy's Tale - Home",
-    description: 'The inane mutterings of Alexander Foxleigh',
+    title,
+    description,
     creator: '@foxleigh81',
     images: [`${process.env.NEXT_PUBLIC_SITE_URL}/foxy-tail-logo.png`],
   },
@@ -139,7 +143,7 @@ export default async function BlogIndex({ searchParams }: HomePageProps) {
       '@type': 'WebSite',
       name: "Foxy's Tale",
       url: process.env.NEXT_PUBLIC_SITE_URL,
-      description: 'The inane mutterings of Alexander Foxleigh',
+      description,
       author: {
         '@type': 'Person',
         name: 'Alexander Foxleigh',

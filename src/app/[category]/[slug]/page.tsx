@@ -6,6 +6,7 @@ import type { Post as BasePost } from '@/sanity/schemaTypes/postType';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 import type { Author } from '@/sanity/schemaTypes/authorType';
 import type { RelatedPost } from '@/types/post';
+import { metadata as siteMetadata } from '@/app/page';
 
 // Import components
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -17,7 +18,8 @@ import RelatedPosts from '@/components/RelatedPosts';
 import LegacyBanner from '@/components/LegacyBanner';
 import OpinionBanner from '@/components/OpinionBanner';
 import SocialSharing from '@/components/SocialSharing';
-import { FaCommentAlt } from 'react-icons/fa';
+import Comments from '@/components/Comments/Comments';
+import { Suspense } from 'react';
 
 // Extended Post type that includes expanded references
 type Post = Omit<BasePost, 'author' | 'relatedPosts'> & {
@@ -70,6 +72,7 @@ const postQuery = `*[_type == "post" && slug.current == $slug][0] {
   excerpt,
   tags,
   youtube,
+  disableComments,
   relatedPosts[]->{
     _id,
     title,
@@ -153,7 +156,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   const readingTime = Math.ceil(wordCount / 200); // Avg reading speed of 200 words per minute
 
   return {
-    title: post.title,
+    title: post.title + ' | ' + siteMetadata.title,
     description: post.excerpt,
     openGraph: {
       title: post.title,
@@ -500,11 +503,17 @@ export default async function PostPage({ params }: PostPageProps) {
           <div className="lg:col-span-8 mt-4">
             {isOpinion && <OpinionBanner />}
             <BlogArticle content={post.body} />
-            <div className="border-t border-gray-200 py-4 flex justify-center text-sm">
-              <span className="flex items-center gap-2">
-                <FaCommentAlt className="text-gray-600" /> Comments coming soon!
-              </span>
-            </div>
+            {!post.disableComments ? (
+              <div className="border-t border-gray-200 py-4">
+                <Suspense fallback={<div className="py-8 text-center">Loading comments...</div>}>
+                  <Comments postId={post._id} />
+                </Suspense>
+              </div>
+            ) : (
+              <div className="border-t border-gray-200 py-4 text-center text-gray-500">
+                Comments are disabled on this post
+              </div>
+            )}
             <SocialSharing
               url={canonicalUrl}
               title={post.title}
