@@ -12,17 +12,23 @@ import { User, Session } from '@supabase/supabase-js';
 import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '@/types/supabase';
 import { usePathname } from 'next/navigation';
-import crypto from 'crypto';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
-const getGravatarUrl = (email: string, size = 200): string => {
-  const hash = crypto.createHash('md5').update(email.toLowerCase().trim()).digest('hex');
+const generateMD5Hash = async (str: string): Promise<string> => {
+  const msgBuffer = new TextEncoder().encode(str);
+  const hashBuffer = await crypto.subtle.digest('MD5', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+};
+
+const getGravatarUrl = async (email: string, size = 200): Promise<string> => {
+  const hash = await generateMD5Hash(email.toLowerCase().trim());
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404`;
 };
 
 const checkGravatar = async (email: string): Promise<string | null> => {
-  const url = getGravatarUrl(email);
+  const url = await getGravatarUrl(email);
   try {
     const response = await fetch(url);
     if (response.ok) {
@@ -174,10 +180,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 if (authUser.email) {
                   avatarUrl = await checkGravatar(authUser.email);
                   if (!avatarUrl) {
-                    avatarUrl = `https://www.gravatar.com/avatar/${crypto
-                      .createHash('md5')
-                      .update(authUser.email.toLowerCase().trim())
-                      .digest('hex')}`;
+                    avatarUrl = await getGravatarUrl(authUser.email);
                   }
                 }
               } catch (error) {

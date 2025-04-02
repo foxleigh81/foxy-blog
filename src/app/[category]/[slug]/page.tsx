@@ -72,6 +72,7 @@ const postQuery = `*[_type == "post" && slug.current == $slug][0] {
   excerpt,
   tags,
   youtube,
+  disableComments,
   relatedPosts[]->{
     _id,
     title,
@@ -502,11 +503,17 @@ export default async function PostPage({ params }: PostPageProps) {
           <div className="lg:col-span-8 mt-4">
             {isOpinion && <OpinionBanner />}
             <BlogArticle content={post.body} />
-            <div className="border-t border-gray-200 py-4">
-              <Suspense fallback={<div className="py-8 text-center">Loading comments...</div>}>
-                <Comments postId={post._id} />
-              </Suspense>
-            </div>
+            {!post.disableComments ? (
+              <div className="border-t border-gray-200 py-4">
+                <Suspense fallback={<div className="py-8 text-center">Loading comments...</div>}>
+                  <Comments postId={post._id} />
+                </Suspense>
+              </div>
+            ) : (
+              <div className="border-t border-gray-200 py-4 text-center text-gray-500">
+                Comments are disabled on this post
+              </div>
+            )}
             <SocialSharing
               url={canonicalUrl}
               title={post.title}
