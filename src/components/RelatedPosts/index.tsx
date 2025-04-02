@@ -33,12 +33,7 @@ const RelatedPosts: React.FC<RelatedPostsProps> = ({ posts, categories }) => {
                 {relatedPost.mainImage?.asset && (
                   <div className="relative h-48 w-full">
                     <Image
-                      src={urlFor(relatedPost.mainImage)
-                        .width(400)
-                        .height(240)
-                        .fit('crop')
-                        .crop('entropy')
-                        .url()}
+                      src={urlFor(relatedPost.mainImage).width(400).height(240).url()}
                       alt={relatedPost.mainImage.alt || relatedPost.title}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -53,7 +48,7 @@ const RelatedPosts: React.FC<RelatedPostsProps> = ({ posts, categories }) => {
                     {relatedPost.title}
                   </h3>
                   {relatedPost.excerpt && (
-                    <p className="text-gray-600 text-sm line-clamp-2">{relatedPost.excerpt}</p>
+                    <p className="text-gray-600 text-sm">{relatedPost.excerpt}</p>
                   )}
                 </div>
               </a>
