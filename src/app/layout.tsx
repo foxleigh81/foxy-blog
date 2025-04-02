@@ -27,6 +27,11 @@ const secondaryFont = Lato({
 export const metadata: Metadata = {
   title: "Foxy's Tale",
   description: 'The inane mutterings of Alexander Foxleigh',
+  alternates: {
+    types: {
+      'application/rss+xml': '/rss-feed',
+    },
+  },
 };
 
 // Query to fetch all categories
