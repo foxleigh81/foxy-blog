@@ -19,6 +19,8 @@ import RelatedPosts from '@/components/RelatedPosts';
 import LegacyBanner from '@/components/LegacyBanner';
 import OpinionBanner from '@/components/OpinionBanner';
 import SocialSharing from '@/components/SocialSharing';
+import Comments from '@/components/Comments';
+import { Suspense } from 'react';
 
 // Extended Post type that includes expanded references
 type Post = Omit<BasePost, 'author' | 'relatedPosts' | 'body'> & {
@@ -504,13 +506,10 @@ export default async function PostPage({ params }: PostPageProps) {
             {isOpinion && <OpinionBanner />}
             <BlogArticle content={post.body} />
             {!post.disableComments ? (
-              <div className="border-t border-gray-200 py-8 text-center">
-                <div className="text-gray-500">
-                  <p className="text-lg font-medium mb-2">Comments Coming Soon</p>
-                  <p className="text-sm">
-                    We&apos;re working on bringing you a great commenting experience.
-                  </p>
-                </div>
+              <div className="border-t border-gray-200 py-4">
+                <Suspense fallback={<div className="py-8 text-center">Loading comments...</div>}>
+                  <Comments postId={post._id} />
+                </Suspense>
               </div>
             ) : (
               <div className="border-t border-gray-200 py-4 text-center text-gray-500">
