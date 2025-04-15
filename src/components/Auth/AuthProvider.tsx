@@ -15,6 +15,8 @@ import { usePathname } from 'next/navigation';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
+// --- Restored Gravatar functions ---
+
 const generateMD5Hash = async (str: string): Promise<string> => {
   const msgBuffer = new TextEncoder().encode(str);
   const hashBuffer = await crypto.subtle.digest('MD5', msgBuffer);
@@ -27,6 +29,7 @@ const getGravatarUrl = async (email: string, size = 200): Promise<string> => {
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404`;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const checkGravatar = async (email: string): Promise<string | null> => {
   const url = await getGravatarUrl(email);
   try {
@@ -39,6 +42,7 @@ const checkGravatar = async (email: string): Promise<string | null> => {
   }
   return null;
 };
+// --- End of Gravatar functions ---
 
 interface AuthContextType {
   user: User | null;
@@ -78,7 +82,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Define fetchProfile first before it's used
   const fetchProfile = useCallback(
     async (userId: string) => {
       try {
@@ -89,25 +92,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           .single();
 
         if (error) {
-          // If the error is because the profile doesn't exist, don't log it as an error
           if (error.code === 'PGRST116') {
             return null;
           }
           console.error('Error fetching profile:', error);
           return null;
         }
-
         setProfile(data);
         return data;
       } catch (error) {
         console.error('Error in fetchProfile:', error);
-        return null;
+        throw error;
       }
     },
     [supabase]
   );
 
-  // This useEffect detects path changes and refreshes the profile
   useEffect(() => {
     if (user) {
       fetchProfile(user.id);
@@ -115,29 +115,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [pathname, user, fetchProfile]);
 
   useEffect(() => {
-    // Get initial session
     const getInitialSession = async () => {
       try {
-        // First get session to maintain cookies
         const {
           data: { session: initialSession },
+          error: getSessionError,
         } = await supabase.auth.getSession();
 
-        if (initialSession) {
+        if (getSessionError) {
+          console.error(
+            '[AuthProvider][getInitialSession] Error getting session:',
+            getSessionError
+          );
+        } else if (initialSession) {
           setSession(initialSession);
 
-          // Now use getUser to get authenticated user data
           const {
             data: { user: authUser },
+            error: getUserError,
           } = await supabase.auth.getUser();
 
-          if (authUser) {
+          if (getUserError) {
+            console.error('[AuthProvider][getInitialSession] Error getting user:', getUserError);
+          } else if (authUser) {
             setUser(authUser);
             await fetchProfile(authUser.id);
+          } else {
+            // No initial session found.
           }
+        } else {
+          // No initial session found.
         }
       } catch (error) {
-        console.error('Error fetching initial session:', error);
+        console.error('[AuthProvider][getInitialSession] Error fetching initial session:', error);
       } finally {
         setIsLoading(false);
       }
@@ -145,84 +155,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     getInitialSession();
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      if (currentSession) {
+      try {
         setSession(currentSession);
-
-        // Use getUser to get authenticated user data
-        const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser();
-
-        if (authUser) {
-          setUser(authUser);
-          try {
-            // Check if profile exists
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', authUser.id)
-              .single();
-
-            if (profileError && profileError.code === 'PGRST116') {
-              // Get username from metadata
-              const username =
-                authUser.user_metadata?.username ||
-                authUser.user_metadata?.display_name ||
-                'Anonymous';
-
-              // Check for Gravatar
-              let avatarUrl = null;
-              try {
-                if (authUser.email) {
-                  avatarUrl = await checkGravatar(authUser.email);
-                  if (!avatarUrl) {
-                    avatarUrl = await getGravatarUrl(authUser.email);
-                  }
-                }
-              } catch (error) {
-                console.error('Error checking gravatar:', error);
-              }
-
-              // Profile doesn't exist, create it
-              const { data: newProfile, error: insertError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: authUser.id,
-                  username: username,
-                  is_moderator: false,
-                  avatar_url: avatarUrl,
-                })
-                .select()
-                .single();
-
-              if (insertError) {
-                console.error('Error creating profile:', insertError);
-              } else {
-                // Set the profile directly to avoid extra fetch
-                setProfile(newProfile);
-                return; // Skip fetchProfile since we already have the profile
-              }
-            }
-
-            // Fetch the profile with await to make sure it completes
-            const profileData = await fetchProfile(authUser.id);
-            if (profileData) {
-              setProfile(profileData);
-            }
-          } catch (error) {
-            console.error('Error in auth state change handler:', error);
-          }
+        const authUser = currentSession?.user ?? null;
+        setUser(authUser);
+        if (!authUser) {
+          setProfile(null);
         }
-      } else {
+      } catch (outerError) {
+        console.error('[AuthProvider] Error in simplified onAuthStateChange handler:', outerError);
         setUser(null);
         setProfile(null);
+        setSession(null);
+      } finally {
+        // Removed flag reset
       }
-
-      setIsLoading(false);
     });
 
     return () => {
@@ -278,10 +228,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw error;
       }
 
-      // Refetch the profile to get the updated data
       await refetchProfile();
 
-      // Dispatch a custom event to notify components of profile update
       if (typeof window !== 'undefined') {
         const event = new CustomEvent('profileUpdated', {
           detail: { userId: user.id },
@@ -309,11 +257,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return null;
       }
 
-      // Update the profile state with the latest data
       if (data) {
         setProfile(data);
       }
-
       return data;
     } catch (error) {
       console.error('Error in refetchProfile:', error);

@@ -1,54 +1,62 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from '@/types/supabase';
 
 export async function middleware(request: NextRequest) {
-  // Log the current request path for debugging
-  console.log(`[Middleware] Processing: ${request.nextUrl.pathname}`);
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-  // Create a response object that we can modify and return
-  const response = NextResponse.next();
+  // Define cookie methods (type inferred)
+  const cookieMethods = {
+    get(name: string) {
+      return request.cookies.get(name)?.value;
+    },
+    set(name: string, value: string, options: CookieOptions) {
+      request.cookies.set({ name, value, ...options });
+      response = NextResponse.next({
+        request: {
+          headers: request.headers,
+        },
+      });
+      response.cookies.set({ name, value, ...options });
+    },
+    remove(name: string, options: CookieOptions) {
+      request.cookies.set({ name, value: '', ...options });
+      response = NextResponse.next({
+        request: {
+          headers: request.headers,
+        },
+      });
+      response.cookies.set({ name, value: '', ...options });
+    },
+  };
 
-  // Initialize the Supabase client with the correct approach for middleware
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        getAll: () => {
-          return Array.from(request.cookies.getAll()).map((cookie) => ({
-            name: cookie.name,
-            value: cookie.value,
-          }));
-        },
-        setAll: (cookiesList) => {
-          cookiesList.forEach((cookie) => {
-            // Setting cookies in the response
-            response.cookies.set(cookie.name, cookie.value, cookie.options);
-          });
-        },
-      },
+      cookies: cookieMethods,
     }
   );
 
-  // First get session to maintain cookies
+  // Refresh session if expired - required for Server Components
   await supabase.auth.getSession();
 
-  // Then use getUser to get authenticated user data
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  console.log(`[Middleware] Session check for ${request.nextUrl.pathname}:`, {
-    isAuthenticated: !!user,
-    userId: user?.id,
-  });
-
-  // Return the response with the updated session
   return response;
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)', '/api/:path*'],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 };
