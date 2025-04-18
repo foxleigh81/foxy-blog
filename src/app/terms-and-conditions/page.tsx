@@ -54,7 +54,7 @@ export default function TermsAndConditions() {
           <p>You must not use our website to:</p>
           <ul className="list-disc pl-6">
             <li>
-              Engage in any activity that disrupts the website's functionality or availability.
+              Engage in any activity that disrupts the website&apos;s functionality or availability.
             </li>
             <li>Post spam or unsolicited promotional material.</li>
             <li>Transmit harmful software, viruses, or malicious scripts.</li>
