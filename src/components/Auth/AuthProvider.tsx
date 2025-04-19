@@ -51,7 +51,7 @@ interface AuthContextType {
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ user: User | null; error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ user: User | null; error: Error | null }>;
-  signInWithFacebook: () => Promise<{ user: User | null; error: Error | null }>;
+  signInWithFacebook: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (profile: Partial<Profile>) => Promise<void>;
   refetchProfile: () => Promise<Profile | null>;
@@ -206,16 +206,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithFacebook = async () => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
-      return { user: data.user, error: error };
+      return { error: error };
     } catch (error) {
       console.error('Error signing in with Facebook:', error);
-      return { user: null, error: error as Error };
+      return { error: error as Error };
     }
   };
 
