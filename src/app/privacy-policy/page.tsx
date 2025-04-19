@@ -88,6 +88,37 @@ export default function PrivacyPolicy() {
         </section>
 
         <section className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4">Data Deletion Requests</h2>
+          <p>
+            If you wish to have your personal data removed from our systems, you can request
+            deletion by:
+          </p>
+          <ol className="list-decimal pl-6">
+            <li>
+              Sending an email to{' '}
+              <a href="mailto:privacy@example.com" className="text-blue-600 hover:underline">
+                privacy@example.com
+              </a>{' '}
+              with the subject line &quot;Data Deletion Request&quot;
+            </li>
+            <li>
+              Including the following information in your email:
+              <ul className="list-disc pl-6 mt-2">
+                <li>Your full name</li>
+                <li>Email address associated with your account</li>
+                <li>Any usernames or identifiers you&apos;ve used on our site</li>
+                <li>Specific data you want deleted (if applicable)</li>
+              </ul>
+            </li>
+          </ol>
+          <p className="mt-4">
+            We will process your request within 30 days of receipt. You will receive a confirmation
+            email once your data has been deleted. Please note that some data may be retained if
+            required by law or for legitimate business purposes.
+          </p>
+        </section>
+
+        <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">Retention of Your Information</h2>
           <p>
             We retain your personal data only for as long as necessary to fulfil the purposes
