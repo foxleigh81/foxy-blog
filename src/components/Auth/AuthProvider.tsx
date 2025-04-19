@@ -205,6 +205,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signInWithFacebook = async () => {
+    if (process.env.NEXT_PUBLIC_ENABLE_FACEBOOK_LOGIN !== 'true') {
+      return { error: new Error('Facebook login is currently disabled') };
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',

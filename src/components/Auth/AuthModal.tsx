@@ -135,23 +135,27 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
           {!showConfirmationMessage && (
             <>
-              <button
-                onClick={handleFacebookSignIn}
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 text-white bg-[#1877F2] hover:bg-[#166FE5] focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-4 disabled:bg-blue-300"
-              >
-                <FaFacebook className="text-xl" />
-                Continue with Facebook
-              </button>
+              {process.env.NEXT_PUBLIC_ENABLE_FACEBOOK_LOGIN === 'true' && (
+                <>
+                  <button
+                    onClick={handleFacebookSignIn}
+                    disabled={isSubmitting}
+                    className="w-full flex items-center justify-center gap-2 text-white bg-[#1877F2] hover:bg-[#166FE5] focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-4 disabled:bg-blue-300"
+                  >
+                    <FaFacebook className="text-xl" />
+                    Continue with Facebook
+                  </button>
 
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or</span>
-                </div>
-              </div>
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white text-gray-500">Or</span>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <form onSubmit={handleSubmit}>
                 {mode === 'signup' && (
