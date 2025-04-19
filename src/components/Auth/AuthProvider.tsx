@@ -51,6 +51,7 @@ interface AuthContextType {
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ user: User | null; error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ user: User | null; error: Error | null }>;
+  signInWithFacebook: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (profile: Partial<Profile>) => Promise<void>;
   refetchProfile: () => Promise<Profile | null>;
@@ -203,6 +204,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const signInWithFacebook = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      return { error: error };
+    } catch (error) {
+      console.error('Error signing in with Facebook:', error);
+      return { error: error as Error };
+    }
+  };
+
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -253,19 +269,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .single();
 
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error refetching profile:', error);
         return null;
       }
 
-      if (data) {
-        setProfile(data);
-      }
+      setProfile(data);
       return data;
     } catch (error) {
       console.error('Error in refetchProfile:', error);
       return null;
     }
-  }, [user, supabase]);
+  }, [supabase, user]);
 
   const value = {
     user,
@@ -274,6 +288,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     signIn,
     signUp,
+    signInWithFacebook,
     signOut,
     updateProfile,
     refetchProfile,
