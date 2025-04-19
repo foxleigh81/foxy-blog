@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import SocialLinks from '@/components/SocialLinks';
+import Link from 'next/link';
 
 const Footer: React.FC = () => {
   return (
@@ -34,6 +35,15 @@ const Footer: React.FC = () => {
                 style={{ width: 'auto', height: 'auto' }}
               />
             </a>
+          </div>
+
+          <div className="flex justify-center gap-4 mt-4 text-sm text-gray-600">
+            <Link href="/privacy-policy" className="hover:underline">
+              Privacy Policy
+            </Link>
+            <Link href="/terms-and-conditions" className="hover:underline">
+              Terms & Conditions
+            </Link>
           </div>
         </div>
       </div>
