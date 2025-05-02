@@ -41,8 +41,8 @@ const categoriesQuery = groq`*[_type == "category"] {
   description
 }`;
 
-// Query to fetch the featured post with all necessary fields
-const featuredPostQuery = groq`*[_type == "featuredPost"][0] {
+// Query to fetch the most recent featured post with all necessary fields
+const featuredPostQuery = groq`*[_type == "featuredPost"][-1] {
   "post": post->{
     _id,
     title,
