@@ -360,8 +360,8 @@ const CommentsList: React.FC<CommentsListProps> = ({
 
     if (comments.length === 0) {
       return (
-        <div className="p-6 text-center text-gray-500">
-          <FaRegCommentAlt className="mx-auto mb-3 h-8 w-8 text-gray-400" />
+        <div className="p-6 text-center text-gray-700">
+          <FaRegCommentAlt className="mx-auto mb-3 h-8 w-8 text-gray-700" />
           <p>No comments yet. Be the first to share your thoughts!</p>
         </div>
       );
