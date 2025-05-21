@@ -8,6 +8,7 @@ import Masthead from '@/components/Masthead';
 import Footer from '@/components/Footer';
 import CookieConsent from '@/components/CookieConsent';
 import GTMScript from '@/components/GTMScript';
+import SkipLink from '@/components/SkipLink';
 import { sanityClient } from '@/sanity/lib/client';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 
@@ -64,12 +65,15 @@ export default async function RootLayout({
     <html lang="en">
       <head>{gtmId && <GTMScript gtmId={gtmId} />}</head>
       <body className={`${primaryFont.variable} ${secondaryFont.variable} antialiased`}>
+        <SkipLink targetId="maincontent" />
         <Masthead
           categories={categories}
           title={metadata.title as string}
           subtitle={metadata.description as string}
         />
-        <main className="container mx-auto px-4">{children}</main>
+        <main id="maincontent" tabIndex={-1} className="container mx-auto px-4">
+          {children}
+        </main>
         <Footer />
         <Analytics />
         <CookieConsent />
