@@ -500,9 +500,9 @@ export default async function PostPage({ params }: PostPageProps) {
           readingTime={readingTime}
         />
 
-        {isLegacy && <LegacyBanner year={post.publishedAt?.split('-')[0] || ''} />}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           <div className="lg:col-span-8 mt-4">
+            {isLegacy && <LegacyBanner year={post.publishedAt?.split('-')[0] || ''} />}
             {isOpinion && <OpinionBanner />}
             <BlogArticle content={post.body} />
             {!post.disableComments ? (
