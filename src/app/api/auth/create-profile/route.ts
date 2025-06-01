@@ -7,6 +7,8 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export async function POST(request: NextRequest) {
+  console.log('[API] create-profile: Request received');
+
   try {
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('API: Missing Supabase URL or service role key');
@@ -22,15 +24,23 @@ export async function POST(request: NextRequest) {
     });
 
     const { userId, username, avatarUrl } = await request.json();
+    console.log(`[API] create-profile: Parsed request data:`, {
+      userId,
+      username,
+      hasAvatarUrl: !!avatarUrl,
+    });
 
     if (!userId || !username) {
+      console.error(`[API] create-profile: Missing required fields`, { userId, username });
       return NextResponse.json({ error: 'User ID and username are required' }, { status: 400 });
     }
+
+    console.log(`[API] create-profile: Checking for existing profile for user: ${userId}`);
 
     // First check if the profile already exists
     const { data: existingProfile, error: checkError } = await supabaseAdmin
       .from('profiles')
-      .select('id')
+      .select('*')
       .eq('id', userId)
       .maybeSingle();
 
@@ -44,6 +54,7 @@ export async function POST(request: NextRequest) {
 
     // If profile already exists, just return success
     if (existingProfile) {
+      console.log(`[API] create-profile: Profile already exists for user: ${userId}`);
       return NextResponse.json({
         success: true,
         message: 'Profile already exists',
@@ -51,13 +62,18 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    console.log(`[API] create-profile: Creating new profile for user: ${userId}`);
+
     // Create profile record using admin client which bypasses RLS
     const profileData = {
       id: userId,
       username,
       avatar_url: avatarUrl,
       is_moderator: false,
+      is_trusted: false,
     };
+
+    console.log(`[API] create-profile: Profile data to insert:`, profileData);
 
     const { data: newProfile, error: insertError } = await supabaseAdmin
       .from('profiles')
@@ -72,6 +88,11 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    console.log(`[API] create-profile: Profile created successfully:`, {
+      id: newProfile.id,
+      username: newProfile.username,
+    });
 
     return NextResponse.json({
       success: true,

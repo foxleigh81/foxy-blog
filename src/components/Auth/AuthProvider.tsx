@@ -97,10 +97,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Helper function to create a profile for a user
   const createProfileForUser = useCallback(
     async (user: User): Promise<Profile | null> => {
+      console.log(`[AuthProvider] Creating profile for user: ${user.id}`, {
+        email: user.email,
+        hasUserMetadata: !!user.user_metadata,
+        userMetadata: user.user_metadata,
+      });
+
       try {
         const username = generateUsername(user);
-        const avatarUrl = await checkGravatar(user.email || '');
+        console.log(`[AuthProvider] Generated username: ${username}`);
 
+        console.log(`[AuthProvider] Checking Gravatar for: ${user.email}`);
+        const avatarUrl = await checkGravatar(user.email || '');
+        console.log(`[AuthProvider] Gravatar result:`, { avatarUrl: avatarUrl || 'none' });
+
+        console.log(`[AuthProvider] Calling create-profile API...`);
         const response = await fetch('/api/auth/create-profile', {
           method: 'POST',
           headers: {
@@ -113,8 +124,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }),
         });
 
+        console.log(`[AuthProvider] Create-profile API response:`, {
+          status: response.status,
+          ok: response.ok,
+        });
+
         if (!response.ok) {
           const errorData = await response.json();
+          console.error(`[AuthProvider] Create-profile API error:`, errorData);
+
           const error = new Error(
             `Failed to create profile: ${errorData.error || 'Unknown error'}`
           );
@@ -129,6 +147,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               errorData,
               username,
               userEmail: user.email,
+              responseStatus: response.status,
             },
           });
 
@@ -137,6 +156,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         const { profile } = await response.json();
+        console.log(`[AuthProvider] Profile created successfully:`, {
+          profileId: profile?.id,
+          username: profile?.username,
+        });
 
         // Track successful profile creation in Sentry
         Sentry.addBreadcrumb({
@@ -159,6 +182,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         return profile;
       } catch (error) {
+        console.error(`[AuthProvider] Exception in createProfileForUser:`, error);
+
         // Report unexpected errors to Sentry
         Sentry.captureException(error, {
           tags: {
@@ -179,6 +204,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchProfile = useCallback(
     async (userId: string) => {
+      console.log(`[AuthProvider] Fetching profile for user: ${userId}`);
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -187,7 +213,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           .single();
 
         if (error) {
+          console.log(`[AuthProvider] Profile fetch error:`, {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+          });
+
           if (error.code === 'PGRST116') {
+            console.log(`[AuthProvider] No profile found for user ${userId}`);
             return null;
           }
 
@@ -205,9 +238,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.error('Error fetching profile:', error);
           return null;
         }
+
+        console.log(`[AuthProvider] Profile found for user ${userId}:`, {
+          username: data.username,
+          hasAvatar: !!data.avatar_url,
+        });
         setProfile(data);
         return data;
       } catch (error) {
+        console.error(`[AuthProvider] Exception in fetchProfile:`, error);
         Sentry.captureException(error, {
           tags: {
             operation: 'profile_fetch',
@@ -225,10 +264,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Enhanced function to fetch or create profile
   const fetchOrCreateProfile = useCallback(
     async (user: User) => {
+      console.log(`[AuthProvider] Starting fetchOrCreateProfile for user: ${user.id}`);
       try {
         const existingProfile = await fetchProfile(user.id);
 
         if (existingProfile) {
+          console.log(`[AuthProvider] Existing profile found, setting Sentry context`);
           // Set user context for existing users
           Sentry.setUser({
             id: user.id,
@@ -243,6 +284,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const newProfile = await createProfileForUser(user);
 
         if (newProfile) {
+          console.log(`[AuthProvider] New profile created, updating state`);
           setProfile(newProfile);
           return newProfile;
         } else {
@@ -250,6 +292,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return null;
         }
       } catch (error) {
+        console.error(`[AuthProvider] Exception in fetchOrCreateProfile:`, error);
         Sentry.captureException(error, {
           tags: {
             operation: 'fetch_or_create_profile',
@@ -315,20 +358,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       try {
+        console.log(`[AuthProvider] Auth event: ${event}`, {
+          hasSession: !!currentSession,
+          hasUser: !!currentSession?.user,
+          userId: currentSession?.user?.id,
+        });
+
         setSession(currentSession);
         const authUser = currentSession?.user ?? null;
         setUser(authUser);
 
         if (!authUser) {
           setProfile(null);
+          // Clear Sentry user context when logging out
+          Sentry.setUser(null);
         } else {
-          // For sign up and sign in events, ensure profile is created
-          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          // Handle profile creation/fetching for all relevant auth events
+          // SIGNED_IN: User signs in (existing or new user after email confirmation)
+          // INITIAL_SESSION: Page load with existing session
+          // TOKEN_REFRESHED: Token refresh (user is still authenticated)
+          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+            console.log(`[AuthProvider] Fetching/creating profile for event: ${event}`);
             await fetchOrCreateProfile(authUser);
+          } else {
+            console.log(`[AuthProvider] Skipping profile fetch for event: ${event}`);
           }
         }
       } catch (outerError) {
         console.error('[AuthProvider] Error in auth state change handler:', outerError);
+        Sentry.captureException(outerError, {
+          tags: {
+            operation: 'auth_state_change',
+            event,
+          },
+          extra: {
+            hasSession: !!currentSession,
+            hasUser: !!currentSession?.user,
+          },
+        });
         setUser(null);
         setProfile(null);
         setSession(null);
