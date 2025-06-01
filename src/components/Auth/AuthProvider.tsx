@@ -12,6 +12,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '@/types/supabase';
 import { usePathname } from 'next/navigation';
+import * as Sentry from '@sentry/nextjs';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -29,7 +30,6 @@ const getGravatarUrl = async (email: string, size = 200): Promise<string> => {
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404`;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const checkGravatar = async (email: string): Promise<string | null> => {
   const url = await getGravatarUrl(email);
   try {
@@ -83,6 +83,100 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  // Memoized helper function to generate username from user data
+  const generateUsername = useCallback((user: User): string => {
+    return (
+      user.user_metadata?.username ||
+      user.user_metadata?.name ||
+      user.user_metadata?.full_name ||
+      user.email?.split('@')[0] ||
+      'Anonymous'
+    );
+  }, []);
+
+  // Helper function to create a profile for a user
+  const createProfileForUser = useCallback(
+    async (user: User): Promise<Profile | null> => {
+      try {
+        const username = generateUsername(user);
+        const avatarUrl = await checkGravatar(user.email || '');
+
+        const response = await fetch('/api/auth/create-profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            username,
+            avatarUrl,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          const error = new Error(
+            `Failed to create profile: ${errorData.error || 'Unknown error'}`
+          );
+
+          // Report profile creation failure to Sentry
+          Sentry.captureException(error, {
+            tags: {
+              operation: 'profile_creation',
+              user_id: user.id,
+            },
+            extra: {
+              errorData,
+              username,
+              userEmail: user.email,
+            },
+          });
+
+          console.error('Failed to create profile:', errorData);
+          return null;
+        }
+
+        const { profile } = await response.json();
+
+        // Track successful profile creation in Sentry
+        Sentry.addBreadcrumb({
+          message: 'New user profile created successfully',
+          category: 'auth',
+          level: 'info',
+          data: {
+            userId: user.id,
+            username,
+            hasAvatar: !!avatarUrl,
+          },
+        });
+
+        // Set user context for future Sentry events
+        Sentry.setUser({
+          id: user.id,
+          email: user.email,
+          username,
+        });
+
+        return profile;
+      } catch (error) {
+        // Report unexpected errors to Sentry
+        Sentry.captureException(error, {
+          tags: {
+            operation: 'profile_creation',
+            user_id: user.id,
+          },
+          extra: {
+            userEmail: user.email,
+          },
+        });
+
+        console.error('Error creating profile:', error);
+        return null;
+      }
+    },
+    [generateUsername]
+  );
+
   const fetchProfile = useCallback(
     async (userId: string) => {
       try {
@@ -96,12 +190,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (error.code === 'PGRST116') {
             return null;
           }
+
+          // Report profile fetch errors to Sentry
+          Sentry.captureException(new Error(`Error fetching profile: ${error.message}`), {
+            tags: {
+              operation: 'profile_fetch',
+              user_id: userId,
+            },
+            extra: {
+              error,
+            },
+          });
+
           console.error('Error fetching profile:', error);
           return null;
         }
         setProfile(data);
         return data;
       } catch (error) {
+        Sentry.captureException(error, {
+          tags: {
+            operation: 'profile_fetch',
+            user_id: userId,
+          },
+        });
+
         console.error('Error in fetchProfile:', error);
         throw error;
       }
@@ -109,11 +222,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     [supabase]
   );
 
+  // Enhanced function to fetch or create profile
+  const fetchOrCreateProfile = useCallback(
+    async (user: User) => {
+      try {
+        const existingProfile = await fetchProfile(user.id);
+
+        if (existingProfile) {
+          // Set user context for existing users
+          Sentry.setUser({
+            id: user.id,
+            email: user.email,
+            username: existingProfile.username || undefined,
+          });
+          return existingProfile;
+        }
+
+        // Profile doesn't exist, create one
+        console.log('No profile found for user, creating new profile...');
+        const newProfile = await createProfileForUser(user);
+
+        if (newProfile) {
+          setProfile(newProfile);
+          return newProfile;
+        } else {
+          console.error('Failed to create profile for user');
+          return null;
+        }
+      } catch (error) {
+        Sentry.captureException(error, {
+          tags: {
+            operation: 'fetch_or_create_profile',
+            user_id: user.id,
+          },
+        });
+
+        console.error('Error in fetchOrCreateProfile:', error);
+        return null;
+      }
+    },
+    [fetchProfile, createProfileForUser]
+  );
+
   useEffect(() => {
     if (user) {
-      fetchProfile(user.id);
+      fetchOrCreateProfile(user);
     }
-  }, [pathname, user, fetchProfile]);
+  }, [pathname, user, fetchOrCreateProfile]);
 
   useEffect(() => {
     const getInitialSession = async () => {
@@ -140,7 +295,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.error('[AuthProvider][getInitialSession] Error getting user:', getUserError);
           } else if (authUser) {
             setUser(authUser);
-            await fetchProfile(authUser.id);
+            await fetchOrCreateProfile(authUser);
           } else {
             // No initial session found.
           }
@@ -163,11 +318,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSession(currentSession);
         const authUser = currentSession?.user ?? null;
         setUser(authUser);
+
         if (!authUser) {
           setProfile(null);
+        } else {
+          // For sign up and sign in events, ensure profile is created
+          if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+            await fetchOrCreateProfile(authUser);
+          }
         }
       } catch (outerError) {
-        console.error('[AuthProvider] Error in simplified onAuthStateChange handler:', outerError);
+        console.error('[AuthProvider] Error in auth state change handler:', outerError);
         setUser(null);
         setProfile(null);
         setSession(null);
@@ -179,7 +340,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase, fetchProfile]);
+  }, [supabase, fetchOrCreateProfile]);
 
   const signIn = async (email: string, password: string) => {
     try {
