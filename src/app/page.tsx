@@ -75,7 +75,7 @@ interface HomePageProps {
 
 const title = "Foxy's Tale - The inane mutterings of Alexander Foxleigh";
 const description =
-  "Hi. I'm Alex, I'm a senior full-stack developer with a passion for building performant, accessible and highly usable web applications.\nYou can find out more about me by reading my blog, taking a look at my website or having a look at my social links which are below in the footer.\nHere is an assorted collection of my rants, ravings and general ramblings. I apologise in advance.";
+  "Hi. I'm Alex, I'm a lead frontend engineer and design systems specialist with a passion for building performant, accessible and highly usable web applications.\nYou can find out more about me by reading my blog, taking a look at my website or having a look at my social links which are below in the footer.\nHere is an assorted collection of my rants, ravings and general ramblings. I apologise in advance.";
 
 export const metadata: Metadata = {
   title,
@@ -187,8 +187,8 @@ export default async function BlogIndex({ searchParams }: HomePageProps) {
         <main className="container mx-auto py-4 px-4">
           <div className="mb-8">
             <p className="text-lg font-bold mb-4">
-              Hi. I&apos;m Alex, I&apos;m a senior full-stack developer with a passion for building
-              performant, accessible and highly usable web applications.
+              Hi. I&apos;m Alex, I&apos;m a lead frontend engineer and design systems specialist
+              with a passion for building performant, accessible and highly usable web applications.
             </p>
             <p className="mb-4 text-sm">
               You can find out more about me by reading my blog,{' '}
