@@ -87,6 +87,11 @@ const ModerationQueue: React.FC = () => {
 
       // Remove the comment from the list since it's no longer unapproved
       setComments((prev) => prev.filter((comment) => comment.id !== commentId));
+
+      // Dispatch event to notify other components about the status change
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('comment-status-changed'));
+      }
     } catch (error) {
       console.error('Error updating comment status:', error);
       setError('Failed to update comment. Please try again.');
