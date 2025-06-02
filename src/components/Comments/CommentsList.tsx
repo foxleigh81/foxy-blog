@@ -5,7 +5,7 @@ import { FaRegCommentAlt } from 'react-icons/fa';
 import { useSearchParams } from 'next/navigation';
 import CommentItem from './CommentItem';
 import Pagination from '../Pagination';
-import { useAuth } from '../Auth/AuthProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import { Database } from '@/types/supabase';
 
 type CommentStatus = 'pending' | 'approved' | 'rejected';

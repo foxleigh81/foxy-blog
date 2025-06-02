@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '../Auth/AuthProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from '../Auth/AuthModal';
 import { FaPaperPlane } from 'react-icons/fa';
 

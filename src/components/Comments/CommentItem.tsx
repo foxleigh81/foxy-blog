@@ -14,7 +14,7 @@ import {
   FaEllipsisV,
 } from 'react-icons/fa';
 import { formatDistanceToNow } from 'date-fns';
-import { useAuth } from '../Auth/AuthProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import CommentInput from './CommentInput';
 
 type CommentStatus = 'pending' | 'approved' | 'rejected';
