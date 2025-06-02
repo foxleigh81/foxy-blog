@@ -74,7 +74,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ onEditProfile }) => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setDropdownOpen(!dropdownOpen)}
-        className={`flex items-center space-x-2 text-white rounded-lg p-2 transition-all duration-300 ${
+        className={`flex items-center space-x-2 text-white rounded-lg p-2 transition-colors duration-300 ${
           showNotification
             ? 'bg-purple-500/80 hover:bg-purple-500/90 animate-pulse'
             : 'hover:bg-white/10'
