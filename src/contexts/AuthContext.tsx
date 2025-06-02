@@ -107,11 +107,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Initialize auth state
   useEffect(() => {
+    let isMounted = true;
+
     const initializeAuth = async () => {
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
 
         if (session?.user) {
           setUser(session.user);
@@ -127,12 +131,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             );
           }
 
-          setProfile(userProfile);
+          if (isMounted) {
+            setProfile(userProfile);
+          }
+        } else {
+          if (isMounted) {
+            setUser(null);
+            setProfile(null);
+          }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
+        if (isMounted) {
+          setUser(null);
+          setProfile(null);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -142,6 +159,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+
+      console.log('Auth state change:', event, session?.user?.email);
+
       setUser(session?.user ?? null);
 
       if (session?.user) {
@@ -156,15 +177,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           );
         }
 
-        setProfile(userProfile);
+        if (isMounted) {
+          setProfile(userProfile);
+        }
       } else {
-        setProfile(null);
+        if (isMounted) {
+          setProfile(null);
+        }
       }
 
-      setLoading(false);
+      // Only set loading to false if this is not the initial session (which is handled by initializeAuth)
+      if (isMounted && event !== 'INITIAL_SESSION') {
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [createProfile, fetchProfile, supabase.auth]);
 
   const signUp = async (email: string, password: string, metadata?: Record<string, string>) => {
