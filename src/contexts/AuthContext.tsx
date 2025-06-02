@@ -148,20 +148,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchProfile = useCallback(
     async (userId: string): Promise<Profile | null> => {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
+        console.log('[AUTH DEBUG] Starting database query for profile:', userId);
+
+        // Add timeout wrapper to prevent hanging queries
+        const profilePromise = supabase.from('profiles').select('*').eq('id', userId).single();
+
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Profile fetch timeout')), 10000); // 10 second timeout
+        });
+
+        const { data, error } = await Promise.race([profilePromise, timeoutPromise]);
+
+        console.log('[AUTH DEBUG] Database query completed:', {
+          hasData: !!data,
+          error: error?.message,
+          userId,
+        });
 
         if (error) {
-          console.error('Error fetching profile:', error);
+          console.error('[AUTH DEBUG] Error fetching profile:', error);
           return null;
         }
 
+        console.log('[AUTH DEBUG] Profile fetch successful:', {
+          profileId: data?.id,
+          username: data?.username,
+        });
+
         return data as Profile;
       } catch (error) {
-        console.error('Exception in fetchProfile:', error);
+        console.error('[AUTH DEBUG] Exception in fetchProfile:', error);
         return null;
       }
     },
@@ -172,6 +188,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const createProfile = useCallback(
     async (userId: string, email: string, userData?: User): Promise<Profile | null> => {
       try {
+        console.log('[AUTH DEBUG] Starting profile creation for user:', userId);
+
         // Use username from user metadata if available, otherwise fall back to email prefix
         const username = userData?.user_metadata?.username || email.split('@')[0];
 
@@ -182,20 +200,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           is_trusted: false,
         };
 
-        const { data, error } = await supabase
-          .from('profiles')
-          .upsert(profileData)
-          .select()
-          .single();
+        console.log('[AUTH DEBUG] Profile data to insert:', profileData);
+
+        // Add timeout wrapper to prevent hanging queries
+        const createPromise = supabase.from('profiles').upsert(profileData).select().single();
+
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Profile creation timeout')), 10000); // 10 second timeout
+        });
+
+        const { data, error } = await Promise.race([createPromise, timeoutPromise]);
+
+        console.log('[AUTH DEBUG] Profile creation completed:', {
+          hasData: !!data,
+          error: error?.message,
+          userId,
+        });
 
         if (error) {
-          console.error('Error creating profile:', error);
+          console.error('[AUTH DEBUG] Error creating profile:', error);
           return null;
         }
 
+        console.log('[AUTH DEBUG] Profile creation successful:', {
+          profileId: data?.id,
+          username: data?.username,
+        });
+
         return data as Profile;
       } catch (error) {
-        console.error('Error creating profile:', error);
+        console.error('[AUTH DEBUG] Error creating profile:', error);
         return null;
       }
     },
