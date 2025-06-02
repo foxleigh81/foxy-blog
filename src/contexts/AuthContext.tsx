@@ -67,12 +67,21 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       };
 
     case 'PROFILE_LOADED':
-      return {
-        ...state,
-        status: 'authenticated',
-        profile: action.profile,
-        error: undefined,
-      };
+      if (action.profile) {
+        return {
+          ...state,
+          status: 'authenticated',
+          profile: action.profile,
+          error: undefined,
+        };
+      } else {
+        return {
+          ...state,
+          status: 'error',
+          profile: null,
+          error: 'Failed to load user profile',
+        };
+      }
 
     case 'AUTH_ERROR':
       return {
