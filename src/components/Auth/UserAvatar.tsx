@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FaSignOutAlt, FaEdit, FaShieldAlt, FaStar } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface UserAvatarProps {
   onEditProfile: () => void;
@@ -141,6 +142,18 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ onEditProfile }) => {
             <FaEdit className="mr-2" />
             Edit Profile
           </button>
+
+          {/* Moderator dashboard link - only visible to moderators */}
+          {profile?.is_moderator && (
+            <Link
+              href="/moderator"
+              onClick={() => setDropdownOpen(false)}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+            >
+              <FaShieldAlt className="mr-2" />
+              Moderator Dashboard
+            </Link>
+          )}
 
           <button
             onClick={handleSignOut}
