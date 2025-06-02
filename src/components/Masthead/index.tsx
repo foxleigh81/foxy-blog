@@ -3,6 +3,10 @@
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import Search from '@/components/Search';
+import UserAvatar from '@/components/Auth/UserAvatar';
+import AuthModal from '@/components/Auth/AuthModal';
+import ProfileEditModal from '@/components/Auth/ProfileEditModal';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -16,6 +20,9 @@ interface MastheadProps {
 
 const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const { user, loading } = useAuth();
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -47,9 +54,24 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
             </div>
           </div>
 
-          <div className="hidden nav:flex items-center">
+          <div className="hidden nav:flex items-center space-x-4">
             <Navigation categories={categories} className="justify-end" />
             <Search mobileMenuOpen={false} />
+
+            {!loading && (
+              <>
+                {user ? (
+                  <UserAvatar onEditProfile={() => setProfileModalOpen(true)} />
+                ) : (
+                  <button
+                    onClick={() => setAuthModalOpen(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                  >
+                    Sign In
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           <button
@@ -82,9 +104,31 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
             <div className="mt-4 flex justify-center w-full">
               <Search mobileMenuOpen={menuOpen} />
             </div>
+
+            {/* Mobile auth section */}
+            {!loading && (
+              <div className="mt-4 flex justify-center">
+                {user ? (
+                  <UserAvatar onEditProfile={() => setProfileModalOpen(true)} />
+                ) : (
+                  <button
+                    onClick={() => setAuthModalOpen(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                  >
+                    Sign In
+                  </button>
+                )}
+              </div>
+            )}
           </nav>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+
+      {/* Profile Edit Modal */}
+      <ProfileEditModal isOpen={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
     </header>
   );
 };

@@ -10,7 +10,6 @@
 .masthead {
   position: relative;
   background-color: rebeccapurple;
-  overflow: hidden;
 }
 
 .masthead::before {
