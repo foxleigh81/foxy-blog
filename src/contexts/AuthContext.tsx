@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useReducer,
   useCallback,
+  useRef,
   ReactNode,
 } from 'react';
 import { User } from '@supabase/supabase-js';
@@ -42,13 +43,6 @@ type AuthAction =
   | { type: 'PROFILE_UPDATED'; profile: Profile };
 
 const authReducer = (state: AuthState, action: AuthAction): AuthState => {
-  console.log('[AUTH DEBUG] State transition:', {
-    from: state.status,
-    action: action.type,
-    hasUser: !!state.user,
-    hasProfile: !!state.profile,
-  });
-
   switch (action.type) {
     case 'INITIALIZE_START':
       return {
@@ -141,6 +135,8 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const isInitialized = useRef(false);
+  const isProcessingSession = useRef(false);
 
   const supabase = createClient();
 
@@ -148,8 +144,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchProfile = useCallback(
     async (userId: string): Promise<Profile | null> => {
       try {
-        console.log('[AUTH DEBUG] Starting database query for profile:', userId);
-
         // Add timeout wrapper to prevent hanging queries
         const profilePromise = supabase.from('profiles').select('*').eq('id', userId).single();
 
@@ -159,25 +153,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         const { data, error } = await Promise.race([profilePromise, timeoutPromise]);
 
-        console.log('[AUTH DEBUG] Database query completed:', {
-          hasData: !!data,
-          error: error?.message,
-          userId,
-        });
-
         if (error) {
-          console.error('[AUTH DEBUG] Error fetching profile:', error);
           return null;
         }
 
-        console.log('[AUTH DEBUG] Profile fetch successful:', {
-          profileId: data?.id,
-          username: data?.username,
-        });
-
         return data as Profile;
-      } catch (error) {
-        console.error('[AUTH DEBUG] Exception in fetchProfile:', error);
+      } catch {
         return null;
       }
     },
@@ -188,8 +169,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const createProfile = useCallback(
     async (userId: string, email: string, userData?: User): Promise<Profile | null> => {
       try {
-        console.log('[AUTH DEBUG] Starting profile creation for user:', userId);
-
         // Use username from user metadata if available, otherwise fall back to email prefix
         const username = userData?.user_metadata?.username || email.split('@')[0];
 
@@ -200,8 +179,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           is_trusted: false,
         };
 
-        console.log('[AUTH DEBUG] Profile data to insert:', profileData);
-
         // Add timeout wrapper to prevent hanging queries
         const createPromise = supabase.from('profiles').upsert(profileData).select().single();
 
@@ -211,75 +188,55 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         const { data, error } = await Promise.race([createPromise, timeoutPromise]);
 
-        console.log('[AUTH DEBUG] Profile creation completed:', {
-          hasData: !!data,
-          error: error?.message,
-          userId,
-        });
-
         if (error) {
-          console.error('[AUTH DEBUG] Error creating profile:', error);
           return null;
         }
 
-        console.log('[AUTH DEBUG] Profile creation successful:', {
-          profileId: data?.id,
-          username: data?.username,
-        });
-
         return data as Profile;
-      } catch (error) {
-        console.error('[AUTH DEBUG] Error creating profile:', error);
+      } catch {
         return null;
       }
     },
     [supabase]
   );
 
-  // Handle user session and profile loading
+  // Handle user session and profile loading with concurrency protection
   const handleUserSession = useCallback(
-    async (user: User | null) => {
-      console.log('[AUTH DEBUG] Handling user session:', {
-        hasUser: !!user,
-        userId: user?.id,
-        userEmail: user?.email,
-      });
-
-      if (!user) {
-        console.log('[AUTH DEBUG] No user, setting to unauthenticated');
-        dispatch({ type: 'SESSION_EMPTY' });
+    async (user: User | null, source: 'initialization' | 'auth_change' = 'auth_change') => {
+      // Prevent concurrent session processing
+      if (isProcessingSession.current) {
         return;
       }
 
-      console.log('[AUTH DEBUG] User found, setting to authenticating');
-      dispatch({ type: 'SESSION_FOUND', user });
+      // During initialization, ignore auth change events
+      if (source === 'auth_change' && !isInitialized.current) {
+        return;
+      }
+
+      isProcessingSession.current = true;
 
       try {
-        console.log('[AUTH DEBUG] Fetching profile for user:', user.id);
-        let userProfile = await fetchProfile(user.id);
-
-        console.log('[AUTH DEBUG] Profile fetch result:', {
-          hasProfile: !!userProfile,
-          profileId: userProfile?.id,
-          username: userProfile?.username,
-        });
-
-        // Create profile if it doesn't exist
-        if (!userProfile) {
-          console.log('[AUTH DEBUG] No profile found, creating new profile');
-          userProfile = await createProfile(user.id, user.email || '', user);
-          console.log('[AUTH DEBUG] Profile creation result:', {
-            hasProfile: !!userProfile,
-            profileId: userProfile?.id,
-            username: userProfile?.username,
-          });
+        if (!user) {
+          dispatch({ type: 'SESSION_EMPTY' });
+          return;
         }
 
-        console.log('[AUTH DEBUG] Setting profile loaded');
-        dispatch({ type: 'PROFILE_LOADED', profile: userProfile });
-      } catch (error) {
-        console.error('[AUTH DEBUG] Error handling user session:', error);
-        dispatch({ type: 'AUTH_ERROR', error: 'Failed to load user profile' });
+        dispatch({ type: 'SESSION_FOUND', user });
+
+        try {
+          let userProfile = await fetchProfile(user.id);
+
+          // Create profile if it doesn't exist
+          if (!userProfile) {
+            userProfile = await createProfile(user.id, user.email || '', user);
+          }
+
+          dispatch({ type: 'PROFILE_LOADED', profile: userProfile });
+        } catch {
+          dispatch({ type: 'AUTH_ERROR', error: 'Failed to load user profile' });
+        }
+      } finally {
+        isProcessingSession.current = false;
       }
     },
     [fetchProfile, createProfile]
@@ -290,28 +247,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     let isMounted = true;
 
     const initializeAuth = async () => {
-      console.log('[AUTH DEBUG] Starting initialization');
       dispatch({ type: 'INITIALIZE_START' });
 
       try {
-        console.log('[AUTH DEBUG] Getting session...');
         const {
           data: { session },
         } = await supabase.auth.getSession();
 
-        console.log('[AUTH DEBUG] Session result:', {
-          hasSession: !!session,
-          hasUser: !!session?.user,
-          userId: session?.user?.id,
-          expiresAt: session?.expires_at,
-          isMounted,
-        });
-
         if (isMounted) {
-          await handleUserSession(session?.user ?? null);
+          await handleUserSession(session?.user ?? null, 'initialization');
+          isInitialized.current = true;
         }
-      } catch (error) {
-        console.error('[AUTH DEBUG] Error initializing auth:', error);
+      } catch {
         if (isMounted) {
           dispatch({ type: 'AUTH_ERROR', error: 'Failed to initialize authentication' });
         }
@@ -324,26 +271,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[AUTH DEBUG] Auth state change:', {
-        event,
-        hasSession: !!session,
-        hasUser: !!session?.user,
-        userId: session?.user?.id,
-        isMounted,
-      });
-
       if (!isMounted) return;
 
       try {
-        await handleUserSession(session?.user ?? null);
-      } catch (error) {
-        console.error('[AUTH DEBUG] Error handling user session:', error);
-        dispatch({ type: 'AUTH_ERROR', error: 'Failed to handle user session' });
+        await handleUserSession(session?.user ?? null, 'auth_change');
+      } catch {
+        dispatch({ type: 'AUTH_ERROR', error: 'Failed to handle auth change' });
       }
     });
 
     return () => {
       isMounted = false;
+      isInitialized.current = false;
+      isProcessingSession.current = false;
       subscription.unsubscribe();
     };
   }, [handleUserSession, supabase.auth]);
