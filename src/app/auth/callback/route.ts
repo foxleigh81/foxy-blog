@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import type { Database } from '@/types/supabase';
+import { SUPABASE_COOKIE_OPTIONS } from '@/lib/cookie-config';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -24,7 +25,13 @@ export async function GET(request: NextRequest) {
         setAll: (cookiesList) => {
           cookiesList.forEach((cookie) => {
             try {
-              cookieStore.set(cookie.name, cookie.value, cookie.options);
+              // Use shared cookie configuration for consistency
+              const cookieOptions: Record<string, unknown> = {
+                ...SUPABASE_COOKIE_OPTIONS,
+                ...cookie.options,
+              };
+
+              cookieStore.set(cookie.name, cookie.value, cookieOptions);
             } catch (error) {
               console.log('Cookie setting failed:', error);
             }
