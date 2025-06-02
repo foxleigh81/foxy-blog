@@ -180,7 +180,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
 
         // Add timeout wrapper to prevent hanging queries
-        const createPromise = supabase.from('profiles').upsert(profileData).select().single();
+        const createPromise = supabase.from('profiles').insert(profileData).select().single();
 
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => reject(new Error('Profile creation timeout')), 10000); // 10 second timeout
