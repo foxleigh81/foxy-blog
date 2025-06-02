@@ -9,28 +9,45 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Define cookie methods (type inferred)
+  // Define cookie methods with proper Chrome-compatible attributes
   const cookieMethods = {
     get(name: string) {
       return request.cookies.get(name)?.value;
     },
     set(name: string, value: string, options: CookieOptions) {
-      request.cookies.set({ name, value, ...options });
+      // Ensure Chrome-compatible cookie attributes
+      const cookieOptions = {
+        ...options,
+        sameSite: 'lax' as const,
+        secure: request.nextUrl.protocol === 'https:',
+        path: '/',
+        httpOnly: false, // Auth cookies need to be accessible to JavaScript
+      };
+
+      request.cookies.set({ name, value, ...cookieOptions });
       response = NextResponse.next({
         request: {
           headers: request.headers,
         },
       });
-      response.cookies.set({ name, value, ...options });
+      response.cookies.set({ name, value, ...cookieOptions });
     },
     remove(name: string, options: CookieOptions) {
-      request.cookies.set({ name, value: '', ...options });
+      const cookieOptions = {
+        ...options,
+        sameSite: 'lax' as const,
+        secure: request.nextUrl.protocol === 'https:',
+        path: '/',
+        httpOnly: false,
+      };
+
+      request.cookies.set({ name, value: '', ...cookieOptions });
       response = NextResponse.next({
         request: {
           headers: request.headers,
         },
       });
-      response.cookies.set({ name, value: '', ...options });
+      response.cookies.set({ name, value: '', ...cookieOptions });
     },
   };
 
