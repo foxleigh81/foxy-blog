@@ -1,70 +1,51 @@
-'use client';
-
 import React, { useState } from 'react';
-import { useAuth } from './AuthProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from './AuthModal';
-import ProfileEditModal from './ProfileEditModal';
 
-export function UserAuthStatus() {
-  const { user, profile, signOut } = useAuth();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
+const UserAuthStatus: React.FC = () => {
+  const { user, profile, loading } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-4">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
       <>
-        <button
-          onClick={() => setIsAuthModalOpen(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Sign In
-        </button>
-        <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <p className="text-blue-800 mb-3">
+            <strong>Join the conversation!</strong> Sign in to share your thoughts and engage with
+            other readers.
+          </p>
+          <button
+            onClick={() => setAuthModalOpen(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            Sign In to Comment
+          </button>
+        </div>
+
+        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       </>
     );
   }
 
   return (
-    <div className="flex items-center justify-between w-full">
-      <div className="flex items-center space-x-2">
-        <img
-          src={
-            profile?.avatar_url ||
-            `https://www.gravatar.com/avatar/${user.email?.toLowerCase().trim()}`
-          }
-          alt={profile?.username || 'User avatar'}
-          className="h-8 w-8 rounded-full"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = '/default-avatar.svg';
-          }}
-        />
-        <span className="text-sm font-medium text-gray-700">
-          {profile?.username || 'Anonymous'}
-        </span>
-      </div>
-
-      <div className="flex items-center space-x-3">
-        <button
-          onClick={() => setIsProfileEditModalOpen(true)}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Edit Profile
-        </button>
-        <button
-          onClick={() => signOut()}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Sign Out
-        </button>
-      </div>
-
-      <ProfileEditModal
-        isOpen={isProfileEditModalOpen}
-        onClose={() => setIsProfileEditModalOpen(false)}
-      />
+    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+      <p className="text-green-800">
+        <strong>Welcome back, {profile?.username || user.email?.split('@')[0]}!</strong>
+        {profile?.is_moderator && ' You have moderator privileges.'}
+        {!profile?.is_moderator && profile?.is_trusted && ' You are a trusted contributor.'}
+      </p>
     </div>
   );
-}
+};
 
 export default UserAuthStatus;
