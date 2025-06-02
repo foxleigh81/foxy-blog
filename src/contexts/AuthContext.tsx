@@ -161,8 +161,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
 
-      console.log('Auth state change:', event, session?.user?.email);
-
       setUser(session?.user ?? null);
 
       if (session?.user) {

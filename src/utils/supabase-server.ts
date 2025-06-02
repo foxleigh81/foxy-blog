@@ -23,7 +23,16 @@ export async function createSupabaseServerClient() {
         setAll: async (cookiesList) => {
           try {
             cookiesList.forEach((cookie) => {
-              cookieStore.set(cookie.name, cookie.value, cookie.options || {});
+              // Ensure proper cookie attributes for Chrome compatibility
+              const cookieOptions = {
+                ...cookie.options,
+                sameSite: 'lax' as const,
+                secure: process.env.NODE_ENV === 'production',
+                path: '/',
+                httpOnly: false, // Auth cookies need to be accessible to JavaScript
+              };
+
+              cookieStore.set(cookie.name, cookie.value, cookieOptions);
             });
           } catch {
             // This try/catch is needed for middleware and other read-only contexts
