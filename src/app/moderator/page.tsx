@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/utils/supabase-server';
+import ModeratorDashboard from '@/components/Moderator/ModeratorDashboard';
 
 /**
- * Moderator-only page that displays a welcome message
+ * Moderator-only page that displays the moderator dashboard
  * Only accessible to users with moderator privileges
  */
 export default async function ModeratorPage() {
@@ -36,11 +37,13 @@ export default async function ModeratorPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
-          <h1 className="text-3xl font-bold text-blue-900 mb-4">Welcome, {displayName}</h1>
-          <p className="text-blue-700">You have successfully accessed the moderator dashboard.</p>
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome, {displayName}</h1>
+          <p className="text-gray-600">Moderator Dashboard - Manage comments and users</p>
         </div>
+
+        <ModeratorDashboard />
       </div>
     </div>
   );
