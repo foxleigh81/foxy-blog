@@ -1,56 +1,79 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import type { Database } from '@/types/supabase';
 
 export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get('code');
+  const { searchParams } = new URL(request.url);
+  const code = searchParams.get('code');
+  const token_hash = searchParams.get('token_hash');
+  const type = searchParams.get('type');
+  const access_token = searchParams.get('access_token');
+  const refresh_token = searchParams.get('refresh_token');
 
-  if (code) {
-    const cookieStore = await cookies();
+  const cookieStore = await cookies();
 
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll: async () => {
-            const cookies = Array.from(cookieStore.getAll());
-            return cookies.map((cookie) => ({
-              name: cookie.name,
-              value: cookie.value,
-            }));
-          },
-          setAll: async (cookiesList) => {
-            try {
-              cookiesList.forEach((cookie) => {
-                cookieStore.set(cookie.name, cookie.value, cookie.options || {});
-              });
-            } catch (error) {
-              console.error('Error setting cookies in callback route:', error);
-              // Continue despite error - the cookie may still be set
-            }
-          },
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => {
+          return cookieStore.getAll();
         },
-      }
-    );
+        setAll: (cookiesList) => {
+          cookiesList.forEach((cookie) => {
+            try {
+              cookieStore.set(cookie.name, cookie.value, cookie.options);
+            } catch (error) {
+              console.log('Cookie setting failed:', error);
+            }
+          });
+        },
+      },
+    }
+  );
 
-    try {
-      // Exchange the code for a session
+  let redirectUrl = '/auth/redirect-handler';
+
+  try {
+    // Handle PKCE flow with code
+    if (code) {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (error) {
         console.error('Error exchanging code for session:', error);
+        redirectUrl = '/?auth=error';
       }
-    } catch (error) {
-      console.error('Exception during code exchange:', error);
     }
+    // Handle direct token flow
+    else if (access_token && refresh_token) {
+      const { error } = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
+
+      if (error) {
+        console.error('Error setting session:', error);
+        redirectUrl = '/?auth=error';
+      }
+    }
+    // Handle token_hash (email confirmation)
+    else if (token_hash && type === 'email') {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash,
+        type: 'email',
+      });
+
+      if (error) {
+        console.error('Error verifying token:', error);
+        redirectUrl = '/?auth=error';
+      }
+    }
+  } catch (error) {
+    console.error('Exception during auth callback:', error);
+    redirectUrl = '/?auth=error';
   }
 
-  // URL to redirect to after sign in process completes
-  const response = NextResponse.redirect(requestUrl.origin);
-
-  return response;
+  return NextResponse.redirect(new URL(redirectUrl, request.url));
 }

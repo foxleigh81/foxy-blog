@@ -10,6 +10,8 @@ type DBProfile = {
   avatar_url: string | null;
   is_moderator: boolean;
   is_trusted: boolean;
+  is_banned: boolean;
+  suspended_until: string | null;
 };
 
 type DBComment = {
@@ -68,6 +70,12 @@ async function createClient() {
     }
   );
 }
+
+// Utility function to check if user is currently suspended
+const isUserSuspended = (suspendedUntil: string | null): boolean => {
+  if (!suspendedUntil) return false;
+  return new Date(suspendedUntil) > new Date();
+};
 
 // GET function to fetch comments
 export async function GET(request: NextRequest) {
@@ -310,6 +318,27 @@ export async function POST(request: NextRequest) {
 
         const safeProfile = newProfile as unknown as DBProfile;
 
+        // Check if user is banned or suspended
+        const isBanned = safeProfile.is_banned === true;
+        const isSuspended = isUserSuspended(safeProfile.suspended_until);
+
+        if (isBanned) {
+          return NextResponse.json(
+            { error: 'Your account has been banned and you cannot post comments.' },
+            { status: 403 }
+          );
+        }
+
+        if (isSuspended) {
+          const suspensionEndDate = new Date(safeProfile.suspended_until!).toLocaleDateString();
+          return NextResponse.json(
+            {
+              error: `Your account is suspended until ${suspensionEndDate}. You cannot post comments during this time.`,
+            },
+            { status: 403 }
+          );
+        }
+
         // Determine comment status
         const commentStatus =
           safeProfile.is_moderator || safeProfile.is_trusted ? 'approved' : status || 'pending';
@@ -357,6 +386,27 @@ export async function POST(request: NextRequest) {
 
     // Type assertion for profile
     const safeProfile = profile as unknown as DBProfile;
+
+    // Check if user is banned or suspended
+    const isBanned = safeProfile.is_banned === true;
+    const isSuspended = isUserSuspended(safeProfile.suspended_until);
+
+    if (isBanned) {
+      return NextResponse.json(
+        { error: 'Your account has been banned and you cannot post comments.' },
+        { status: 403 }
+      );
+    }
+
+    if (isSuspended) {
+      const suspensionEndDate = new Date(safeProfile.suspended_until!).toLocaleDateString();
+      return NextResponse.json(
+        {
+          error: `Your account is suspended until ${suspensionEndDate}. You cannot post comments during this time.`,
+        },
+        { status: 403 }
+      );
+    }
 
     // Determine the comment status based on user's role:
     // - Moderators and trusted users get automatic approval

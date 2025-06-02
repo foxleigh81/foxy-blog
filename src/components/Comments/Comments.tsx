@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { AuthProvider } from '../Auth/AuthProvider';
-import UserAuthStatus from '../Auth/UserAuthStatus';
+import UserAuthStatus from '@/components/Auth/UserAuthStatus';
 import CommentInput from './CommentInput';
 import CommentsList from './CommentsList';
 
@@ -60,13 +59,11 @@ const Comments: React.FC<CommentsProps> = ({ postId, className = '' }) => {
   );
 
   return (
-    <AuthProvider>
-      <div className={`space-y-6 ${className}`}>
-        {userAuthStatusComponent}
-        {commentInputComponent}
-        {commentsListComponent}
-      </div>
-    </AuthProvider>
+    <div className={`space-y-6 ${className}`}>
+      {userAuthStatusComponent}
+      {commentInputComponent}
+      {commentsListComponent}
+    </div>
   );
 };
 

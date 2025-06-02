@@ -4,6 +4,7 @@ import './globals.css';
 import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from 'react-hot-toast';
 
+import { AuthProvider } from '@/contexts/AuthContext';
 import Masthead from '@/components/Masthead';
 import Footer from '@/components/Footer';
 import CookieConsent from '@/components/CookieConsent';
@@ -65,19 +66,21 @@ export default async function RootLayout({
     <html lang="en">
       <head>{gtmId && <GTMScript gtmId={gtmId} />}</head>
       <body className={`${primaryFont.variable} ${secondaryFont.variable} antialiased`}>
-        <SkipLink targetId="maincontent" />
-        <Masthead
-          categories={categories}
-          title={metadata.title as string}
-          subtitle={metadata.description as string}
-        />
-        <main id="maincontent" tabIndex={-1} className="container mx-auto px-4">
-          {children}
-        </main>
-        <Footer />
-        <Analytics />
-        <CookieConsent />
-        <Toaster position="bottom-center" />
+        <AuthProvider>
+          <SkipLink targetId="maincontent" />
+          <Masthead
+            categories={categories}
+            title={metadata.title as string}
+            subtitle={metadata.description as string}
+          />
+          <main id="maincontent" tabIndex={-1} className="container mx-auto px-4">
+            {children}
+          </main>
+          <Footer />
+          <Analytics />
+          <CookieConsent />
+          <Toaster position="bottom-center" />
+        </AuthProvider>
       </body>
     </html>
   );
