@@ -8,6 +8,11 @@ export function createClient() {
     {
       cookies: {
         getAll: () => {
+          // Only access document if in browser environment
+          if (typeof document === 'undefined') {
+            return [];
+          }
+
           // Get all cookies from document.cookie
           return document.cookie
             .split(';')
@@ -22,6 +27,11 @@ export function createClient() {
             });
         },
         setAll: (cookieList) => {
+          // Only set cookies if in browser environment
+          if (typeof document === 'undefined' || typeof window === 'undefined') {
+            return;
+          }
+
           cookieList.forEach(({ name, value, options }) => {
             // Set cookies with proper attributes for Chrome
             const cookieOptions = {
