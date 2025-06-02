@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaSignOutAlt, FaEdit, FaShieldAlt, FaStar } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
+import Image from 'next/image';
 
 interface UserAvatarProps {
   onEditProfile: () => void;
@@ -71,10 +72,15 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ onEditProfile }) => {
       >
         <div className="relative">
           {avatarUrl ? (
-            <img
+            <Image
               src={avatarUrl}
               alt={profile?.username || 'User avatar'}
-              className="w-8 h-8 rounded-full border-2 border-white/20"
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-full border-2 border-white/20 object-cover"
+              placeholder="blur"
+              blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNmM2Y0ZjYiLz4KPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSI4IiB5PSI4Ij4KPHBhdGggZD0iTTggNkMxMC4yMDkxIDYgMTIgNC4yMDkxIDEyIDJDMTIgLTAuMjA5MSAxMC4yMDkxIC0yIDggLTJDNS43OTA5IC0yIDQgLTAuMjA5MSA0IDJDNCA0LjIwOTEgNS43OTA5IDYgOCA2WiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNMTQgMTRIMkMxLjQ0NzcyIDEzLjk5OTggMS4wMDExNCAxMy43MDI2IDEgMTMuMThDMC45OTk4MTQgMTIuNjU3NiAxLjk0Nzg5IDkuMDAwNTEgOCA5LjAwMDUxQzE0LjA1MjEgOS4wMDA1MSAxNS4wMDAyIDEyLjY1NzYgMTUgMTMuMThDMTQuOTk4OSAxMy43MDI2IDE0LjU1MjMgMTMuOTk5OCAxNCAxNFoiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2Zz4KPHN2Zz4="
+              priority
               onError={(e) => {
                 // If custom avatar fails, hide the image and show initials
                 e.currentTarget.style.display = 'none';

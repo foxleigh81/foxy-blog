@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaTimes, FaUser, FaUpload, FaSave, FaTrash } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/utils/supabase-client';
+import Image from 'next/image';
 
 interface ProfileEditModalProps {
   isOpen: boolean;
@@ -236,10 +237,15 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Preview</label>
                 <div className="flex items-center space-x-3">
-                  <img
+                  <Image
                     src={avatarPreview}
                     alt="Avatar preview"
+                    width={64}
+                    height={64}
                     className="w-16 h-16 rounded-full border-2 border-gray-200 object-cover"
+                    placeholder="blur"
+                    blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzIiIGZpbGw9IiNmM2Y0ZjYiLz4KPHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSIxNiIgeT0iMTYiPgo8cGF0aCBkPSJNMTYgMTJDMjAuNDE4MyAxMiAyNCA4LjQxODMgMjQgNEMyNCA0LjQxODMgMjAuNDE4MyAwIDE2IDBDMTEuNTgxNyAwIDggLTQuNDE4MyA4IDRDOCA4LjQxODMgMTEuNTgxNyAxMiAxNiAxMloiIGZpbGw9IiM5Q0EzQUYiLz4KPHBhdGggZD0iTTI4IDI4SDRDMi44OTU0MyAyNy45OTk2IDIuMDIyMjggMjcuNDA1MiAyIDI2LjM2QzEuOTk5NjMgMjUuMzE1MiAzLjg5NTc5IDE4LjAwMSAxNiAxOC4wMDFDMjguMTA0MiAxOC4wMDEgMzAuMDAwNCAyNS4zMTUyIDMwIDI2LjM2QzI5Ljk5NzggMjcuNDA1MiAyOS4xMDQ1IDI3Ljk5OTYgMjggMjhaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPgo8L3N2Zz4="
+                    priority
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}

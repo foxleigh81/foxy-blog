@@ -16,6 +16,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import CommentInput from './CommentInput';
+import Image from 'next/image';
 
 type CommentStatus = 'pending' | 'approved' | 'rejected';
 
@@ -193,10 +194,14 @@ const CommentItem: React.FC<CommentItemProps> = ({
     <div className={containerClass}>
       <div className="flex items-start space-x-3">
         {displayUser.avatarUrl ? (
-          <img
+          <Image
             src={displayUser.avatarUrl}
             alt={displayUser.displayName}
-            className="w-10 h-10 rounded-full"
+            width={40}
+            height={40}
+            className="w-10 h-10 rounded-full object-cover"
+            placeholder="blur"
+            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNmM2Y0ZjYiLz4KPHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSIxMCIgeT0iMTAiPgo8cGF0aCBkPSJNMTAgNy41QzEyLjc2MTQgNy41IDE1IDUuMjYxNCAxNSAyLjVDMTUgLTAuMjYxNCAxMi43NjE0IC0yLjUgMTAgLTIuNUM3LjIzODU4IC0yLjUgNSAtMC4yNjE0IDUgMi41QzUgNS4yNjE0IDcuMjM4NTggNy41IDEwIDcuNVoiIGZpbGw9IiM5Q0EzQUYiLz4KPHBhdGggZD0iTTE3LjUgMTcuNUgyLjVDMS42MTkzIDE3LjQ5OTcgMS4wMTM5MyAxNi44MzE1IDEgMTYuMDVDMC45OTk3NjggMTUuMjY4NSAyLjM2OTc0IDExLjI1MDYgMTAgMTEuMjUwNkMxNy42MzAzIDExLjI1MDYgMTkuMDAwMiAxNS4yNjg1IDE5IDE2LjA1QzE4Ljk4NjEgMTYuODMxNSAxOC4zODA3IDE3LjQ5OTcgMTcuNSAxNy41WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4KPHN2Zz4="
           />
         ) : (
           <div className="w-10 h-10 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center">
