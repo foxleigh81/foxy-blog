@@ -58,19 +58,38 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
             <Navigation categories={categories} className="justify-end" />
             <Search mobileMenuOpen={false} />
 
-            {!loading && (
-              <>
+            {loading ? (
+              // Loading placeholder - matches dimensions of sign in button/user avatar
+              <div
+                className={`flex items-center space-x-2 text-white bg-white/10 rounded-lg p-2 animate-pulse ${styles.authSection}`}
+              >
+                <div className="w-8 h-8 rounded-full bg-white/20"></div>
+                <div className="hidden sm:block">
+                  <div className="w-20 h-4 bg-white/20 rounded"></div>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.authSection}>
                 {user ? (
                   <UserAvatar onEditProfile={() => setProfileModalOpen(true)} />
                 ) : (
                   <button
                     onClick={() => setAuthModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
                   >
-                    Sign In
+                    <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <span>Sign In</span>
                   </button>
                 )}
-              </>
+              </div>
             )}
           </div>
 
@@ -106,18 +125,39 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
             </div>
 
             {/* Mobile auth section */}
-            {!loading && (
+            {loading ? (
+              // Mobile loading placeholder
               <div className="mt-4 flex justify-center">
-                {user ? (
-                  <UserAvatar onEditProfile={() => setProfileModalOpen(true)} />
-                ) : (
-                  <button
-                    onClick={() => setAuthModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-                  >
-                    Sign In
-                  </button>
-                )}
+                <div
+                  className={`flex items-center space-x-2 text-white bg-white/10 rounded-lg p-2 animate-pulse ${styles.authSection}`}
+                >
+                  <div className="w-8 h-8 rounded-full bg-white/20"></div>
+                  <div className="w-20 h-4 bg-white/20 rounded"></div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 flex justify-center">
+                <div className={styles.authSection}>
+                  {user ? (
+                    <UserAvatar onEditProfile={() => setProfileModalOpen(true)} />
+                  ) : (
+                    <button
+                      onClick={() => setAuthModalOpen(true)}
+                      className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fillRule="evenodd"
+                            d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <span>Sign In</span>
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </nav>

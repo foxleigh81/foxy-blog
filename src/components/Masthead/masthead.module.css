@@ -48,3 +48,16 @@
   z-index: 2;
   height: 100%;
 }
+
+/* Fixed width for auth section to prevent layout shift */
+.authSection {
+  width: 124px;
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 639px) {
+  .authSection {
+    width: 96px; /* Smaller width for mobile without username text */
+  }
+}

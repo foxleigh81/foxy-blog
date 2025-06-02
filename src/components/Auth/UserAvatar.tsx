@@ -104,7 +104,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ onEditProfile }) => {
               {profile.is_moderator && (
                 <span className="flex items-center">
                   <FaShieldAlt className="mr-1" />
-                  Moderator
+                  Mod
                 </span>
               )}
               {!profile.is_moderator && profile.is_trusted && (
