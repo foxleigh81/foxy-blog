@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { FaComments, FaUsers } from 'react-icons/fa';
 import ModerationQueue from './ModerationQueue';
+import UserManagement from './UserManagement';
 
 /**
  * Main moderator dashboard with tabbed interface
@@ -22,13 +23,7 @@ const ModeratorDashboard: React.FC = () => {
       id: 'users' as const,
       label: 'Manage Users',
       icon: <FaUsers className="mr-2" />,
-      component: (
-        <div className="text-center py-12">
-          <FaUsers className="mx-auto text-6xl text-gray-300 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">User Management</h3>
-          <p className="text-gray-500">Coming soon - Suspend and ban users</p>
-        </div>
-      ),
+      component: <UserManagement />,
     },
   ];
 

@@ -56,6 +56,8 @@ export interface Database {
           avatar_url: string | null;
           is_moderator: boolean;
           is_trusted: boolean;
+          is_banned: boolean;
+          suspended_until: string | null;
         };
         Insert: {
           id: string;
@@ -64,6 +66,8 @@ export interface Database {
           avatar_url?: string | null;
           is_moderator?: boolean;
           is_trusted?: boolean;
+          is_banned?: boolean;
+          suspended_until?: string | null;
         };
         Update: {
           id?: string;
@@ -72,6 +76,8 @@ export interface Database {
           avatar_url?: string | null;
           is_moderator?: boolean;
           is_trusted?: boolean;
+          is_banned?: boolean;
+          suspended_until?: string | null;
         };
         Relationships: [
           {
