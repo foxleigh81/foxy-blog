@@ -40,6 +40,12 @@ interface CommentItemProps {
   highlightMentions?: boolean;
 }
 
+// Utility function to check if user is currently suspended
+const isUserSuspended = (suspendedUntil: string | null): boolean => {
+  if (!suspendedUntil) return false;
+  return new Date(suspendedUntil) > new Date();
+};
+
 const CommentItem: React.FC<CommentItemProps> = ({
   id,
   content,
@@ -64,6 +70,11 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const isPending = status === 'pending';
   const isCurrentUserModerator = profile?.is_moderator === true;
   const isCommentOwner = profile?.id === user.id;
+
+  // Check if current user is banned or suspended
+  const isCurrentUserBanned = profile?.is_banned === true;
+  const isCurrentUserSuspended = isUserSuspended(profile?.suspended_until || null);
+  const isCurrentUserBlocked = isCurrentUserBanned || isCurrentUserSuspended;
 
   // Use current user's profile data for their own comments
   const displayUser = useMemo(() => {
@@ -335,8 +346,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
             </div>
           )}
 
-          {/* Show reply button only for approved comments or to moderators */}
-          {(!isPending || isCurrentUserModerator) && profile && (
+          {/* Show reply button only for approved comments or to moderators, and only if user is not blocked */}
+          {(!isPending || isCurrentUserModerator) && profile && !isCurrentUserBlocked && (
             <div className="flex">
               <button
                 onClick={toggleReply}

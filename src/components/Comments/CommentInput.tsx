@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from '../Auth/AuthModal';
-import { FaPaperPlane } from 'react-icons/fa';
+import { FaPaperPlane, FaBan, FaClock } from 'react-icons/fa';
 
 interface CommentInputProps {
   postId: string;
@@ -13,6 +13,12 @@ interface CommentInputProps {
   onCancelReply?: () => void;
   className?: string;
 }
+
+// Utility function to check if user is currently suspended
+const isUserSuspended = (suspendedUntil: string | null): boolean => {
+  if (!suspendedUntil) return false;
+  return new Date(suspendedUntil) > new Date();
+};
 
 const CommentInput: React.FC<CommentInputProps> = ({
   postId,
@@ -28,6 +34,11 @@ const CommentInput: React.FC<CommentInputProps> = ({
   const [error, setError] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user, profile } = useAuth();
+
+  // Check user status
+  const isBanned = profile?.is_banned === true;
+  const isSuspended = isUserSuspended(profile?.suspended_until || null);
+  const isBlocked = isBanned || isSuspended;
 
   useEffect(() => {
     // When replyToUser changes, update the comment text
@@ -62,6 +73,11 @@ const CommentInput: React.FC<CommentInputProps> = ({
 
       if (!user || !profile) {
         setIsModalOpen(true);
+        return;
+      }
+
+      if (isBlocked) {
+        // This shouldn't happen as the form should be disabled, but just in case
         return;
       }
 
@@ -125,7 +141,17 @@ const CommentInput: React.FC<CommentInputProps> = ({
         setIsSubmitting(false);
       }
     },
-    [user, profile, comment, extractMentions, postId, parentId, onCommentSubmitted, onCancelReply]
+    [
+      user,
+      profile,
+      comment,
+      extractMentions,
+      postId,
+      parentId,
+      onCommentSubmitted,
+      onCancelReply,
+      isBlocked,
+    ]
   );
 
   // If user is not logged in, show prompt
@@ -141,6 +167,36 @@ const CommentInput: React.FC<CommentInputProps> = ({
         </button>
 
         <AuthModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      </div>
+    );
+  }
+
+  // If user is banned, show banned message
+  if (isBanned) {
+    return (
+      <div className={`bg-red-50 border border-red-200 rounded-lg p-4 text-center ${className}`}>
+        <FaBan className="mx-auto text-red-500 text-2xl mb-2" />
+        <p className="text-red-700 font-medium mb-1">Account Banned</p>
+        <p className="text-red-600 text-sm">
+          Your account has been banned and you cannot post comments.
+        </p>
+      </div>
+    );
+  }
+
+  // If user is suspended, show suspension message
+  if (isSuspended && profile?.suspended_until) {
+    const suspensionEndDate = new Date(profile.suspended_until).toLocaleDateString();
+    return (
+      <div
+        className={`bg-orange-50 border border-orange-200 rounded-lg p-4 text-center ${className}`}
+      >
+        <FaClock className="mx-auto text-orange-500 text-2xl mb-2" />
+        <p className="text-orange-700 font-medium mb-1">Account Suspended</p>
+        <p className="text-orange-600 text-sm">
+          Your account is suspended until {suspensionEndDate}. You cannot post comments during this
+          time.
+        </p>
       </div>
     );
   }

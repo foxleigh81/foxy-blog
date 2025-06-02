@@ -18,6 +18,8 @@ interface Profile {
   avatar_url: string | null;
   is_moderator: boolean;
   is_trusted: boolean;
+  is_banned: boolean;
+  suspended_until: string | null;
   created_at: string;
 }
 
