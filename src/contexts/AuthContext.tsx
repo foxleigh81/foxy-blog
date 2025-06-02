@@ -244,7 +244,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
 
-      await handleUserSession(session?.user ?? null);
+      try {
+        await handleUserSession(session?.user ?? null);
+      } catch (error) {
+        console.error('Error handling user session:', error);
+        dispatch({ type: 'AUTH_ERROR', error: 'Failed to handle user session' });
+      }
     });
 
     return () => {
