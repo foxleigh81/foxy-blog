@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaUser, FaImage, FaSave } from 'react-icons/fa';
+import { FaTimes, FaUser, FaUpload, FaSave, FaTrash } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/utils/supabase-client';
 
 interface ProfileEditModalProps {
   isOpen: boolean;
@@ -8,24 +9,29 @@ interface ProfileEditModalProps {
 }
 
 const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) => {
-  const { profile, updateProfile } = useAuth();
+  const { user, profile, updateProfile } = useAuth();
   const [username, setUsername] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+
+  const supabase = createClient();
 
   // Initialize form with current profile data
   useEffect(() => {
     if (profile) {
       setUsername(profile.username || '');
-      setAvatarUrl(profile.avatar_url || '');
+      setAvatarPreview(profile.avatar_url || '');
     }
   }, [profile]);
 
   const resetForm = () => {
     setUsername(profile?.username || '');
-    setAvatarUrl(profile?.avatar_url || '');
+    setAvatarFile(null);
+    setAvatarPreview(profile?.avatar_url || '');
     setError('');
     setMessage('');
   };
@@ -33,6 +39,95 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
   const handleClose = () => {
     resetForm();
     onClose();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image must be smaller than 5MB');
+        return;
+      }
+
+      setAvatarFile(file);
+      setError('');
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadAvatar = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+
+    setUploading(true);
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `avatar-${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('user-avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage.from('user-avatars').getPublicUrl(filePath);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      throw error;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeAvatar = async () => {
+    if (!profile?.avatar_url) return;
+
+    try {
+      // Extract filename from URL for deletion
+      const urlParts = profile.avatar_url.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+
+      // Delete from storage
+      await supabase.storage.from('user-avatars').remove([fileName]);
+
+      // Update profile
+      await updateProfile({
+        avatar_url: null,
+      });
+
+      setAvatarPreview('');
+      setMessage('Avatar removed successfully!');
+
+      setTimeout(() => {
+        handleClose();
+      }, 1500);
+    } catch (err) {
+      console.error('Error removing avatar:', err);
+      setError('Failed to remove avatar');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,9 +143,24 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
     setMessage('');
 
     try {
+      let avatarUrl = profile?.avatar_url;
+
+      // Upload new avatar if file is selected
+      if (avatarFile) {
+        // Delete old avatar if it exists
+        if (profile?.avatar_url) {
+          const urlParts = profile.avatar_url.split('/');
+          const oldFileName = urlParts[urlParts.length - 1];
+          await supabase.storage.from('user-avatars').remove([oldFileName]);
+        }
+
+        // Upload new avatar
+        avatarUrl = await uploadAvatar(avatarFile);
+      }
+
       await updateProfile({
         username: username.trim(),
-        avatar_url: avatarUrl.trim() || null,
+        avatar_url: avatarUrl,
       });
 
       setMessage('Profile updated successfully!');
@@ -81,7 +191,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
         </button>
 
         <div className="p-6">
-          <h2 className="text-2xl font-bold mb-6 text-center">Edit Profile</h2>
+          <h2 className="text-2xl font-bold mb-6 text-center text-black">Edit Profile</h2>
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
@@ -95,7 +205,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
                   id="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter your username"
                   required
                 />
@@ -103,37 +213,50 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
             </div>
 
             <div className="mb-4">
-              <label htmlFor="avatarUrl" className="block text-sm font-medium text-gray-700 mb-2">
-                Avatar URL (optional)
+              <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-2">
+                Avatar Image
               </label>
-              <div className="relative">
-                <FaImage className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="url"
-                  id="avatarUrl"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="https://example.com/avatar.jpg"
-                />
+              <div className="space-y-3">
+                <div className="relative">
+                  <FaUpload className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="file"
+                    id="avatar"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">Upload an image file (max 5MB)</p>
               </div>
-              <p className="mt-1 text-xs text-gray-500">Leave empty to use Gravatar or initials</p>
             </div>
 
             {/* Avatar preview */}
-            {avatarUrl && (
+            {avatarPreview && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Preview</label>
                 <div className="flex items-center space-x-3">
                   <img
-                    src={avatarUrl}
+                    src={avatarPreview}
                     alt="Avatar preview"
-                    className="w-16 h-16 rounded-full border-2 border-gray-200"
+                    className="w-16 h-16 rounded-full border-2 border-gray-200 object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
                   />
-                  <span className="text-sm text-gray-600">Avatar preview</span>
+                  <div className="flex-1">
+                    <span className="text-sm text-gray-600">Current avatar</span>
+                    {profile?.avatar_url && (
+                      <button
+                        type="button"
+                        onClick={removeAvatar}
+                        className="block mt-1 text-xs text-red-600 hover:text-red-800 flex items-center"
+                      >
+                        <FaTrash className="mr-1" />
+                        Remove avatar
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -161,13 +284,19 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose }) 
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || uploading}
                 className={`flex-1 py-2 px-4 rounded-lg text-white font-medium transition-colors flex items-center justify-center ${
-                  loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                  loading || uploading
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
-                {loading ? (
-                  'Saving...'
+                {loading || uploading ? (
+                  uploading ? (
+                    'Uploading...'
+                  ) : (
+                    'Saving...'
+                  )
                 ) : (
                   <>
                     <FaSave className="mr-2" />
