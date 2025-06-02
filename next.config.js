@@ -10,6 +10,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'storage.ko-fi.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'anziyfomjxqromwfamme.supabase.co',
+      },
     ],
   },
   experimental: {
@@ -62,18 +66,15 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
-
 // Injected content via Sentry wizard below
+import { withSentryConfig } from '@sentry/nextjs';
 
-const { withSentryConfig } = require('@sentry/nextjs');
-
-module.exports = withSentryConfig(module.exports, {
+export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
   org: 'space-nectar',
-  project: 'javascript-nextjs',
+  project: 'foxys-tale',
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
