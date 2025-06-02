@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import type { Database } from '@/types/supabase';
+import { SUPABASE_COOKIE_OPTIONS } from '@/lib/cookie-config';
 
 /**
  * Helper function to create a Supabase client with proper cookie handling for Next.js 15.
@@ -23,13 +24,10 @@ export async function createSupabaseServerClient() {
         setAll: async (cookiesList) => {
           try {
             cookiesList.forEach((cookie) => {
-              // Ensure proper cookie attributes for Chrome compatibility
-              const cookieOptions = {
+              // Use shared cookie configuration for consistency
+              const cookieOptions: Record<string, unknown> = {
+                ...SUPABASE_COOKIE_OPTIONS,
                 ...cookie.options,
-                sameSite: 'lax' as const,
-                secure: process.env.NODE_ENV === 'production',
-                path: '/',
-                httpOnly: false, // Auth cookies need to be accessible to JavaScript
               };
 
               cookieStore.set(cookie.name, cookie.value, cookieOptions);

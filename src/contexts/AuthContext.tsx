@@ -4,8 +4,9 @@ import React, {
   createContext,
   useContext,
   useEffect,
-  useState,
+  useReducer,
   useCallback,
+  useRef,
   ReactNode,
 } from 'react';
 import { User } from '@supabase/supabase-js';
@@ -22,6 +23,98 @@ interface Profile {
   suspended_until: string | null;
   created_at: string;
 }
+
+type AuthStatus = 'initializing' | 'unauthenticated' | 'authenticating' | 'authenticated' | 'error';
+
+interface AuthState {
+  status: AuthStatus;
+  user: User | null;
+  profile: Profile | null;
+  error?: string;
+}
+
+type AuthAction =
+  | { type: 'INITIALIZE_START' }
+  | { type: 'SESSION_FOUND'; user: User }
+  | { type: 'SESSION_EMPTY' }
+  | { type: 'PROFILE_LOADED'; profile: Profile | null }
+  | { type: 'AUTH_ERROR'; error: string }
+  | { type: 'SIGN_OUT' }
+  | { type: 'PROFILE_UPDATED'; profile: Profile };
+
+const authReducer = (state: AuthState, action: AuthAction): AuthState => {
+  switch (action.type) {
+    case 'INITIALIZE_START':
+      return {
+        ...state,
+        status: 'initializing',
+        error: undefined,
+      };
+
+    case 'SESSION_FOUND':
+      return {
+        ...state,
+        status: 'authenticating',
+        user: action.user,
+        error: undefined,
+      };
+
+    case 'SESSION_EMPTY':
+      return {
+        status: 'unauthenticated',
+        user: null,
+        profile: null,
+        error: undefined,
+      };
+
+    case 'PROFILE_LOADED':
+      if (action.profile) {
+        return {
+          ...state,
+          status: 'authenticated',
+          profile: action.profile,
+          error: undefined,
+        };
+      } else {
+        return {
+          ...state,
+          status: 'error',
+          profile: null,
+          error: 'Failed to load user profile',
+        };
+      }
+
+    case 'AUTH_ERROR':
+      return {
+        ...state,
+        status: 'error',
+        error: action.error,
+      };
+
+    case 'SIGN_OUT':
+      return {
+        status: 'unauthenticated',
+        user: null,
+        profile: null,
+        error: undefined,
+      };
+
+    case 'PROFILE_UPDATED':
+      return {
+        ...state,
+        profile: action.profile,
+      };
+
+    default:
+      return state;
+  }
+};
+
+const initialState: AuthState = {
+  status: 'initializing',
+  user: null,
+  profile: null,
+};
 
 interface AuthContextType {
   user: User | null;
@@ -41,9 +134,9 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, dispatch] = useReducer(authReducer, initialState);
+  const isInitialized = useRef(false);
+  const isProcessingSession = useRef(false);
 
   const supabase = createClient();
 
@@ -51,20 +144,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchProfile = useCallback(
     async (userId: string): Promise<Profile | null> => {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
+        // Add timeout wrapper to prevent hanging queries
+        const profilePromise = supabase.from('profiles').select('*').eq('id', userId).single();
+
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Profile fetch timeout')), 10000); // 10 second timeout
+        });
+
+        const { data, error } = await Promise.race([profilePromise, timeoutPromise]);
 
         if (error) {
-          console.error('Error fetching profile:', error);
           return null;
         }
 
         return data as Profile;
-      } catch (error) {
-        console.error('Exception in fetchProfile:', error);
+      } catch {
         return null;
       }
     },
@@ -85,24 +179,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           is_trusted: false,
         };
 
-        const { data, error } = await supabase
-          .from('profiles')
-          .upsert(profileData)
-          .select()
-          .single();
+        // Add timeout wrapper to prevent hanging queries
+        const createPromise = supabase.from('profiles').insert(profileData).select().single();
+
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Profile creation timeout')), 10000); // 10 second timeout
+        });
+
+        const { data, error } = await Promise.race([createPromise, timeoutPromise]);
 
         if (error) {
-          console.error('Error creating profile:', error);
           return null;
         }
 
         return data as Profile;
-      } catch (error) {
-        console.error('Error creating profile:', error);
+      } catch {
         return null;
       }
     },
     [supabase]
+  );
+
+  // Handle user session and profile loading with concurrency protection
+  const handleUserSession = useCallback(
+    async (user: User | null, source: 'initialization' | 'auth_change' = 'auth_change') => {
+      // Prevent concurrent session processing
+      if (isProcessingSession.current) {
+        return;
+      }
+
+      // During initialization, ignore auth change events
+      if (source === 'auth_change' && !isInitialized.current) {
+        return;
+      }
+
+      isProcessingSession.current = true;
+
+      try {
+        if (!user) {
+          dispatch({ type: 'SESSION_EMPTY' });
+          return;
+        }
+
+        dispatch({ type: 'SESSION_FOUND', user });
+
+        try {
+          let userProfile = await fetchProfile(user.id);
+
+          // Create profile if it doesn't exist
+          if (!userProfile) {
+            userProfile = await createProfile(user.id, user.email || '', user);
+          }
+
+          dispatch({ type: 'PROFILE_LOADED', profile: userProfile });
+        } catch {
+          dispatch({ type: 'AUTH_ERROR', error: 'Failed to load user profile' });
+        }
+      } finally {
+        isProcessingSession.current = false;
+      }
+    },
+    [fetchProfile, createProfile]
   );
 
   // Initialize auth state
@@ -110,45 +247,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     let isMounted = true;
 
     const initializeAuth = async () => {
+      dispatch({ type: 'INITIALIZE_START' });
+
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
 
-        if (!isMounted) return;
-
-        if (session?.user) {
-          setUser(session.user);
-
-          let userProfile = await fetchProfile(session.user.id);
-
-          // Create profile if it doesn't exist
-          if (!userProfile) {
-            userProfile = await createProfile(
-              session.user.id,
-              session.user.email || '',
-              session.user
-            );
-          }
-
-          if (isMounted) {
-            setProfile(userProfile);
-          }
-        } else {
-          if (isMounted) {
-            setUser(null);
-            setProfile(null);
-          }
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
         if (isMounted) {
-          setUser(null);
-          setProfile(null);
+          await handleUserSession(session?.user ?? null, 'initialization');
+          isInitialized.current = true;
         }
-      } finally {
+      } catch {
         if (isMounted) {
-          setLoading(false);
+          dispatch({ type: 'AUTH_ERROR', error: 'Failed to initialize authentication' });
         }
       }
     };
@@ -161,40 +273,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
 
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        let userProfile = await fetchProfile(session.user.id);
-
-        // Create profile if it doesn't exist (for new sign-ups)
-        if (!userProfile) {
-          userProfile = await createProfile(
-            session.user.id,
-            session.user.email || '',
-            session.user
-          );
-        }
-
-        if (isMounted) {
-          setProfile(userProfile);
-        }
-      } else {
-        if (isMounted) {
-          setProfile(null);
-        }
-      }
-
-      // Only set loading to false if this is not the initial session (which is handled by initializeAuth)
-      if (isMounted && event !== 'INITIAL_SESSION') {
-        setLoading(false);
+      try {
+        await handleUserSession(session?.user ?? null, 'auth_change');
+      } catch {
+        dispatch({ type: 'AUTH_ERROR', error: 'Failed to handle auth change' });
       }
     });
 
     return () => {
       isMounted = false;
+      isInitialized.current = false;
+      isProcessingSession.current = false;
       subscription.unsubscribe();
     };
-  }, [createProfile, fetchProfile, supabase.auth]);
+  }, [handleUserSession, supabase.auth]);
 
   const signUp = async (email: string, password: string, metadata?: Record<string, string>) => {
     // Store the current path for redirect after email confirmation
@@ -233,15 +325,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (error) {
       throw error;
     }
+
+    dispatch({ type: 'SIGN_OUT' });
   };
 
   const updateProfile = async (updates: Partial<Profile>) => {
-    if (!user) throw new Error('No user logged in');
+    if (!state.user) throw new Error('No user logged in');
 
     const { data, error } = await supabase
       .from('profiles')
       .update(updates as Database['public']['Tables']['profiles']['Update'])
-      .eq('id', user.id)
+      .eq('id', state.user.id)
       .select()
       .single();
 
@@ -249,23 +343,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw error;
     }
 
-    setProfile(data as Profile);
+    dispatch({ type: 'PROFILE_UPDATED', profile: data as Profile });
 
     // Dispatch event for other components
     window.dispatchEvent(new CustomEvent('profileUpdated'));
   };
 
   const refreshProfile = useCallback(async () => {
-    if (!user) return;
+    if (!state.user) return;
 
-    const userProfile = await fetchProfile(user.id);
-    setProfile(userProfile);
-  }, [user, fetchProfile]);
+    const userProfile = await fetchProfile(state.user.id);
+    dispatch({ type: 'PROFILE_LOADED', profile: userProfile });
+  }, [state.user, fetchProfile]);
 
   const value = {
-    user,
-    profile,
-    loading,
+    user: state.user,
+    profile: state.profile,
+    loading: state.status === 'initializing' || state.status === 'authenticating',
     signUp,
     signIn,
     signOut,
