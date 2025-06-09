@@ -13,8 +13,6 @@ export default function RedirectHandler() {
     // Clean up localStorage
     localStorage.removeItem('auth_return_to');
 
-    console.log('Redirecting to stored path:', returnTo);
-
     // Redirect to the stored path
     router.replace(returnTo);
   }, [router]);

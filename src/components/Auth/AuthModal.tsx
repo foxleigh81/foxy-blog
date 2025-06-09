@@ -132,8 +132,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMode = 's
             </div>
           ) : (
             <>
-              <h2 className="text-2xl font-bold mb-6 text-center">
-                {mode === 'signin' ? 'Sign In' : 'Create Account'}
+              <h2 className="text-2xl font-bold mb-6 text-center text-black">
+                {mode === 'signin' ? "Sign In to Foxy's Tail" : "Join Foxy's Tail"}
               </h2>
 
               <form onSubmit={mode === 'signin' ? handleSignIn : handleSignUp}>

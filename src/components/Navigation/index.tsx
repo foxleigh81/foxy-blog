@@ -22,7 +22,9 @@ const Navigation: React.FC<NavigationProps> = ({ className = '', categories = []
 
   return (
     <nav className={`${className}`}>
-      <ul className="flex flex-col nav:flex-row items-center nav:items-stretch list-none p-0 m-0">
+      <ul
+        className={`flex flex-col nav:flex-row items-center nav:items-stretch list-none p-0 m-0 ${className.includes('justify-end') ? 'nav:justify-end' : ''}`}
+      >
         {navLinks.map((link) => (
           <li key={link.path} className="nav:ml-6 w-full nav:w-auto">
             <Link
