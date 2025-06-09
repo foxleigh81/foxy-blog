@@ -58,6 +58,7 @@
 
 @media (max-width: 639px) {
   .authSection {
-    width: 96px; /* Smaller width for mobile without username text */
+    width: auto; /* Allow button to be its natural width on mobile */
+    min-width: 120px; /* Ensure minimum width for better appearance */
   }
 }

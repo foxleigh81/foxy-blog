@@ -29,7 +29,7 @@
   border-radius: 9999px;
   padding: 0.25rem 0.25rem 0.25rem 1rem;
   backdrop-filter: blur(5px);
-  animation: expandSearch 0.3s ease forwards;
+  width: 15rem;
 }
 
 .searchInput {
@@ -37,8 +37,7 @@
   border: none;
   color: white;
   padding: 0.5rem 0;
-  width: 0;
-  animation: expandInput 0.3s ease forwards;
+  width: 11rem;
   outline: none;
   font-size: 0.875rem;
 }
@@ -47,8 +46,7 @@
   color: rgba(255, 255, 255, 0.7);
 }
 
-.searchButton,
-.closeButton {
+.searchButton {
   background: transparent;
   border: none;
   color: white;
@@ -61,30 +59,8 @@
   justify-content: center;
 }
 
-.searchButton:hover,
-.closeButton:hover {
+.searchButton:hover {
   background-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Animations */
-@keyframes expandSearch {
-  from {
-    width: 2.5rem;
-    opacity: 0;
-  }
-  to {
-    width: 15rem;
-    opacity: 1;
-  }
-}
-
-@keyframes expandInput {
-  from {
-    width: 0;
-  }
-  to {
-    width: 10rem;
-  }
 }
 
 /* Mobile styles */
@@ -114,33 +90,17 @@
     margin-top: 0.5rem;
     background-color: rgba(0, 0, 0, 0.8);
     z-index: 50;
+    width: calc(100vw - 2rem);
   }
 
-  @keyframes expandSearch {
-    from {
-      width: 2.5rem;
-      opacity: 0;
-    }
-    to {
-      width: calc(100vw - 2rem);
-      opacity: 1;
-    }
-  }
-
-  @keyframes expandInput {
-    from {
-      width: 0;
-    }
-    to {
-      width: calc(100vw - 8rem);
-    }
+  .searchForm:not(.mobileExpanded .searchForm) .searchInput {
+    width: calc(100vw - 8rem);
   }
 
   /* Special styles for search in mobile menu */
   .mobileExpanded .searchForm,
   .mobileSearchForm {
     width: 90%;
-    animation: none;
     display: flex;
     justify-content: space-between;
     padding: 0.25rem 0.5rem;
@@ -149,7 +109,6 @@
   .mobileExpanded .searchInput,
   .mobileSearchForm .searchInput {
     width: 85%;
-    animation: none;
     flex-grow: 1;
   }
 }

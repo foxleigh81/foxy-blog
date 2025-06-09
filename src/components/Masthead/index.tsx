@@ -33,6 +33,7 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
       className={`w-full text-white py-8 mb-8 relative ${styles.masthead} ${menuOpen ? styles.menuOpen : ''}`}
     >
       <div className="container mx-auto relative z-10">
+        {/* First row: Logo/Title, Search, and Auth */}
         <div className="flex flex-wrap items-center justify-between">
           <div className="flex-1 min-w-[200px] flex items-center gap-4">
             <Image
@@ -55,7 +56,6 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
           </div>
 
           <div className="hidden nav:flex items-center space-x-4">
-            <Navigation categories={categories} className="justify-end" />
             <Search mobileMenuOpen={false} />
 
             {loading ? (
@@ -114,6 +114,12 @@ const Masthead: React.FC<MastheadProps> = ({ title, subtitle, categories }) => {
           </button>
         </div>
 
+        {/* Second row: Navigation (desktop only) */}
+        <div className="hidden nav:block mt-6">
+          <Navigation categories={categories} className="justify-end" />
+        </div>
+
+        {/* Mobile menu */}
         <div className="nav:hidden">
           <nav
             id="navigation"

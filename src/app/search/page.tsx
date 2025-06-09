@@ -127,14 +127,6 @@ function SearchContent() {
 
         const fetchedCategories = await sanityClient.fetch<Category[]>(categoriesQuery);
 
-        // For debugging purposes, log the posts and search term
-        console.log('Search term:', cleanQuery);
-        console.log('Matching tag IDs:', matchingTagIds);
-        console.log(
-          'Fetched posts:',
-          fetchedPosts.map((p) => ({ title: p.title }))
-        );
-
         // Client-side filtering as a backup
         const filteredPosts = fetchedPosts.filter((post) => {
           const searchTermLower = cleanQuery.toLowerCase();
