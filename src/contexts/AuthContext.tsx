@@ -68,21 +68,12 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       };
 
     case 'PROFILE_LOADED':
-      if (action.profile) {
-        return {
-          ...state,
-          status: 'authenticated',
-          profile: action.profile,
-          error: undefined,
-        };
-      } else {
-        return {
-          ...state,
-          status: 'error',
-          profile: null,
-          error: 'Failed to load user profile',
-        };
-      }
+      return {
+        ...state,
+        status: 'authenticated',
+        profile: action.profile,
+        error: action.profile ? undefined : 'Profile unavailable, but authentication successful',
+      };
 
     case 'AUTH_ERROR':
       return {
@@ -137,6 +128,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const isInitialized = useRef(false);
   const isProcessingSession = useRef(false);
+  const currentStateRef = useRef(state);
+
+  // Keep the ref updated with current state
+  currentStateRef.current = state;
 
   const supabase = createClient();
 
@@ -179,8 +174,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           is_trusted: false,
         };
 
-        // Add timeout wrapper to prevent hanging queries
-        const createPromise = supabase.from('profiles').insert(profileData).select().single();
+        // Use upsert to handle race conditions and prevent 409 conflicts
+        const createPromise = supabase
+          .from('profiles')
+          .upsert(profileData, {
+            onConflict: 'id',
+            ignoreDuplicates: false,
+          })
+          .select()
+          .single();
 
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => reject(new Error('Profile creation timeout')), 10000); // 10 second timeout
@@ -189,15 +191,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { data, error } = await Promise.race([createPromise, timeoutPromise]);
 
         if (error) {
+          // If it's still a conflict error, try to fetch the existing profile
+          if (error.code === '23505' || error.message?.includes('duplicate key')) {
+            return await fetchProfile(userId);
+          }
           return null;
         }
 
         return data as Profile;
       } catch {
-        return null;
+        // Fallback: try to fetch existing profile in case of any creation errors
+        try {
+          return await fetchProfile(userId);
+        } catch {
+          return null;
+        }
       }
     },
-    [supabase]
+    [supabase, fetchProfile]
   );
 
   // Handle user session and profile loading with concurrency protection
@@ -221,19 +232,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return;
         }
 
+        // Check if this is the same user we already have authenticated
+        // If so, skip the re-authentication flow to prevent loading states
+        if (
+          source === 'auth_change' &&
+          currentStateRef.current.status === 'authenticated' &&
+          currentStateRef.current.user?.id === user.id &&
+          currentStateRef.current.profile
+        ) {
+          // Same user, already authenticated with profile - no need to re-process
+          return;
+        }
+
         dispatch({ type: 'SESSION_FOUND', user });
 
         try {
           let userProfile = await fetchProfile(user.id);
 
-          // Create profile if it doesn't exist
+          // Create profile if it doesn't exist with retry logic
           if (!userProfile) {
+            // Try creating the profile, with a single retry on failure
             userProfile = await createProfile(user.id, user.email || '', user);
+
+            // If creation failed, wait a bit and try fetching again
+            // (in case another process created the profile)
+            if (!userProfile) {
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+              userProfile = await fetchProfile(user.id);
+            }
           }
 
+          // Dispatch authenticated state with whatever profile we have
           dispatch({ type: 'PROFILE_LOADED', profile: userProfile });
-        } catch {
-          dispatch({ type: 'AUTH_ERROR', error: 'Failed to load user profile' });
+
+          // Log warning if profile is still null after all attempts
+          if (!userProfile) {
+            console.warn('Profile creation/loading failed, but user is authenticated');
+          }
+        } catch (error) {
+          console.error('Profile loading error:', error);
+          // Don't block authentication if profile loading fails
+          // Dispatch with null profile to allow user to continue
+          dispatch({ type: 'PROFILE_LOADED', profile: null });
         }
       } finally {
         isProcessingSession.current = false;
@@ -250,16 +290,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       dispatch({ type: 'INITIALIZE_START' });
 
       try {
+        // Add timeout to prevent hanging during initialization
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Session initialization timeout')), 15000);
+        });
+
         const {
           data: { session },
-        } = await supabase.auth.getSession();
+        } = await Promise.race([sessionPromise, timeoutPromise]);
 
         if (isMounted) {
           await handleUserSession(session?.user ?? null, 'initialization');
           isInitialized.current = true;
         }
-      } catch {
+      } catch (error) {
         if (isMounted) {
+          console.error('Auth initialization error:', error);
           dispatch({ type: 'AUTH_ERROR', error: 'Failed to initialize authentication' });
         }
       }
@@ -273,9 +320,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
 
+      // Filter out events that don't require re-authentication
+      // TOKEN_REFRESHED events often fire when switching tabs but don't need processing
+      if (
+        event === 'TOKEN_REFRESHED' &&
+        currentStateRef.current.status === 'authenticated' &&
+        currentStateRef.current.user?.id === session?.user?.id
+      ) {
+        return;
+      }
+
       try {
         await handleUserSession(session?.user ?? null, 'auth_change');
-      } catch {
+      } catch (error) {
+        console.error('Auth change error:', error);
         dispatch({ type: 'AUTH_ERROR', error: 'Failed to handle auth change' });
       }
     });
