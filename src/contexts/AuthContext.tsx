@@ -199,11 +199,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         return data as Profile;
-      } catch {
+      } catch (error) {
         // Fallback: try to fetch existing profile in case of any creation errors
         try {
           return await fetchProfile(userId);
-        } catch {
+        } catch (fetchError) {
+          console.error('Profile creation and fallback fetch both failed:', { error, fetchError });
           return null;
         }
       }
