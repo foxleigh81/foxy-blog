@@ -101,7 +101,7 @@ const BlogHeader: React.FC<BlogHeaderProps> = ({
             fill
             priority
             className="object-cover object-top"
-            sizes="100vw"
+            sizes="(max-width: 1499px) 100vw, 1500px"
             placeholder="blur"
             blurDataURL={mainImage.asset.metadata?.lqip || ''}
           />
