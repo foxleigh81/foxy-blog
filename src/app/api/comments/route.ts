@@ -295,24 +295,103 @@ export async function POST(request: NextRequest) {
 
       // If the profile doesn't exist, create one
       if (profileError.code === 'PGRST116') {
-        // Create a new profile for the user
+        // Use upsert to prevent race conditions
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
-          .insert({
-            id: user.id,
-            username:
-              user.user_metadata?.username ||
-              user.user_metadata?.name ||
-              user.email?.split('@')[0] ||
-              'Anonymous',
-            is_moderator: false,
-            is_trusted: false,
-          })
+          .upsert(
+            {
+              id: user.id,
+              username:
+                user.user_metadata?.username ||
+                user.user_metadata?.name ||
+                user.email?.split('@')[0] ||
+                'Anonymous',
+              is_moderator: false,
+              is_trusted: false,
+            },
+            {
+              onConflict: 'id',
+              ignoreDuplicates: false,
+            }
+          )
           .select()
           .single();
 
         if (createError) {
           console.error('Error creating profile:', createError);
+
+          // If it's a conflict error, try to fetch the existing profile
+          if (createError.code === '23505' || createError.message?.includes('duplicate key')) {
+            const { data: existingProfile, error: fetchError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', user.id)
+              .single();
+
+            if (fetchError || !existingProfile) {
+              return NextResponse.json(
+                { error: 'Failed to create or fetch user profile' },
+                { status: 500 }
+              );
+            }
+
+            // Use the existing profile
+            const safeProfile = existingProfile as unknown as DBProfile;
+
+            // Continue with the existing profile logic...
+            const isBanned = safeProfile.is_banned === true;
+            const isSuspended = isUserSuspended(safeProfile.suspended_until);
+
+            if (isBanned) {
+              return NextResponse.json(
+                { error: 'Your account has been banned and you cannot post comments.' },
+                { status: 403 }
+              );
+            }
+
+            if (isSuspended) {
+              const suspensionEndDate = new Date(safeProfile.suspended_until!).toLocaleDateString();
+              return NextResponse.json(
+                {
+                  error: `Your account is suspended until ${suspensionEndDate}. You cannot post comments during this time.`,
+                },
+                { status: 403 }
+              );
+            }
+
+            // Determine comment status
+            const commentStatus =
+              safeProfile.is_moderator || safeProfile.is_trusted ? 'approved' : status || 'pending';
+
+            // Create comment data
+            const commentData = {
+              content,
+              post_id: postId,
+              user_id: user.id,
+              parent_id: parentId || null,
+              mentions,
+              status: commentStatus,
+            };
+
+            // Insert the comment
+            const { data: comment, error: insertError } = await supabase
+              .from('comments')
+              .insert(commentData)
+              .select()
+              .single();
+
+            if (insertError) {
+              console.error('Error inserting comment:', insertError);
+              return NextResponse.json({ error: 'Failed to save comment' }, { status: 500 });
+            }
+
+            const safeComment = comment as unknown as DBComment;
+            return NextResponse.json({
+              success: true,
+              comment: safeComment,
+            });
+          }
+
           return NextResponse.json({ error: 'Failed to create user profile' }, { status: 500 });
         }
 

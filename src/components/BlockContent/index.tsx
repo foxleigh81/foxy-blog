@@ -17,6 +17,39 @@ interface BlockContentProps {
   content: BlockContentType;
 }
 
+/**
+ * Generates the correct URL for internal link references based on content type
+ */
+const generateInternalUrl = (reference: {
+  _type?: string;
+  slug?: { current: string };
+  categories?: { slug: { current: string } };
+}): string => {
+  const { _type: refType, slug, categories } = reference;
+
+  if (!slug?.current || !refType) {
+    return '#'; // Fallback for broken references
+  }
+
+  switch (refType) {
+    case 'post':
+      // Posts require category in the URL structure: /[category]/[slug]
+      const categorySlug = categories?.slug?.current;
+      if (!categorySlug) {
+        // Gracefully handle missing category by returning a broken link indicator
+        return '#';
+      }
+      return `/${categorySlug}/${slug.current}`;
+    case 'category':
+      return `/${slug.current}`;
+    case 'author':
+      return `/author/${slug.current}`;
+    default:
+      // Handle unknown reference types gracefully
+      return '#';
+  }
+};
+
 export default function BlockContent({ content }: BlockContentProps) {
   const components: Partial<PortableTextReactComponents> = {
     types: {
@@ -93,8 +126,13 @@ export default function BlockContent({ content }: BlockContentProps) {
         );
       },
       internalLink: ({ children, value }) => {
-        if (!value?.reference?.slug?.current) return <>{children}</>;
-        const href = `/${value.reference._type}/${value.reference.slug.current}`;
+        const href = generateInternalUrl(value?.reference || {});
+
+        // Don't render broken links
+        if (href === '#') {
+          return children;
+        }
+
         return (
           <Link
             href={href}

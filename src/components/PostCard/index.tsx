@@ -40,6 +40,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   fill
                   className="object-cover"
                   priority={isFeatured}
+                  fetchPriority={isFeatured ? 'high' : 'auto'}
                   placeholder="blur"
                   blurDataURL={post.mainImage.asset.metadata?.lqip || ''}
                   sizes={
@@ -47,7 +48,7 @@ const PostCard: React.FC<PostCardProps> = ({
                       ? '(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1000px'
                       : '(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 500px'
                   }
-                  quality={isFeatured ? 90 : 75}
+                  quality={80}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
               </>

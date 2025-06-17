@@ -69,6 +69,21 @@ const postQuery = `*[_type == "post" && slug.current == $slug][0] {
           lqip
         }
       }
+    },
+    markDefs[]{
+      ...,
+      _type == "internalLink" => {
+        ...,
+        "reference": reference->{
+          _type,
+          slug,
+          _type == "post" => {
+            "categories": categories[0]->{
+              slug
+            }
+          }
+        }
+      }
     }
   },
   excerpt,

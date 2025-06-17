@@ -22,11 +22,28 @@ export type BlockContent = Array<
         marks?: Array<'strong' | 'em' | 'code' | 'strike-through'>;
       }>;
       style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote';
-      markDefs?: Array<{
-        _key: string;
-        _type: 'link';
-        href: string;
-      }>;
+      markDefs?: Array<
+        | {
+            _key: string;
+            _type: 'link';
+            href: string;
+          }
+        | {
+            _key: string;
+            _type: 'internalLink';
+            reference: {
+              _type: 'post' | 'category' | 'author';
+              slug: {
+                current: string;
+              };
+              categories?: {
+                slug: {
+                  current: string;
+                };
+              };
+            };
+          }
+      >;
     }
   | {
       _type: 'image';
