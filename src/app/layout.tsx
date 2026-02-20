@@ -7,7 +7,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import Masthead from '@/components/Masthead';
 import Footer from '@/components/Footer';
 import CookieConsent from '@/components/CookieConsent';
-import GTMScript from '@/components/GTMScript';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 import SkipLink from '@/components/SkipLink';
 import { sanityClient } from '@/sanity/lib/client';
 import type { Category } from '@/sanity/schemaTypes/categoryType';
@@ -55,16 +55,13 @@ export default async function RootLayout({
 }>) {
   // Fetch categories for navigation
   const categories = await getCategories();
-  const gtmId = process.env.NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID;
-
-  if (!gtmId) {
-    console.warn('GTM ID not found in environment variables');
-  }
+  const gaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
   return (
     <html lang="en">
-      <head>{gtmId && <GTMScript gtmId={gtmId} />}</head>
+      <head />
       <body className={`${primaryFont.variable} ${secondaryFont.variable} antialiased`}>
+        {gaId && <GoogleAnalytics gaId={gaId} />}
         <AuthProvider>
           <SkipLink targetId="maincontent" />
           <Masthead
