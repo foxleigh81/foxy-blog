@@ -17,6 +17,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import CommentInput from './CommentInput';
 import Image from 'next/image';
+import { isUserSuspended } from '@/utils/comment-utils';
 
 type CommentStatus = 'pending' | 'approved' | 'rejected';
 
@@ -39,12 +40,6 @@ interface CommentItemProps {
   onEdit?: (id: string, newContent: string) => Promise<void>;
   highlightMentions?: boolean;
 }
-
-// Utility function to check if user is currently suspended
-const isUserSuspended = (suspendedUntil: string | null): boolean => {
-  if (!suspendedUntil) return false;
-  return new Date(suspendedUntil) > new Date();
-};
 
 const CommentItem: React.FC<CommentItemProps> = ({
   id,

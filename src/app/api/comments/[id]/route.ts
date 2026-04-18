@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/utils/supabase-server';
+import { MAX_COMMENT_LENGTH } from '@/utils/comment-utils';
 
 // PATCH function to update a comment (for moderation or editing content)
 export async function PATCH(
@@ -34,6 +35,12 @@ export async function PATCH(
     if (content !== undefined) {
       if (typeof content !== 'string' || content.trim().length === 0) {
         return NextResponse.json({ error: 'Content cannot be empty' }, { status: 400 });
+      }
+      if (content.length > MAX_COMMENT_LENGTH) {
+        return NextResponse.json(
+          { error: `Comment cannot exceed ${MAX_COMMENT_LENGTH} characters` },
+          { status: 400 }
+        );
       }
       updateData.content = content.trim();
     }

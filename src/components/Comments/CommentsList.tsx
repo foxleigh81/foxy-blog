@@ -168,16 +168,16 @@ const CommentsList: React.FC<CommentsListProps> = ({
           throw new Error(errorData.error || 'Failed to delete comment');
         }
 
-        // Remove the comment from state
-        setComments((prevComments) => prevComments.filter((comment) => comment.id !== commentId));
-
-        // If deleting a parent comment, also filter out all replies to that comment
-        setComments((prevComments) =>
-          prevComments.filter((comment) => comment.parent_id !== commentId)
-        );
-
-        // Update total count
-        setTotalComments((prev) => Math.max(0, prev - 1));
+        // Remove the comment and any replies to it in a single state update
+        setComments((prevComments) => {
+          const removed = prevComments.filter(
+            (comment) => comment.id === commentId || comment.parent_id === commentId
+          );
+          setTotalComments((prev) => Math.max(0, prev - removed.length));
+          return prevComments.filter(
+            (comment) => comment.id !== commentId && comment.parent_id !== commentId
+          );
+        });
       } catch (error) {
         console.error('Error deleting comment:', error);
         throw error;

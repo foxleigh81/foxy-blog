@@ -92,10 +92,6 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       }
     }
 
-    console.log('Attempting to update user:', userId);
-    console.log('Update data:', updateData);
-    console.log('Current user (moderator):', user.id);
-
     // Update the user using service role to bypass RLS
     const { data, error } = await supabase
       .from('profiles')
@@ -105,8 +101,6 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
     if (error) {
       console.error('Error updating user profile:', error);
-      console.error('Update data:', updateData);
-      console.error('User ID:', userId);
 
       // Check if it's an RLS policy issue
       if (

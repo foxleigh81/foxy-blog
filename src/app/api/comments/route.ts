@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
-import type { Database } from '@/types/supabase';
+import { createSupabaseServerClient } from '@/utils/supabase-server';
+import { isUserSuspended, isValidUUID, MAX_COMMENT_LENGTH } from '@/utils/comment-utils';
 
-// Define simple types that avoid the complex Supabase generics
 type DBProfile = {
   id: string;
   username: string | null;
@@ -40,43 +38,6 @@ type Comment = {
   parent_id: string | null;
 };
 
-// Helper function to create a Supabase client with proper cookie handling
-// Using the direct approach recommended in the GitHub issue
-async function createClient() {
-  // Cookies must be awaited in Next.js 15
-  const cookieStore = await cookies();
-
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: async () => {
-          return Array.from(cookieStore.getAll()).map((cookie) => ({
-            name: cookie.name,
-            value: cookie.value,
-          }));
-        },
-        setAll: async (cookiesList) => {
-          cookiesList.forEach((cookie) => {
-            try {
-              cookieStore.set(cookie.name, cookie.value, cookie.options || {});
-            } catch {
-              // This try/catch is needed for middleware and read-only contexts
-            }
-          });
-        },
-      },
-    }
-  );
-}
-
-// Utility function to check if user is currently suspended
-const isUserSuspended = (suspendedUntil: string | null): boolean => {
-  if (!suspendedUntil) return false;
-  return new Date(suspendedUntil) > new Date();
-};
-
 // GET function to fetch comments
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -90,34 +51,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
   }
 
-  // Calculate offset for pagination
+  // Validate userId is a proper UUID if provided
+  if (userId && !isValidUUID(userId)) {
+    return NextResponse.json({ error: 'Invalid userId format' }, { status: 400 });
+  }
+
   const offset = (page - 1) * limit;
 
   try {
-    // Include a new parameter to fetch the user's own pending comments
-    const queryParams = new URLSearchParams({
-      postId: postId,
-      page: page.toString(),
-      limit: limit.toString(),
-    });
+    const supabase = await createSupabaseServerClient();
 
-    // Add includePending for moderators
-    if (includePending) {
-      queryParams.append('includePending', 'true');
-    }
-
-    // Add new parameter to include the current user's pending comments
-    if (userId) {
-      queryParams.append('userId', userId);
-    }
-
-    // Create Supabase client - now awaiting it
-    const supabase = await createClient();
-
-    // First get session to maintain cookies
+    // Maintain session cookies
     await supabase.auth.getSession();
 
-    // Start building query for comments
+    // Build query for comments
     let query = supabase
       .from('comments')
       .select(
@@ -141,15 +88,12 @@ export async function GET(request: NextRequest) {
     // 3. Otherwise, show only approved comments
     if (!includePending) {
       if (userId) {
-        // Show approved comments OR pending comments created by this user
         query = query.or(`status.eq.approved,and(status.eq.pending,user_id.eq.${userId})`);
       } else {
-        // Show only approved comments
         query = query.eq('status', 'approved');
       }
     }
 
-    // Get comments with pagination
     const {
       data: comments,
       count,
@@ -165,7 +109,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ comments: [], total: 0, page, limit });
     }
 
-    // Type assertion to make TypeScript happy
     const safeComments = comments as unknown as DBComment[];
 
     // Get user profiles for all comments
@@ -184,20 +127,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch user profiles' }, { status: 500 });
     }
 
-    // Type assertion for profiles
     const safeProfiles = profiles as unknown as DBProfile[];
 
-    // Create a map of user profiles
     const profilesMap: Record<string, DBProfile> = {};
     for (const profile of safeProfiles) {
       profilesMap[profile.id] = profile;
     }
 
-    // Transform the response to match the expected format
     const transformedComments: Comment[] = safeComments.map((comment) => {
       const profile = profilesMap[comment.user_id];
       if (!profile) {
-        // Handle missing profile gracefully
         return {
           id: comment.id,
           content: comment.content,
@@ -248,31 +187,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { content, postId, parentId, mentions, status } = body;
+    // NOTE: status is deliberately NOT accepted from the client
+    const { content, postId, parentId, mentions } = body;
 
-    // Create Supabase client - now awaiting it
-    const supabase = await createClient();
+    const supabase = await createSupabaseServerClient();
 
-    // Then use getUser to get authenticated user data for better security
+    // Authenticate
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError) {
-      console.error('Error getting user:', userError);
-      return NextResponse.json(
-        { error: 'Authentication error: ' + userError.message },
-        { status: 401 }
-      );
-    }
-
-    if (!user) {
-      console.error('No user found');
-      return NextResponse.json(
-        { error: 'Authentication required - no user found' },
-        { status: 401 }
-      );
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     // Validate required fields
@@ -283,202 +210,82 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has a profile
-    const { data: profile, error: profileError } = await supabase
+    if (typeof content !== 'string' || content.trim().length === 0) {
+      return NextResponse.json({ error: 'Comment cannot be empty' }, { status: 400 });
+    }
+
+    if (content.length > MAX_COMMENT_LENGTH) {
+      return NextResponse.json(
+        { error: `Comment cannot exceed ${MAX_COMMENT_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
+
+    // Get or create profile (single code path)
+    let profile: DBProfile;
+
+    const { data: existingProfile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single();
 
-    if (profileError) {
-      console.error('Error fetching profile:', profileError);
+    if (profileError && profileError.code === 'PGRST116') {
+      // Profile doesn't exist — create one via upsert to handle race conditions
+      const { data: newProfile, error: createError } = await supabase
+        .from('profiles')
+        .upsert(
+          {
+            id: user.id,
+            username:
+              user.user_metadata?.username ||
+              user.user_metadata?.name ||
+              user.email?.split('@')[0] ||
+              'Anonymous',
+            is_moderator: false,
+            is_trusted: false,
+          },
+          { onConflict: 'id', ignoreDuplicates: false }
+        )
+        .select()
+        .single();
 
-      // If the profile doesn't exist, create one
-      if (profileError.code === 'PGRST116') {
-        // Use upsert to prevent race conditions
-        const { data: newProfile, error: createError } = await supabase
+      if (createError || !newProfile) {
+        // Race condition: another request created the profile first — fetch it
+        const { data: fallbackProfile, error: fallbackError } = await supabase
           .from('profiles')
-          .upsert(
-            {
-              id: user.id,
-              username:
-                user.user_metadata?.username ||
-                user.user_metadata?.name ||
-                user.email?.split('@')[0] ||
-                'Anonymous',
-              is_moderator: false,
-              is_trusted: false,
-            },
-            {
-              onConflict: 'id',
-              ignoreDuplicates: false,
-            }
-          )
-          .select()
+          .select('*')
+          .eq('id', user.id)
           .single();
 
-        if (createError) {
-          console.error('Error creating profile:', createError);
-
-          // If it's a conflict error, try to fetch the existing profile
-          if (createError.code === '23505' || createError.message?.includes('duplicate key')) {
-            const { data: existingProfile, error: fetchError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', user.id)
-              .single();
-
-            if (fetchError || !existingProfile) {
-              return NextResponse.json(
-                { error: 'Failed to create or fetch user profile' },
-                { status: 500 }
-              );
-            }
-
-            // Use the existing profile
-            const safeProfile = existingProfile as unknown as DBProfile;
-
-            // Continue with the existing profile logic...
-            const isBanned = safeProfile.is_banned === true;
-            const isSuspended = isUserSuspended(safeProfile.suspended_until);
-
-            if (isBanned) {
-              return NextResponse.json(
-                { error: 'Your account has been banned and you cannot post comments.' },
-                { status: 403 }
-              );
-            }
-
-            if (isSuspended) {
-              const suspensionEndDate = new Date(safeProfile.suspended_until!).toLocaleDateString();
-              return NextResponse.json(
-                {
-                  error: `Your account is suspended until ${suspensionEndDate}. You cannot post comments during this time.`,
-                },
-                { status: 403 }
-              );
-            }
-
-            // Determine comment status
-            const commentStatus =
-              safeProfile.is_moderator || safeProfile.is_trusted ? 'approved' : status || 'pending';
-
-            // Create comment data
-            const commentData = {
-              content,
-              post_id: postId,
-              user_id: user.id,
-              parent_id: parentId || null,
-              mentions,
-              status: commentStatus,
-            };
-
-            // Insert the comment
-            const { data: comment, error: insertError } = await supabase
-              .from('comments')
-              .insert(commentData)
-              .select()
-              .single();
-
-            if (insertError) {
-              console.error('Error inserting comment:', insertError);
-              return NextResponse.json({ error: 'Failed to save comment' }, { status: 500 });
-            }
-
-            const safeComment = comment as unknown as DBComment;
-            return NextResponse.json({
-              success: true,
-              comment: safeComment,
-            });
-          }
-
-          return NextResponse.json({ error: 'Failed to create user profile' }, { status: 500 });
-        }
-
-        const safeProfile = newProfile as unknown as DBProfile;
-
-        // Check if user is banned or suspended
-        const isBanned = safeProfile.is_banned === true;
-        const isSuspended = isUserSuspended(safeProfile.suspended_until);
-
-        if (isBanned) {
+        if (fallbackError || !fallbackProfile) {
           return NextResponse.json(
-            { error: 'Your account has been banned and you cannot post comments.' },
-            { status: 403 }
+            { error: 'Failed to create or fetch user profile' },
+            { status: 500 }
           );
         }
-
-        if (isSuspended) {
-          const suspensionEndDate = new Date(safeProfile.suspended_until!).toLocaleDateString();
-          return NextResponse.json(
-            {
-              error: `Your account is suspended until ${suspensionEndDate}. You cannot post comments during this time.`,
-            },
-            { status: 403 }
-          );
-        }
-
-        // Determine comment status
-        const commentStatus =
-          safeProfile.is_moderator || safeProfile.is_trusted ? 'approved' : status || 'pending';
-
-        // Create comment data
-        const commentData = {
-          content,
-          post_id: postId,
-          user_id: user.id,
-          parent_id: parentId || null,
-          mentions,
-          status: commentStatus,
-        };
-
-        // Insert the comment
-        const { data: comment, error: insertError } = await supabase
-          .from('comments')
-          .insert(commentData)
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error('Error inserting comment:', insertError);
-          return NextResponse.json({ error: 'Failed to save comment' }, { status: 500 });
-        }
-
-        // Type assertion for the returned comment
-        const safeComment = comment as unknown as DBComment;
-
-        return NextResponse.json({
-          success: true,
-          comment: safeComment,
-        });
+        profile = fallbackProfile as unknown as DBProfile;
+      } else {
+        profile = newProfile as unknown as DBProfile;
       }
-
-      return NextResponse.json(
-        { error: 'Error fetching user profile: ' + profileError.message },
-        { status: 500 }
-      );
-    }
-
-    if (!profile) {
+    } else if (profileError) {
+      return NextResponse.json({ error: 'Error fetching user profile' }, { status: 500 });
+    } else if (!existingProfile) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    } else {
+      profile = existingProfile as unknown as DBProfile;
     }
 
-    // Type assertion for profile
-    const safeProfile = profile as unknown as DBProfile;
-
-    // Check if user is banned or suspended
-    const isBanned = safeProfile.is_banned === true;
-    const isSuspended = isUserSuspended(safeProfile.suspended_until);
-
-    if (isBanned) {
+    // Check ban / suspension
+    if (profile.is_banned) {
       return NextResponse.json(
         { error: 'Your account has been banned and you cannot post comments.' },
         { status: 403 }
       );
     }
 
-    if (isSuspended) {
-      const suspensionEndDate = new Date(safeProfile.suspended_until!).toLocaleDateString();
+    if (isUserSuspended(profile.suspended_until)) {
+      const suspensionEndDate = new Date(profile.suspended_until!).toLocaleDateString();
       return NextResponse.json(
         {
           error: `Your account is suspended until ${suspensionEndDate}. You cannot post comments during this time.`,
@@ -487,43 +294,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine the comment status based on user's role:
-    // - Moderators and trusted users get automatic approval
-    // - Regular users need moderation
-    const commentStatus =
-      safeProfile.is_moderator || safeProfile.is_trusted ? 'approved' : status || 'pending';
+    // Determine status — NEVER trust client-supplied status
+    const commentStatus = profile.is_moderator || profile.is_trusted ? 'approved' : 'pending';
 
-    // Create comment data with proper type
-    const commentData = {
-      content,
-      post_id: postId,
-      user_id: user.id,
-      parent_id: parentId || null,
-      mentions,
-      status: commentStatus,
-    };
-
-    // Insert the comment
+    // Insert comment
     const { data: comment, error: insertError } = await supabase
       .from('comments')
-      .insert(commentData)
+      .insert({
+        content: content.trim(),
+        post_id: postId,
+        user_id: user.id,
+        parent_id: parentId || null,
+        mentions: mentions || null,
+        status: commentStatus,
+      })
       .select()
       .single();
 
     if (insertError) {
       console.error('Error inserting comment:', insertError);
-      return NextResponse.json(
-        { error: 'Failed to save comment: ' + insertError.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to save comment' }, { status: 500 });
     }
-
-    // Type assertion for the returned comment
-    const safeComment = comment as unknown as DBComment;
 
     return NextResponse.json({
       success: true,
-      comment: safeComment,
+      comment: comment as unknown as DBComment,
     });
   } catch (error) {
     console.error('Error creating comment:', error);
