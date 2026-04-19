@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/utils/supabase-server';
-import { isUserSuspended, isValidUUID, MAX_COMMENT_LENGTH } from '@/utils/comment-utils';
+import { isUserSuspended, MAX_COMMENT_LENGTH } from '@/utils/comment-utils';
 
 type DBProfile = {
   id: string;
@@ -44,16 +44,9 @@ export async function GET(request: NextRequest) {
   const postId = searchParams.get('postId');
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '10');
-  const includePending = searchParams.get('includePending') === 'true';
-  const userId = searchParams.get('userId');
 
   if (!postId) {
     return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
-  }
-
-  // Validate userId is a proper UUID if provided
-  if (userId && !isValidUUID(userId)) {
-    return NextResponse.json({ error: 'Invalid userId format' }, { status: 400 });
   }
 
   const offset = (page - 1) * limit;
@@ -61,8 +54,23 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
 
-    // Maintain session cookies
-    await supabase.auth.getSession();
+    // Derive permissions from the authenticated user, not from query params
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    let authenticatedUserId: string | null = null;
+    let isModerator = false;
+
+    if (user) {
+      authenticatedUserId = user.id;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_moderator')
+        .eq('id', user.id)
+        .single();
+      isModerator = !!profile?.is_moderator;
+    }
 
     // Build query for comments
     let query = supabase
@@ -82,16 +90,18 @@ export async function GET(request: NextRequest) {
       )
       .eq('post_id', postId);
 
-    // Filter comments based on status:
-    // 1. If includePending is true (moderator is viewing), show all comments for the post
-    // 2. If userId is provided, show approved comments + that user's pending comments
-    // 3. Otherwise, show only approved comments
-    if (!includePending) {
-      if (userId) {
-        query = query.or(`status.eq.approved,and(status.eq.pending,user_id.eq.${userId})`);
-      } else {
-        query = query.eq('status', 'approved');
-      }
+    // Filter comments based on the authenticated user's role:
+    // 1. Moderators see all comments (including pending/rejected)
+    // 2. Authenticated users see approved comments + their own pending comments
+    // 3. Unauthenticated users see only approved comments
+    if (isModerator) {
+      // No status filter — moderators see everything
+    } else if (authenticatedUserId) {
+      query = query.or(
+        `status.eq.approved,and(status.eq.pending,user_id.eq.${authenticatedUserId})`
+      );
+    } else {
+      query = query.eq('status', 'approved');
     }
 
     const {

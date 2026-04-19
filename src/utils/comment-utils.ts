@@ -5,7 +5,7 @@
 /** Maximum allowed length for a comment body (in characters). */
 export const MAX_COMMENT_LENGTH = 5000;
 
-/** UUID v4 format regex for validating IDs from query strings. */
+/** UUID format regex for validating IDs from query strings. */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Returns true if the given string is a valid UUID. */
