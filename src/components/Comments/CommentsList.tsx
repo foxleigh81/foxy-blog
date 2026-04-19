@@ -48,31 +48,19 @@ const CommentsList: React.FC<CommentsListProps> = ({
 
   const totalPages = Math.ceil(totalComments / commentsPerPage);
   const isUserModerator = !!profile?.is_moderator;
-  const userId = profile?.id;
 
   const fetchComments = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Include a new parameter to fetch the user's own pending comments
+      // Server derives userId and moderator status from the session cookie
       const queryParams = new URLSearchParams({
         postId: postId,
         page: currentPage.toString(),
         limit: commentsPerPage.toString(),
       });
 
-      // Add includePending for moderators
-      if (isUserModerator) {
-        queryParams.append('includePending', 'true');
-      }
-
-      // Add new parameter to include the current user's pending comments
-      if (userId) {
-        queryParams.append('userId', userId);
-      }
-
-      // Fetch comments from the API
       const response = await fetch(`/api/comments?${queryParams.toString()}`);
 
       if (!response.ok) {
@@ -90,7 +78,7 @@ const CommentsList: React.FC<CommentsListProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [postId, currentPage, commentsPerPage, isUserModerator, userId]);
+  }, [postId, currentPage, commentsPerPage]);
 
   useEffect(() => {
     fetchComments();
@@ -168,16 +156,28 @@ const CommentsList: React.FC<CommentsListProps> = ({
           throw new Error(errorData.error || 'Failed to delete comment');
         }
 
-        // Remove the comment from state
-        setComments((prevComments) => prevComments.filter((comment) => comment.id !== commentId));
+        // Remove the comment and all nested descendants, then update the total
+        let removedCount = 0;
+        setComments((prevComments) => {
+          const idsToRemove = new Set<string>([commentId]);
+          const queue = [commentId];
 
-        // If deleting a parent comment, also filter out all replies to that comment
-        setComments((prevComments) =>
-          prevComments.filter((comment) => comment.parent_id !== commentId)
-        );
+          while (queue.length > 0) {
+            const currentId = queue.pop()!;
+            for (const comment of prevComments) {
+              if (comment.parent_id === currentId && !idsToRemove.has(comment.id)) {
+                idsToRemove.add(comment.id);
+                queue.push(comment.id);
+              }
+            }
+          }
 
-        // Update total count
-        setTotalComments((prev) => Math.max(0, prev - 1));
+          removedCount = idsToRemove.size;
+          return prevComments.filter((comment) => !idsToRemove.has(comment.id));
+        });
+        if (removedCount > 0) {
+          setTotalComments((prev) => Math.max(0, prev - removedCount));
+        }
       } catch (error) {
         console.error('Error deleting comment:', error);
         throw error;

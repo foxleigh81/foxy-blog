@@ -2,12 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from './AuthModal';
 import { FaBan, FaClock, FaHeart } from 'react-icons/fa';
-
-// Utility function to check if user is currently suspended
-const isUserSuspended = (suspendedUntil: string | null): boolean => {
-  if (!suspendedUntil) return false;
-  return new Date(suspendedUntil) > new Date();
-};
+import { isUserSuspended } from '@/utils/comment-utils';
 
 const UserAuthStatus: React.FC = () => {
   const { user, profile, loading } = useAuth();

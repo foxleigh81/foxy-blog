@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from '../Auth/AuthModal';
 import { FaPaperPlane, FaBan, FaClock } from 'react-icons/fa';
+import { isUserSuspended, MAX_COMMENT_LENGTH } from '@/utils/comment-utils';
 
 interface CommentInputProps {
   postId: string;
@@ -13,12 +14,6 @@ interface CommentInputProps {
   onCancelReply?: () => void;
   className?: string;
 }
-
-// Utility function to check if user is currently suspended
-const isUserSuspended = (suspendedUntil: string | null): boolean => {
-  if (!suspendedUntil) return false;
-  return new Date(suspendedUntil) > new Date();
-};
 
 const CommentInput: React.FC<CommentInputProps> = ({
   postId,
@@ -93,10 +88,7 @@ const CommentInput: React.FC<CommentInputProps> = ({
         // Extract mentions from the comment
         const mentions = extractMentions(comment);
 
-        // Determine comment status based on moderator status
-        const status = profile.is_moderator ? 'approved' : 'pending';
-
-        // Create new comment in Supabase
+        // Create new comment in Supabase (status is determined server-side)
         const response = await fetch('/api/comments', {
           method: 'POST',
           headers: {
@@ -108,7 +100,6 @@ const CommentInput: React.FC<CommentInputProps> = ({
             postId,
             parentId,
             mentions: mentions.length > 0 ? mentions : null,
-            status,
           }),
         });
 
@@ -211,10 +202,20 @@ const CommentInput: React.FC<CommentInputProps> = ({
           placeholder="Write a comment..."
           value={comment}
           onChange={(e) => setComment(e.target.value)}
+          maxLength={MAX_COMMENT_LENGTH}
           required
         />
         {error && <p className="mt-1 text-red-600 text-sm">{error}</p>}
-        <p className="mt-1 text-xs text-gray-500">Use @ to mention someone (e.g. @username)</p>
+        <div className="mt-1 flex justify-between">
+          <p className="text-xs text-gray-500">Use @ to mention someone (e.g. @username)</p>
+          {comment.length > MAX_COMMENT_LENGTH * 0.9 && (
+            <p
+              className={`text-xs ${comment.length >= MAX_COMMENT_LENGTH ? 'text-red-600' : 'text-amber-600'}`}
+            >
+              {comment.length}/{MAX_COMMENT_LENGTH}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="flex justify-between">
